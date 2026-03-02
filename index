@@ -1,0 +1,43 @@
+<style>
+    @keyframes evo-white-pulse {
+        0% { filter: brightness(1) contrast(1); transform: scale(1); }
+        50% { filter: brightness(10) contrast(0); transform: scale(1.1); }
+        100% { filter: brightness(1) contrast(1); transform: scale(1); }
+    }
+    .evo-anim { animation: evo-white-pulse 0.4s 5; }
+    #evo-overlay { position: fixed; inset: 0; background: white; z-index: 1000; display: none; align-items: center; justify-content: center; transition: opacity 0.5s; }
+</style>
+
+<div id="evo-overlay">
+    <div class="text-center">
+        <div id="evo-img-flash" class="w-64 h-64 bg-contain bg-no-repeat bg-center mx-auto"></div>
+        <h2 id="evo-txt-flash" class="mt-10 text-4xl font-black text-slate-900">等等... 好像有什麼不對勁！</h2>
+    </div>
+</div>
+
+<script>
+    function playEvolutionScene(oldId, newId, newName) {
+        const ov = document.getElementById('evo-overlay');
+        const img = document.getElementById('evo-img-flash');
+        const txt = document.getElementById('evo-txt-flash');
+        
+        ov.style.display = 'flex';
+        ov.style.opacity = 1;
+        img.style.backgroundImage = `url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${oldId}.png')`;
+        img.classList.add('evo-anim');
+        
+        setTimeout(() => {
+            // 進化瞬間
+            img.classList.remove('evo-anim');
+            img.style.backgroundImage = `url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${newId}.png')`;
+            txt.innerText = `恭喜！進化成 ${newName} 了！`;
+            ov.style.backgroundColor = 'rgba(0,0,0,0.9)';
+            txt.className = "mt-10 text-5xl font-black text-yellow-400";
+            
+            setTimeout(() => { 
+                ov.style.opacity = 0;
+                setTimeout(() => { ov.style.display = 'none'; ov.style.backgroundColor = 'white'; }, 500);
+            }, 3000);
+        }, 2000);
+    }
+</script>

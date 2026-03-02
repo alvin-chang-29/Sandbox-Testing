@@ -2,64 +2,102 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>Q彈方塊測試 - v9.4</title>
+    <title>第一代經典音效測試 - v9.8</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 核心Ｑ彈動畫 */
         .block-unit {
-            width: 50px; height: 50px;
-            margin: 4px; border-radius: 8px;
+            width: 45px; height: 45px; margin: 4px; border-radius: 8px;
             transform: scale(0);
-            /* 模擬彈簧效果的貝茲曲線 */
-            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 
-                inset -4px -4px 0px rgba(0,0,0,0.2), 
-                0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: inset -4px -4px 0px rgba(0,0,0,0.2);
         }
         .block-show { transform: scale(1); }
-        
-        /* 顏色定義 */
         .bg-yellow-block { background-color: #facc15; border: 2px solid #ca8a04; }
         .bg-green-block { background-color: #22c55e; border: 2px solid #166534; }
+        
+        /* 簡單的開場遮罩 */
+        #start-screen {
+            position: fixed; inset: 0; z-index: 100;
+            background: #020617; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
     </style>
 </head>
-<body class="bg-slate-950 text-white flex flex-col items-center justify-center min-h-screen p-4">
+<body class="bg-slate-950 text-white min-h-screen flex flex-col items-center justify-center p-4">
 
-    <div class="text-center mb-10">
-        <h1 class="text-2xl font-bold text-blue-400 mb-2">方塊堆疊觸感測試</h1>
-        <p class="text-slate-500 italic text-sm">點擊下方按鈕，感受 3 × 4 的彈跳節奏</p>
+    <div id="start-screen">
+        <h1 class="text-4xl font-black mb-8 tracking-widest text-yellow-500">POKEMON MATH</h1>
+        <button onclick="unlockAudio()" class="bg-white text-black px-12 py-4 rounded-full font-black text-2xl hover:bg-yellow-400 transition">
+            開始遊戲 (解鎖音效)
+        </button>
     </div>
 
-    <div id="container" class="bg-slate-900 p-8 rounded-[2rem] border-2 border-slate-800 flex flex-wrap max-w-sm justify-start content-start min-h-[300px]">
-        </div>
+    <div class="text-center mb-6">
+        <p class="text-slate-500 italic">測試 8-bit 音效與方塊的同步感</p>
+    </div>
 
-    <div class="mt-10 flex gap-4">
-        <button onclick="popBlocks('yellow', 3)" class="bg-yellow-500 text-black px-6 py-3 rounded-xl font-black shadow-lg active:scale-95 transition">
-            噴發黃色方塊 (被乘數)
-        </button>
-        <button onclick="popBlocks('green', 9)" class="bg-green-500 text-white px-6 py-3 rounded-xl font-black shadow-lg active:scale-95 transition">
-            補齊綠色方塊 (乘數)
-        </button>
+    <div id="container" class="bg-slate-900 p-8 rounded-[2rem] border-2 border-slate-800 flex flex-wrap max-w-sm min-h-[250px] content-start"></div>
+
+    <div class="mt-8 flex gap-4">
+        <button onclick="popWithSound('yellow', 3)" class="bg-yellow-600 px-6 py-3 rounded-xl font-bold">被乘數 (3)</button>
+        <button onclick="popWithSound('green', 6)" class="bg-green-600 px-6 py-3 rounded-xl font-bold">乘數 (6)</button>
+        <button onclick="playCapture()" class="bg-blue-600 px-6 py-3 rounded-xl font-bold italic">叮！收服成功</button>
     </div>
 
     <script>
-        function popBlocks(color, count) {
+        // 【Audio Lab】 第一代音效配置
+        const SoundManager = {
+            sounds: {
+                'pop': 'https://vgmtreasurechest.com/soundtracks/pokemon-gameboy-sound-effects/vdrfksnt/Move%20Cursor.mp3',
+                'capture': 'https://vgmtreasurechest.com/soundtracks/pokemon-gameboy-sound-effects/mxtofvba/Captured%20Pokemon.mp3',
+                'bgm': 'https://vgmtreasurechest.com/soundtracks/pokemon-red-green-blue-yellow/mzkzxqzv/10%20Battle%20%28Vs%20Wild%20Pokemon%29.mp3'
+            },
+            cache: {},
+            init() {
+                for (let key in this.sounds) {
+                    this.cache[key] = new Audio(this.sounds[key]);
+                    this.cache[key].load();
+                }
+            },
+            play(key, vol = 0.4) {
+                if (this.cache[key]) {
+                    const s = this.cache[key].cloneNode();
+                    s.volume = vol;
+                    s.play();
+                }
+            }
+        };
+
+        function unlockAudio() {
+            SoundManager.init();
+            document.getElementById('start-screen').style.display = 'none';
+            // 播放經典 BGM
+            const bgm = new Audio(SoundManager.sounds.bgm);
+            bgm.loop = true;
+            bgm.volume = 0.15;
+            bgm.play();
+        }
+
+        function popWithSound(color, count) {
             const container = document.getElementById('container');
-            const colorClass = color === 'yellow' ? 'bg-yellow-block' : 'bg-green-block';
+            const cls = color === 'yellow' ? 'bg-yellow-block' : 'bg-green-block';
             
             for (let i = 0; i < count; i++) {
-                // 延遲生成，製造節奏感
                 setTimeout(() => {
                     const b = document.createElement('div');
-                    b.className = `block-unit ${colorClass}`;
+                    b.className = `block-unit ${cls}`;
                     container.appendChild(b);
                     
-                    // 強制瀏覽器重繪後啟動動畫
-                    requestAnimationFrame(() => {
-                        b.classList.add('block-show');
-                    });
-                }, i * 80); // 每個方塊間隔 80ms 噴發
+                    // 同步播放 Q 彈聲 (第一代選單聲)
+                    SoundManager.play('pop', 0.1); 
+                    
+                    requestAnimationFrame(() => b.classList.add('block-show'));
+                }, i * 100);
             }
+        }
+
+        function playCapture() {
+            SoundManager.play('capture', 0.5);
         }
     </script>
 </body>

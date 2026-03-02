@@ -2,99 +2,108 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>8-bit 數位合成實驗室 - v10.3</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8-bit Battle BGM Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .pixel-border { border: 4px solid white; box-shadow: 8px 8px 0px #334155; }
+        .bg-gb { background-color: #8bac0f; } /* 經典 GameBoy 綠 */
+    </style>
 </head>
-<body class="bg-slate-950 text-white min-h-screen flex flex-col items-center justify-center p-6">
+<body class="bg-slate-950 text-white min-h-screen flex items-center justify-center p-6">
 
-    <div id="unlock-screen" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
-        <button id="btn-unlock" class="bg-white text-black px-16 py-6 rounded-full font-black text-2xl shadow-2xl active:scale-95 transition">
-            啟動 8-bit 合成器
+    <div id="setup" class="fixed inset-0 bg-black z-50 flex items-center justify-center">
+        <button id="start-bgm" class="bg-red-600 px-12 py-6 rounded-full font-black text-2xl animate-pulse">
+            ⚔️ 進入戰鬥！
         </button>
     </div>
 
-    <div class="w-full max-w-md space-y-6">
-        <h1 class="text-2xl font-bold text-center text-yellow-500 mb-8">第一代音效模擬器</h1>
-        
-        <div class="grid grid-cols-1 gap-4">
-            <button onclick="synthPop()" class="bg-yellow-600 py-6 rounded-2xl font-bold text-lg active:scale-95 transition">
-                測試：方塊彈出 (嗶)
-            </button>
-
-            <button onclick="synthHit()" class="bg-red-600 py-6 rounded-2xl font-bold text-lg active:scale-95 transition">
-                測試：效果絕佳 (嘶—咚)
-            </button>
-
-            <button onclick="synthEvo()" class="bg-purple-600 py-6 rounded-2xl font-bold text-lg active:scale-95 transition">
-                測試：進化中 (嗶嗶嗶...)
-            </button>
-
-            <button onclick="synthCapture()" class="bg-blue-600 py-6 rounded-2xl font-bold text-xl italic active:scale-95 transition shadow-lg shadow-blue-900">
-                測試：收服成功旋律！
-            </button>
+    <div class="pixel-border bg-gb p-8 w-full max-w-sm text-slate-900 font-mono">
+        <h2 class="text-2xl font-black mb-4 underline">BATTLE MODE</h2>
+        <div class="space-y-4">
+            <p>Music: 8-bit Synth</p>
+            <p>Status: <span id="music-status" class="font-bold">PLAYING...</span></p>
+            <div class="flex gap-2">
+                <div class="w-4 h-8 bg-slate-800 animate-bounce" style="animation-delay: 0.1s"></div>
+                <div class="w-4 h-12 bg-slate-800 animate-bounce" style="animation-delay: 0.2s"></div>
+                <div class="w-4 h-6 bg-slate-800 animate-bounce" style="animation-delay: 0.3s"></div>
+            </div>
         </div>
+        <button onclick="toggleMusic()" class="mt-8 bg-slate-800 text-white px-4 py-2 text-sm">STOP / PLAY</button>
     </div>
 
     <script>
-        let ctx = null;
+        let audioCtx = null;
+        let isPlaying = false;
+        let nextNoteTime = 0;
+        let timerID = null;
+        const lookAhead = 25.0; // 檢查頻率 (ms)
+        const scheduleAheadTime = 0.1; // 預約時間 (s)
 
-        document.getElementById('btn-unlock').onclick = function() {
+        // 樂譜定義 (頻率)
+        const bassLine = [110, 110, 123, 110, 146, 110, 123, 138]; // 低音軌 A2, B2, D3...
+        const leadLine = [440, 0, 440, 0, 554, 554, 0, 659];      // 主旋律 A4, C#5, E5
+        let currentStep = 0;
+        const tempo = 140; // BPM
+        const stepDuration = 60.0 / tempo / 2; // 八分音符長度
+
+        function initAudio() {
             window.AudioContext = window.AudioContext || window.webkitAudioContext;
-            ctx = new AudioContext();
-            document.getElementById('unlock-screen').style.display = 'none';
-        };
+            audioCtx = new AudioContext();
+            nextNoteTime = audioCtx.currentTime;
+            isPlaying = true;
+            scheduler();
+        }
 
-        // 通用震盪器工具
-        function playTone(freq, type, duration, volume = 0.1, delay = 0) {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
+        function scheduleNote(step, time) {
+            // 軌道 1: Bass (Triangle Wave 較溫和)
+            playOsc(bassLine[step % 8], 'triangle', time, stepDuration, 0.15);
             
-            osc.type = type; // 'square' (8-bit感) 或 'triangle' (柔和點)
-            osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
-            
-            gain.gain.setValueAtTime(volume, ctx.currentTime + delay);
-            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + delay + duration);
-            
+            // 軌道 2: Lead (Square Wave 尖銳感)
+            if (leadLine[step % 8] !== 0) {
+                playOsc(leadLine[step % 8], 'square', time, stepDuration * 0.8, 0.05);
+            }
+        }
+
+        function playOsc(freq, type, startTime, duration, vol) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, startTime);
+            gain.gain.setValueAtTime(vol, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
             osc.connect(gain);
-            gain.connect(ctx.destination);
-            
-            osc.start(ctx.currentTime + delay);
-            osc.stop(ctx.currentTime + delay + duration);
+            gain.connect(audioCtx.destination);
+            osc.start(startTime);
+            osc.stop(startTime + duration);
         }
 
-        // 1. 方塊彈出音 (模擬 Move Cursor)
-        function synthPop() {
-            playTone(880, 'square', 0.05, 0.05);
+        function scheduler() {
+            while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
+                scheduleNote(currentStep, nextNoteTime);
+                nextNoteTime += stepDuration;
+                currentStep++;
+            }
+            timerID = setTimeout(scheduler, lookAhead);
         }
 
-        // 2. 效果絕佳 (快速降頻模擬打擊感)
-        function synthHit() {
-            const now = ctx.currentTime;
-            for(let i=0; i<10; i++) {
-                playTone(600 - (i*50), 'square', 0.1, 0.03, i*0.01);
+        function toggleMusic() {
+            if (isPlaying) {
+                clearTimeout(timerID);
+                isPlaying = false;
+                document.getElementById('music-status').innerText = "PAUSED";
+            } else {
+                nextNoteTime = audioCtx.currentTime;
+                isPlaying = true;
+                scheduler();
+                document.getElementById('music-status').innerText = "PLAYING...";
             }
         }
 
-        // 3. 進化中 (頻率爬升)
-        function synthEvo() {
-            for(let i=0; i<8; i++) {
-                playTone(440 + (i*110), 'square', 0.1, 0.05, i*0.15);
-            }
-        }
-
-        // 4. 收服成功旋律 (經典音階模擬)
-        function synthCapture() {
-            const melody = [
-                {f: 523.25, d: 0.1}, // C5
-                {f: 587.33, d: 0.1}, // D5
-                {f: 659.25, d: 0.1}, // E5
-                {f: 698.46, d: 0.3}  // F5 (長音)
-            ];
-            melody.forEach((note, i) => {
-                playTone(note.f, 'square', note.d, 0.08, i * 0.15);
-            });
-        }
+        document.getElementById('start-bgm').onclick = () => {
+            initAudio();
+            document.getElementById('setup').style.display = 'none';
+        };
     </script>
 </body>
 </html>

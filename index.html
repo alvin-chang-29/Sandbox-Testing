@@ -3,77 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Web Audio API 終極測試 - v10.2</title>
+    <title>8-bit 數位合成實驗室 - v10.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-900 text-white flex flex-col items-center justify-center min-h-screen p-6">
+<body class="bg-slate-950 text-white min-h-screen flex flex-col items-center justify-center p-6">
 
     <div id="unlock-screen" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
-        <h1 class="text-3xl font-bold text-yellow-500 mb-6">音訊硬體啟動器</h1>
-        <p class="text-slate-400 mb-8 text-center text-sm">此按鈕將透過 Web Audio API<br>直接啟動 iPhone 音訊通道</p>
-        <button id="master-unlock" class="bg-white text-black px-16 py-6 rounded-full font-black text-2xl shadow-2xl active:bg-yellow-400">
-            啟動音效
+        <button id="btn-unlock" class="bg-white text-black px-16 py-6 rounded-full font-black text-2xl shadow-2xl active:scale-95 transition">
+            啟動 8-bit 合成器
         </button>
     </div>
 
-    <div class="text-center">
-        <div class="mb-10 p-6 bg-slate-800 rounded-3xl border border-slate-700">
-            <p id="audio-status" class="text-red-500 font-bold">狀態：尚未啟動</p>
+    <div class="w-full max-w-md space-y-6">
+        <h1 class="text-2xl font-bold text-center text-yellow-500 mb-8">第一代音效模擬器</h1>
+        
+        <div class="grid grid-cols-1 gap-4">
+            <button onclick="synthPop()" class="bg-yellow-600 py-6 rounded-2xl font-bold text-lg active:scale-95 transition">
+                測試：方塊彈出 (嗶)
+            </button>
+
+            <button onclick="synthHit()" class="bg-red-600 py-6 rounded-2xl font-bold text-lg active:scale-95 transition">
+                測試：效果絕佳 (嘶—咚)
+            </button>
+
+            <button onclick="synthEvo()" class="bg-purple-600 py-6 rounded-2xl font-bold text-lg active:scale-95 transition">
+                測試：進化中 (嗶嗶嗶...)
+            </button>
+
+            <button onclick="synthCapture()" class="bg-blue-600 py-6 rounded-2xl font-bold text-xl italic active:scale-95 transition shadow-lg shadow-blue-900">
+                測試：收服成功旋律！
+            </button>
         </div>
-        <button onclick="playBip()" class="bg-blue-600 px-12 py-6 rounded-2xl font-bold text-2xl active:scale-90 transition">
-            播放測試音
-        </button>
     </div>
 
     <script>
-        let audioCtx = null;
+        let ctx = null;
 
-        // 啟動函數
-        document.getElementById('master-unlock').addEventListener('click', function() {
-            // 1. 初始化 AudioContext
+        document.getElementById('btn-unlock').onclick = function() {
             window.AudioContext = window.AudioContext || window.webkitAudioContext;
-            audioCtx = new AudioContext();
-
-            // 2. 建立一個無聲的緩衝區並播放，這能解鎖 iOS 的硬體限制
-            const buffer = audioCtx.createBuffer(1, 1, 22050);
-            const source = audioCtx.createBufferSource();
-            source.buffer = buffer;
-            source.connect(audioCtx.destination);
-            source.start(0);
-
-            // 3. 檢查狀態是否變為 'running'
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-
-            document.getElementById('audio-status').innerText = "狀態：音訊硬體已啟動！";
-            document.getElementById('audio-status').className = "text-green-500 font-bold";
+            ctx = new AudioContext();
             document.getElementById('unlock-screen').style.display = 'none';
-        });
+        };
 
-        // 使用震盪器產生 8-bit 風格的嗶聲 (不需要任何外部檔案)
-        function playBip() {
-            if (!audioCtx) return;
+        // 通用震盪器工具
+        function playTone(freq, type, duration, volume = 0.1, delay = 0) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
             
-            // 確保環境是運行中的
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
+            osc.type = type; // 'square' (8-bit感) 或 'triangle' (柔和點)
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+            
+            gain.gain.setValueAtTime(volume, ctx.currentTime + delay);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + delay + duration);
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.start(ctx.currentTime + delay);
+            osc.stop(ctx.currentTime + delay + duration);
+        }
+
+        // 1. 方塊彈出音 (模擬 Move Cursor)
+        function synthPop() {
+            playTone(880, 'square', 0.05, 0.05);
+        }
+
+        // 2. 效果絕佳 (快速降頻模擬打擊感)
+        function synthHit() {
+            const now = ctx.currentTime;
+            for(let i=0; i<10; i++) {
+                playTone(600 - (i*50), 'square', 0.1, 0.03, i*0.01);
             }
+        }
 
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
+        // 3. 進化中 (頻率爬升)
+        function synthEvo() {
+            for(let i=0; i<8; i++) {
+                playTone(440 + (i*110), 'square', 0.1, 0.05, i*0.15);
+            }
+        }
 
-            oscillator.type = 'square'; // 8-bit 方波感
-            oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // A4 音
-            
-            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-
-            oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.1);
+        // 4. 收服成功旋律 (經典音階模擬)
+        function synthCapture() {
+            const melody = [
+                {f: 523.25, d: 0.1}, // C5
+                {f: 587.33, d: 0.1}, // D5
+                {f: 659.25, d: 0.1}, // E5
+                {f: 698.46, d: 0.3}  // F5 (長音)
+            ];
+            melody.forEach((note, i) => {
+                playTone(note.f, 'square', note.d, 0.08, i * 0.15);
+            });
         }
     </script>
 </body>

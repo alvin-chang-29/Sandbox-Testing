@@ -2,102 +2,86 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>第一代經典音效測試 - v9.8</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>iPhone 音效終極修正 - v10.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .block-unit {
-            width: 45px; height: 45px; margin: 4px; border-radius: 8px;
-            transform: scale(0);
-            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: inset -4px -4px 0px rgba(0,0,0,0.2);
-        }
+        .block-unit { width: 50px; height: 50px; margin: 4px; border-radius: 8px; transform: scale(0); transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); background: #facc15; }
         .block-show { transform: scale(1); }
-        .bg-yellow-block { background-color: #facc15; border: 2px solid #ca8a04; }
-        .bg-green-block { background-color: #22c55e; border: 2px solid #166534; }
-        
-        /* 簡單的開場遮罩 */
-        #start-screen {
-            position: fixed; inset: 0; z-index: 100;
-            background: #020617; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-        }
+        #overlay { position: fixed; inset: 0; background: #020617; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
-<body class="bg-slate-950 text-white min-h-screen flex flex-col items-center justify-center p-4">
+<body class="bg-slate-950 text-white min-h-screen flex flex-col items-center justify-center">
 
-    <div id="start-screen">
-        <h1 class="text-4xl font-black mb-8 tracking-widest text-yellow-500">POKEMON MATH</h1>
-        <button onclick="unlockAudio()" class="bg-white text-black px-12 py-4 rounded-full font-black text-2xl hover:bg-yellow-400 transition">
-            開始遊戲 (解鎖音效)
+    <div id="overlay">
+        <div class="mb-8 text-center">
+            <h1 class="text-3xl font-black text-yellow-500 mb-2">第一代音效啟動器</h1>
+            <p class="text-slate-500 text-sm">請確認 iPhone 左側靜音開關已關閉</p>
+        </div>
+        <button id="unlock-btn" class="bg-white text-black px-12 py-5 rounded-full font-black text-xl shadow-2xl active:scale-90 transition-all">
+            點我開啟聲音 (Tap to Start)
         </button>
     </div>
 
-    <div class="text-center mb-6">
-        <p class="text-slate-500 italic">測試 8-bit 音效與方塊的同步感</p>
-    </div>
-
-    <div id="container" class="bg-slate-900 p-8 rounded-[2rem] border-2 border-slate-800 flex flex-wrap max-w-sm min-h-[250px] content-start"></div>
-
-    <div class="mt-8 flex gap-4">
-        <button onclick="popWithSound('yellow', 3)" class="bg-yellow-600 px-6 py-3 rounded-xl font-bold">被乘數 (3)</button>
-        <button onclick="popWithSound('green', 6)" class="bg-green-600 px-6 py-3 rounded-xl font-bold">乘數 (6)</button>
-        <button onclick="playCapture()" class="bg-blue-600 px-6 py-3 rounded-xl font-bold italic">叮！收服成功</button>
-    </div>
+    <div id="container" class="bg-slate-900 p-8 rounded-[2rem] flex flex-wrap max-w-sm min-h-[200px]"></div>
+    
+    <button onclick="playPop(1)" class="mt-10 bg-blue-600 px-10 py-4 rounded-xl font-bold">測試方塊聲</button>
 
     <script>
-        // 【Audio Lab】 第一代音效配置
-        const SoundManager = {
-            sounds: {
-                'pop': 'https://vgmtreasurechest.com/soundtracks/pokemon-gameboy-sound-effects/vdrfksnt/Move%20Cursor.mp3',
-                'capture': 'https://vgmtreasurechest.com/soundtracks/pokemon-gameboy-sound-effects/mxtofvba/Captured%20Pokemon.mp3',
-                'bgm': 'https://vgmtreasurechest.com/soundtracks/pokemon-red-green-blue-yellow/mzkzxqzv/10%20Battle%20%28Vs%20Wild%20Pokemon%29.mp3'
-            },
-            cache: {},
-            init() {
-                for (let key in this.sounds) {
-                    this.cache[key] = new Audio(this.sounds[key]);
-                    this.cache[key].load();
-                }
-            },
-            play(key, vol = 0.4) {
-                if (this.cache[key]) {
-                    const s = this.cache[key].cloneNode();
-                    s.volume = vol;
-                    s.play();
-                }
-            }
+        // 1. 定義音效清單
+        const AUDIO_URLS = {
+            pop: 'https://actions.google.com/google_assistant/sounds/library/cartoon/pop_01.mp3', // 換一個極短且穩定的來源
+            bgm: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' // 測試用 BGM
         };
 
-        function unlockAudio() {
-            SoundManager.init();
-            document.getElementById('start-screen').style.display = 'none';
-            // 播放經典 BGM
-            const bgm = new Audio(SoundManager.sounds.bgm);
-            bgm.loop = true;
-            bgm.volume = 0.15;
-            bgm.play();
-        }
+        const cache = {};
+        let isUnlocked = false;
 
-        function popWithSound(color, count) {
+        // 2. 預載
+        Object.keys(AUDIO_URLS).forEach(key => {
+            cache[key] = new Audio(AUDIO_URLS[key]);
+            cache[key].load();
+        });
+
+        // 3. iPhone 解鎖核心邏輯
+        const unlockBtn = document.getElementById('unlock-btn');
+        
+        // 同時監聽 click 和 touchstart 以確保 iOS 響應
+        ['click', 'touchstart'].forEach(evt => {
+            unlockBtn.addEventListener(evt, function() {
+                if (isUnlocked) return;
+
+                // 播放並立即暫停所有音效 (這能解鎖 iOS 限制)
+                Object.values(cache).forEach(audio => {
+                    audio.play().then(() => {
+                        audio.pause();
+                        audio.currentTime = 0;
+                    }).catch(e => console.log("Unlock failed", e));
+                });
+
+                // 播放背景音樂
+                cache.bgm.loop = true;
+                cache.bgm.volume = 0.2;
+                cache.bgm.play();
+
+                isUnlocked = true;
+                document.getElementById('overlay').style.display = 'none';
+                console.log("Audio Unlocked!");
+            }, { passive: false });
+        });
+
+        function playPop(count) {
             const container = document.getElementById('container');
-            const cls = color === 'yellow' ? 'bg-yellow-block' : 'bg-green-block';
+            const b = document.createElement('div');
+            b.className = 'block-unit';
+            container.appendChild(b);
             
-            for (let i = 0; i < count; i++) {
-                setTimeout(() => {
-                    const b = document.createElement('div');
-                    b.className = `block-unit ${cls}`;
-                    container.appendChild(b);
-                    
-                    // 同步播放 Q 彈聲 (第一代選單聲)
-                    SoundManager.play('pop', 0.1); 
-                    
-                    requestAnimationFrame(() => b.classList.add('block-show'));
-                }, i * 100);
-            }
-        }
-
-        function playCapture() {
-            SoundManager.play('capture', 0.5);
+            // iPhone 播放複本
+            const s = cache.pop.cloneNode();
+            s.volume = 0.5;
+            s.play();
+            
+            setTimeout(() => b.classList.add('block-show'), 50);
         }
     </script>
 </body>

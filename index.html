@@ -3,116 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mezastar Style Math - v11.0</title>
+    <title>Mezastar 強制發聲版 - v11.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 現代感 UI：漸層與發光特效 */
-        .mezastar-card {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            border: 2px solid #3b82f6;
-            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-            border-radius: 2rem;
-        }
-        .btn-action {
-            background: linear-gradient(to bottom, #3b82f6, #1d4ed8);
-            box-shadow: 0 4px 0 #172554, 0 10px 20px rgba(0,0,0,0.4);
-            transition: all 0.1s;
-        }
-        .btn-action:active { transform: translateY(4px); box-shadow: 0 0 0 #172554; }
-        
-        /* 動態背景 */
-        body { background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%); }
+        .mezastar-theme { background: radial-gradient(circle, #1e293b, #020617); }
+        .glow-btn { box-shadow: 0 0 15px #3b82f6; }
     </style>
 </head>
-<body class="text-white min-h-screen flex items-center justify-center p-6">
+<body class="mezastar-theme text-white min-h-screen flex items-center justify-center p-6">
 
-    <div id="overlay" class="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center">
-        <div class="mb-10 text-center animate-bounce">
-            <h1 class="text-5xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">
-                MEZASTAR MATH
-            </h1>
-        </div>
-        <button onclick="initMezastarSystem()" class="btn-action px-16 py-6 rounded-full font-black text-2xl">
+    <div id="overlay" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
+        <h1 class="text-4xl font-black italic mb-10 text-blue-500">MEZASTAR MATH</h1>
+        <p class="text-slate-500 mb-6 text-sm">請確認側邊開關未開啟靜音</p>
+        <button id="unlock-btn" class="bg-blue-600 px-20 py-8 rounded-full font-black text-2xl glow-btn active:scale-90 transition">
             GET READY!
         </button>
     </div>
 
-    <div class="w-full max-w-lg">
-        <div class="mezastar-card p-8 text-center relative overflow-hidden">
-            <div id="poke-img" class="w-48 h-48 mx-auto bg-contain bg-no-repeat bg-center mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]"
-                 style="background-image:url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png')">
-            </div>
-            
-            <h2 class="text-3xl font-black italic mb-2 text-blue-300">PIKACHU</h2>
-            <div class="w-full bg-slate-800 h-4 rounded-full mb-8 overflow-hidden border border-slate-700">
-                <div id="hp-bar" class="h-full bg-gradient-to-r from-green-400 to-blue-500 w-full transition-all duration-500"></div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <button onclick="triggerAction('hit')" class="btn-action p-4 rounded-xl font-bold italic text-sm">ATTACK!</button>
-                <button onclick="triggerAction('pop')" class="btn-action p-4 rounded-xl font-bold italic text-sm text-yellow-300">TAG IN!</button>
-            </div>
-        </div>
+    <div class="text-center">
+        <div class="mb-10 text-2xl font-black italic text-blue-300">SYSTEM READY</div>
+        <button onclick="playMezastarHit()" class="bg-red-600 px-12 py-6 rounded-2xl font-bold text-xl glow-btn">
+            攻擊音效測試
+        </button>
     </div>
 
     <script>
-        // 【Audio Lab】現代音效引擎 (Mezastar 風格採樣)
-        const MezastarAudio = {
-            // 使用現代、高品質的音效來源
-            samples: {
-                'start': 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3', // 震撼開場
-                'hit': 'https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3',   // 金屬打擊感
-                'pop': 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3',   // 科技感彈出
-                'bgm': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3'       // 動感 BGM
-            },
-            cache: {},
+        // 1. 預先建立 Audio 物件 (不要在 function 裡才 new)
+        const hitSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3');
+        const startSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+        const bgm = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3');
+
+        // 2. 關鍵解鎖函數
+        document.getElementById('unlock-btn').addEventListener('click', function() {
+            // 在這個同步的點擊事件中，立刻「摸一下」所有音軌
+            hitSound.play().then(() => { hitSound.pause(); hitSound.currentTime = 0; });
+            startSound.play(); // 播放開場音樂
             
-            async init() {
-                window.AudioContext = window.AudioContext || window.webkitAudioContext;
-                this.ctx = new AudioContext();
-                
-                // 預載音效
-                for (let key in this.samples) {
-                    const res = await fetch(this.samples[key]);
-                    const arrayBuffer = await res.arrayBuffer();
-                    this.cache[key] = await this.ctx.decodeAudioData(arrayBuffer);
-                }
-            },
+            bgm.loop = true;
+            bgm.volume = 0.2;
+            bgm.play();
 
-            play(key, vol = 0.5) {
-                if (!this.cache[key]) return;
-                const source = this.ctx.createBufferSource();
-                source.buffer = this.cache[key];
-                const gainNode = this.ctx.createGain();
-                gainNode.gain.value = vol;
-                source.connect(gainNode);
-                gainNode.connect(this.ctx.destination);
-                source.start(0);
-            }
-        };
+            document.getElementById('overlay').style.display = 'none';
+        });
 
-        async function initMezastarSystem() {
-            document.getElementById('overlay').classList.add('opacity-0');
-            await MezastarAudio.init();
-            MezastarAudio.play('start');
-            
-            // 延遲隱藏遮罩
-            setTimeout(() => {
-                document.getElementById('overlay').style.display = 'none';
-                // 播放動感 BGM
-                const bgm = new Audio(MezastarAudio.samples.bgm);
-                bgm.loop = true;
-                bgm.volume = 0.2;
-                bgm.play();
-            }, 500);
-        }
-
-        function triggerAction(type) {
-            MezastarAudio.play(type);
-            if(type === 'hit') {
-                const bar = document.getElementById('hp-bar');
-                bar.style.width = (parseInt(bar.style.width) || 100) - 10 + "%";
-            }
+        // 3. 測試播放
+        function playMezastarHit() {
+            // 直接播放預載好的物件，不要有任何邏輯判斷
+            hitSound.currentTime = 0;
+            hitSound.play();
         }
     </script>
 </body>

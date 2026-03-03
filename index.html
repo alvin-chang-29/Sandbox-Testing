@@ -3,56 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mezastar Math - The Game v14.1</title>
+    <title>Mezastar Math Pro - v14.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap');
-        body { font-family: 'Orbitron', sans-serif; background: #020617; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Orbitron', sans-serif; background: #020617; -webkit-tap-highlight-color: transparent; overflow: hidden; }
         .mezastar-border { border: 2px solid #3b82f6; box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
         .hp-bar { transition: width 0.5s ease-out; background: linear-gradient(90deg, #10b981, #3b82f6); }
         
-        /* 動態方塊樣式 */
+        /* 方塊動態 */
         .block-unit {
-            width: 45px; height: 45px; margin: 4px; border-radius: 8px;
+            width: 40px; height: 40px; margin: 3px; border-radius: 8px;
             background: linear-gradient(135deg, #fbbf24, #d97706);
-            box-shadow: 0 4px 0 #78350f, 0 8px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 0 #78350f;
             transform: scale(0); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .block-show { transform: scale(1); }
         
-        /* 視覺文字特效層 */
-        #quest-text {
-            pointer-events: none; /* 確保不阻擋點擊 */
-            z-index: 90; /* 放在所有東西的最上面 */
+        /* 進化全螢幕光芒 */
+        #evo-overlay {
+            position: fixed; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 200;
         }
-        .text-pop { animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        
-        /* 進化震動 */
-        .shake { animation: shake-screen 0.1s infinite; }
-        @keyframes shake-screen { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -2px); } 100% { transform: translate(1px, 1px); } }
+        .evo-flash { animation: flash-white 3s ease-in-out forwards; }
+        @keyframes flash-white {
+            0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; }
+        }
+
+        /* 隱藏的 Alert 替代品 */
+        #custom-modal { display: none; }
     </style>
 </head>
 <body class="text-white min-h-screen flex flex-col items-center justify-center p-4">
 
-    <div id="overlay" class="fixed inset-0 bg-black z-[100] flex flex-col items-center justify-center p-10">
-        <h1 class="text-5xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 mb-4">MEZASTAR</h1>
-        <p class="text-blue-500 tracking-widest mb-12 text-sm font-bold">MATHEMATICS SYSTEM</p>
-        <p class="text-slate-600 mb-4 text-xs">請確認 iPhone 側邊開關未開啟靜音</p>
-        <button id="start-btn" class="bg-blue-600 px-16 py-8 rounded-full font-black text-2xl shadow-[0_0_30px_#2563eb] active:scale-95 transition">
+    <div id="overlay" class="fixed inset-0 bg-black z-[300] flex flex-col items-center justify-center">
+        <h1 class="text-4xl font-black italic text-blue-500 mb-8">MEZASTAR MATH</h1>
+        <button id="start-btn" class="bg-blue-600 px-16 py-8 rounded-full font-black text-2xl shadow-2xl active:scale-95 transition">
             GET READY!
         </button>
     </div>
 
+    <div id="evo-overlay"></div>
+
+    <div id="custom-modal" class="fixed inset-0 z-[400] flex items-center justify-center bg-black/80 p-6">
+        <div class="bg-slate-800 border-2 border-blue-500 p-8 rounded-3xl text-center max-w-xs w-full">
+            <h3 id="modal-title" class="text-2xl font-black text-yellow-400 mb-4">EVOLVED!</h3>
+            <p id="modal-body" class="text-slate-300 text-sm mb-8">Your Pokemon has reached a new form.</p>
+            <button onclick="location.reload()" class="bg-blue-600 w-full py-4 rounded-xl font-bold">NEXT BATTLE</button>
+        </div>
+    </div>
+
     <div class="w-full max-w-md">
         <div class="mezastar-border bg-slate-900/90 p-6 rounded-[2.5rem] relative overflow-hidden">
-            
-            <div id="quest-text" class="absolute inset-0 flex items-center justify-center text-5xl font-black italic text-yellow-400"></div>
+            <div id="quest-text" class="absolute inset-0 flex items-center justify-center text-5xl font-black italic text-yellow-400 pointer-events-none z-50"></div>
 
-            <div class="flex justify-between items-end mb-6 relative z-10">
+            <div class="flex justify-between items-end mb-6">
                 <div>
-                    <h2 id="poke-name" class="text-xl font-black italic text-blue-300">CHARIZARD</h2>
+                    <h2 class="text-xl font-black italic text-blue-300">CHARIZARD</h2>
                     <div class="w-48 bg-slate-800 h-3 rounded-full mt-2 border border-slate-700">
                         <div id="hp-indicator" class="hp-bar h-full w-full"></div>
                     </div>
@@ -60,166 +67,114 @@
                 <div class="text-right text-[10px] text-slate-500">SCORE: <span id="score-val">0</span></div>
             </div>
 
-            <div id="stage" class="min-h-[180px] bg-black/20 rounded-3xl p-4 flex flex-wrap justify-center content-start mb-6">
-                </div>
+            <div id="stage" class="min-h-[180px] bg-black/20 rounded-3xl p-4 flex flex-wrap justify-center content-start mb-6"></div>
 
-            <div class="grid grid-cols-2 gap-3 relative z-10">
+            <div class="grid grid-cols-2 gap-3">
                 <div class="col-span-2 bg-slate-800 p-4 rounded-2xl flex justify-between items-center border border-slate-700">
-                    <span id="formula" class="text-3xl font-black text-white">? × ? =</span>
-                    <input id="ans-input" type="number" pattern="\d*" class="bg-black border-2 border-blue-500 w-28 p-3 text-center text-3xl rounded-xl focus:outline-none focus:border-cyan-400">
+                    <span id="formula" class="text-3xl font-black">? × ? =</span>
+                    <input id="ans-input" type="number" pattern="\d*" class="bg-black border-2 border-blue-500 w-28 p-3 text-center text-3xl rounded-xl focus:outline-none">
                 </div>
-                <button onclick="checkAnswer()" class="bg-gradient-to-b from-blue-500 to-blue-700 py-6 rounded-2xl font-black italic text-xl shadow-lg active:translate-y-1 active:shadow-none transition-all">
-                    ATTACK!
-                </button>
-                <button onclick="nextQuestion()" class="bg-slate-700/50 py-6 rounded-2xl font-bold text-sm text-slate-400 active:bg-slate-700">
-                    SKIP
-                </button>
+                <button onclick="checkAnswer()" class="bg-gradient-to-b from-blue-500 to-blue-700 py-6 rounded-2xl font-black italic text-xl shadow-lg active:translate-y-1">ATTACK!</button>
+                <button onclick="nextQuestion()" class="bg-slate-700/50 py-6 rounded-2xl font-bold text-sm text-slate-400">SKIP</button>
             </div>
         </div>
     </div>
 
     <script>
-        // 設定檔
-        const CONFIG = {
-            targetEvolutionScore: 10 // 正式設定：滿10分進化
-        };
-
-        // 【Audio Engine】高品質純音效採樣
+        const CONFIG = { targetScore: 3 }; // 測試用，3分進化
+        
+        // 預置音效物件
         const sfx = {
-            bgm: new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3'), // EDM 風格 BGM
-            pop: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'), // 輕快方塊彈出
-            hit: new Audio('https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3'), // 沉重打擊
-            evolve: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3') // 進化上升音
+            bgm: new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3'),
+            pop: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'),
+            hit: new Audio('https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3'),
+            evo: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3')
         };
 
-        // 資料庫 (Dexie)
-        const db = new Dexie("MezastarMathDB");
-        db.version(1).stores({ progress: '++id, date, score' });
+        let currentAns = 0, score = 0;
 
-        let currentAns = 0;
-        let score = 0;
-
-        // --- 核心啟動函數 (修復問題2: 解鎖 iOS 音訊) ---
-        document.getElementById('start-btn').onclick = () => {
-            // 在點擊瞬間，「摸一下」所有音效以解鎖
-            sfx.bgm.play().then(() => { sfx.bgm.pause(); sfx.bgm.currentTime = 0; });
-            sfx.pop.play().then(() => { sfx.pop.pause(); sfx.pop.currentTime = 0; });
-            sfx.hit.play().then(() => { sfx.hit.pause(); sfx.hit.currentTime = 0; });
-            sfx.evolve.play().then(() => { sfx.evolve.pause(); sfx.evolve.currentTime = 0; });
-
-            // 啟動背景音樂
+        // 啟動與解鎖
+        document.getElementById('start-btn').onclick = function() {
+            // 同步激活所有音軌
+            Object.values(sfx).forEach(track => {
+                track.play().then(() => { track.pause(); track.currentTime = 0; });
+            });
+            
             sfx.bgm.loop = true;
             sfx.bgm.volume = 0.15;
-            sfx.bgm.play();
+            sfx.bgm.play(); // 播放背景音樂
 
             document.getElementById('overlay').style.display = 'none';
-            
-            // 真正開始遊戲：生成題目與動態方塊
-            nextQuestion(); 
+            nextQuestion();
         };
 
-        // --- 遊戲邏輯 ---
         function nextQuestion() {
-            // 移除上題殘留的方塊
             const stage = document.getElementById('stage');
-            stage.querySelectorAll('.block-unit').forEach(el => el.remove());
-
-            // 生成新的九九乘法題目 (2x2 到 9x9)
+            stage.innerHTML = "";
             const a = Math.floor(Math.random() * 8) + 2;
             const b = Math.floor(Math.random() * 8) + 2;
             currentAns = a * b;
-            
-            // 更新 UI
             document.getElementById('formula').innerText = `${a} × ${b} =`;
             document.getElementById('ans-input').value = "";
             document.getElementById('ans-input').focus();
             
-            // 【修復問題1: 動態方塊生成】
-            // 方塊不再一開始就出現，而是隨著題目「啵、啵、啵」地彈出
+            // 動態生成方塊
             for(let i=0; i < currentAns; i++) {
                 setTimeout(() => {
                     const block = document.createElement('div');
                     block.className = 'block-unit';
                     stage.appendChild(block);
-                    
-                    // 播放彈出音 (用 cloneNode 處理同時播放)
-                    sfx.pop.cloneNode().play();
-                    
+                    sfx.pop.cloneNode().play(); // 播放啵啵聲
                     requestAnimationFrame(() => block.classList.add('block-show'));
-                }, i * 25); // 控制生成的節奏感
+                }, i * 20);
             }
         }
 
         function checkAnswer() {
-            const userAns = parseInt(document.getElementById('ans-input').value);
-            if(userAns === currentAns) {
-                // 算對了
+            const val = parseInt(document.getElementById('ans-input').value);
+            if(val === currentAns) {
                 score++;
                 document.getElementById('score-val').innerText = score;
-                
-                // 播放打擊音效 (修復問題2: 此時硬體已解鎖，可以順利播放)
-                sfx.hit.currentTime = 0;
-                sfx.hit.play();
-                
-                // HP 條更新
-                const hpIndicator = document.getElementById('hp-indicator');
-                let currentW = parseInt(hpIndicator.style.width) || 100;
-                hpIndicator.style.width = Math.max(0, currentW - 10) + "%";
+                sfx.hit.currentTime = 0; sfx.hit.play(); // 播放打擊聲
 
-                // 判斷是否達到進化門檻
-                if(score >= CONFIG.targetEvolutionScore) {
-                    triggerEvolutionCeremony();
+                if(score >= CONFIG.targetScore) {
+                    performEvolution();
                 } else {
-                    // 一般攻擊成功視覺效果 (修復問題3: 放在方塊前面)
-                    showEffect("EXCELLENT!");
-                    setTimeout(nextQuestion, 1000); // 1秒後自動進下一題
+                    showText("EXCELLENT!");
+                    setTimeout(nextQuestion, 1000);
                 }
             } else {
-                // 算錯了
-                showEffect("MISS!", "text-red-500");
-                // 簡單震動提示
-                document.getElementById('stage').classList.add('shake');
-                setTimeout(() => document.body.classList.remove('shake'), 200);
+                showText("MISS!", "text-red-500");
             }
         }
 
-        // 視覺特效字工具
-        function showEffect(txt, color = "text-yellow-400") {
-            const q = document.getElementById('quest-text');
-            q.innerText = txt;
-            q.className = `absolute inset-0 flex items-center justify-center text-5xl font-black italic ${color} text-pop z-[90]`;
-            // z-index: 90 確保文字在方塊之上
-            
-            // 0.8 秒後清空文字
-            setTimeout(() => { q.innerText = ""; q.className = "absolute inset-0 flex items-center justify-center text-5xl font-black italic text-yellow-400"; }, 800);
+        function showText(txt, color="text-yellow-400") {
+            const el = document.getElementById('quest-text');
+            el.innerText = txt;
+            el.className = `absolute inset-0 flex items-center justify-center text-5xl font-black italic ${color} animate-bounce z-50`;
+            setTimeout(() => { el.innerText = ""; }, 800);
         }
 
-        // --- 進化儀式引擎 (修復問題2: 進化音樂) ---
-        function triggerEvolutionCeremony() {
-            const stage = document.getElementById('stage');
+        // 進化儀式：核心修復點
+        function performEvolution() {
+            sfx.bgm.pause(); // 停止背景音樂
+            sfx.evo.play();  // 播放上升音
             
-            // 1. 蓄力階段 (3秒)
-            sfx.bgm.volume = 0.02; // BGM 淡出
-            sfx.evolve.play(); // 播放上升音
-            stage.classList.add('animate-pulse'); // 畫面脈動
-            showEffect("READY...", "text-purple-400");
+            // 觸發白光閃爍動畫
+            const evoOverlay = document.getElementById('evo-overlay');
+            evoOverlay.classList.add('evo-flash');
+            
+            showText("EVOLVING...", "text-white");
 
-            // 2. 轉折與爆炸
+            // 3秒後顯示自定義彈窗，取代原生 Alert
             setTimeout(() => {
-                sfx.hit.currentTime = 0; // 重擊音
                 sfx.hit.play();
-                showEffect("EVOLVED!", "text-white");
-                
-                // 更新數據庫
+                document.getElementById('custom-modal').style.display = 'flex';
+                // 這裡存檔到 Dexie
+                const db = new Dexie("MezastarMathDB");
+                db.version(1).stores({ progress: '++id, date, score' });
                 db.progress.add({ date: new Date().toLocaleString(), score: score });
-                
-                // 3. 儀式結束
-                setTimeout(() => {
-                    alert("進化成功！守護靈已進化為更強大的形態！");
-                    location.reload(); // 重啟遊戲迴圈
-                }, 1000);
-
-            }, 3000); // 3秒蓄力
+            }, 3000);
         }
     </script>
 </body>

@@ -3,167 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mezastar Math Sensory Boost - v15.1</title>
+    <title>Mezastar 強制發聲版 - v11.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Permanent+Marker&display=swap');
-        body { font-family: 'Orbitron', sans-serif; background: #020617; overflow: hidden; touch-action: manipulation; }
-        
-        /* 強化方塊動畫：物理噴發感 */
-        .block-unit {
-            width: 38px; height: 38px; margin: 3px; border-radius: 8px;
-            background: linear-gradient(135deg, #fbbf24, #d97706);
-            box-shadow: 0 4px 0 #78350f, 0 8px 15px rgba(0,0,0,0.4);
-            transform: scale(0) translateY(50px);
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .block-show { transform: scale(1) translateY(0); }
-
-        /* 進化時的能量抖動 */
-        .energy-surge { animation: surge 0.1s infinite; filter: brightness(2) contrast(1.5); }
-        @keyframes surge {
-            0% { transform: translate(2px, 2px) scale(1.1); }
-            50% { transform: translate(-2px, -2px) scale(1.15); }
-            100% { transform: translate(2px, 2px) scale(1.1); }
-        }
-
-        /* 全螢幕爆裂閃光 */
-        #evo-whiteout {
-            position: fixed; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 200;
-        }
-        .whiteout-active { animation: whiteout 3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-        @keyframes whiteout {
-            0% { opacity: 0; } 40% { opacity: 1; } 60% { opacity: 1; } 100% { opacity: 0; }
-        }
-
-        /* 打擊文字特效 */
-        .hit-text {
-            font-family: 'Permanent Marker', cursive;
-            animation: hit-zoom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.5) forwards;
-            text-shadow: 0 0 20px rgba(251, 191, 36, 0.8);
-        }
-        @keyframes hit-zoom {
-            0% { transform: scale(0) rotate(-20deg); opacity: 0; }
-            100% { transform: scale(1) rotate(5deg); opacity: 1; }
-        }
+        .mezastar-theme { background: radial-gradient(circle, #1e293b, #020617); }
+        .glow-btn { box-shadow: 0 0 15px #3b82f6; }
     </style>
 </head>
-<body class="text-white min-h-screen flex items-center justify-center p-4">
+<body class="mezastar-theme text-white min-h-screen flex items-center justify-center p-6">
 
-    <div id="overlay" class="fixed inset-0 bg-black z-[300] flex flex-col items-center justify-center">
-        <h1 class="text-5xl font-black italic text-blue-500 mb-10 tracking-tighter">ULTIMATE MODE</h1>
-        <button id="start-btn" class="bg-blue-600 px-20 py-8 rounded-full font-black text-2xl shadow-[0_0_50px_rgba(37,99,235,0.6)] active:scale-90 transition">GET READY!</button>
+    <div id="overlay" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
+        <h1 class="text-4xl font-black italic mb-10 text-blue-500">MEZASTAR MATH</h1>
+        <p class="text-slate-500 mb-6 text-sm">請確認側邊開關未開啟靜音</p>
+        <button id="unlock-btn" class="bg-blue-600 px-20 py-8 rounded-full font-black text-2xl glow-btn active:scale-90 transition">
+            GET READY!
+        </button>
     </div>
 
-    <div id="evo-whiteout"></div>
-
-    <div class="w-full max-w-md mezastar-border bg-slate-900/95 p-6 rounded-[3rem] border-2 border-blue-500 relative overflow-hidden">
-        
-        <div id="fx-layer" class="absolute inset-0 flex items-center justify-center pointer-events-none z-[100]"></div>
-
-        <div class="flex justify-between items-center mb-6">
-            <div class="flex items-center gap-4">
-                <div class="w-20 h-20 bg-slate-800 rounded-2xl p-2 border border-slate-700">
-                    <img id="p-img" src="" class="w-full h-full object-contain">
-                </div>
-                <div>
-                    <h2 id="p-name" class="text-xl font-black italic text-cyan-400">---</h2>
-                    <p id="p-stage" class="text-[10px] text-slate-500 font-bold">READY TO FIGHT</p>
-                </div>
-            </div>
-            <div class="text-right text-xs font-black text-blue-500">SCORE: <span id="s-val">0</span></div>
-        </div>
-
-        <div id="stage" class="min-h-[200px] bg-black/40 rounded-[2rem] p-4 flex flex-wrap justify-center content-start mb-6"></div>
-
-        <div class="space-y-4">
-            <div class="bg-slate-800 p-5 rounded-3xl flex justify-between items-center border-2 border-slate-700">
-                <span id="formula" class="text-4xl font-black text-white italic">? × ?</span>
-                <input id="ans" type="number" pattern="\d*" class="bg-black border-2 border-cyan-500 w-28 p-3 text-center text-3xl rounded-2xl focus:outline-none shadow-[0_0_15px_rgba(6,182,212,0.3)]">
-            </div>
-            <button onclick="attack()" class="w-full bg-gradient-to-b from-blue-400 to-blue-700 py-6 rounded-[2rem] font-black italic text-3xl shadow-[0_8px_0_#1e3a8a] active:translate-y-2 active:shadow-none transition-all">ATTACK!</button>
-        </div>
+    <div class="text-center">
+        <div class="mb-10 text-2xl font-black italic text-blue-300">SYSTEM READY</div>
+        <button onclick="playMezastarHit()" class="bg-red-600 px-12 py-6 rounded-2xl font-bold text-xl glow-btn">
+            攻擊音效測試
+        </button>
     </div>
 
     <script>
-        const DEX = [
-            { s1:{id:4, n:"小火龍"}, s2:{id:5, n:"火恐龍"}, s3:{id:6, n:"噴火龍"} },
-            { s1:{id:172, n:"皮丘"}, s2:{id:25, n:"皮卡丘"}, s3:{id:26, n:"雷丘"} }
-        ];
-        let chain = DEX[Math.floor(Math.random()*DEX.length)], lv = 1, ans = 0, score = 0;
+        // 1. 預先建立 Audio 物件 (不要在 function 裡才 new)
+        const hitSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3');
+        const startSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+        const bgm = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3');
 
-        const sfx = {
-            bgm: new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3'),
-            pop: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'),
-            hit: new Audio('https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3'),
-            evo: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3')
-        };
+        // 2. 關鍵解鎖函數
+        document.getElementById('unlock-btn').addEventListener('click', function() {
+            // 在這個同步的點擊事件中，立刻「摸一下」所有音軌
+            hitSound.play().then(() => { hitSound.pause(); hitSound.currentTime = 0; });
+            startSound.play(); // 播放開場音樂
+            
+            bgm.loop = true;
+            bgm.volume = 0.2;
+            bgm.play();
 
-        document.getElementById('start-btn').onclick = () => {
-            Object.values(sfx).forEach(s => { s.play().then(()=>s.pause()); });
-            sfx.bgm.loop = true; sfx.bgm.volume = 0.15; sfx.bgm.play();
             document.getElementById('overlay').style.display = 'none';
-            updateUI(); next();
-        };
+        });
 
-        function updateUI() {
-            const d = chain[`s${lv}`];
-            document.getElementById('p-name').innerText = d.n;
-            document.getElementById('p-img').src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${d.id}.png`;
-            document.getElementById('p-stage').innerText = lv === 1 ? "BASIC" : (lv === 2 ? "STAGE 1" : "MAX POWER");
-        }
-
-        function next() {
-            const stg = document.getElementById('stage');
-            stg.innerHTML = "";
-            const a = Math.floor(Math.random()*8)+2, b = Math.floor(Math.random()*8)+2;
-            ans = a * b;
-            document.getElementById('formula').innerText = `${a} × ${b}`;
-            document.getElementById('ans').value = "";
-            document.getElementById('ans').focus();
-
-            // 強化噴發動畫
-            for(let i=0; i<ans; i++) {
-                setTimeout(() => {
-                    const b = document.createElement('div');
-                    b.className = 'block-unit';
-                    stg.appendChild(b);
-                    sfx.pop.cloneNode().play();
-                    requestAnimationFrame(() => b.classList.add('block-show'));
-                }, i * 15);
-            }
-        }
-
-        function attack() {
-            if(parseInt(document.getElementById('ans').value) === ans) {
-                score++; document.getElementById('s-val').innerText = score;
-                sfx.hit.currentTime = 0; sfx.hit.play();
-                
-                if(score % 3 === 0 && lv < 3) evolve();
-                else { flashFX("EXCELLENT!"); setTimeout(next, 1000); }
-            } else { flashFX("MISS!", "text-red-500"); }
-        }
-
-        function flashFX(t, c="text-yellow-400") {
-            const l = document.getElementById('fx-layer');
-            l.innerHTML = `<h2 class="hit-text text-6xl ${c}">${t}</h2>`;
-            setTimeout(() => l.innerHTML = "", 800);
-        }
-
-        function evolve() {
-            sfx.bgm.volume = 0.05; sfx.evo.play();
-            document.getElementById('p-img').classList.add('energy-surge');
-            document.getElementById('evo-whiteout').classList.add('whiteout-active');
-            flashFX("EVOLVING...", "text-purple-400");
-
-            setTimeout(() => {
-                lv++; updateUI();
-                sfx.hit.play();
-                document.getElementById('p-img').classList.remove('energy-surge');
-                document.getElementById('evo-whiteout').classList.remove('whiteout-active');
-                sfx.bgm.volume = 0.15;
-                next();
-            }, 3000);
+        // 3. 測試播放
+        function playMezastarHit() {
+            // 直接播放預載好的物件，不要有任何邏輯判斷
+            hitSound.currentTime = 0;
+            hitSound.play();
         }
     </script>
 </body>

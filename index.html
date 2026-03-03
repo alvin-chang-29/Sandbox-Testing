@@ -2,108 +2,165 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>8-bit Battle BGM Engine</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GB Math - Audio System v10.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .pixel-border { border: 4px solid white; box-shadow: 8px 8px 0px #334155; }
-        .bg-gb { background-color: #8bac0f; } /* 經典 GameBoy 綠 */
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        :root {
+            --gb-dark: #0f380f;
+            --gb-mid: #306230;
+            --gb-light: #8bac0f;
+            --gb-bright: #9bbc0f;
+        }
+
+        body { font-family: 'Press Start 2P', cursive; background: #1a1a1a; }
+        
+        /* GameBoy 螢幕風格 */
+        .gb-screen {
+            background-color: var(--gb-light);
+            border: 20px solid #555;
+            border-radius: 10px 10px 50px 10px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+            aspect-ratio: 10 / 9;
+            image-rendering: pixelated;
+        }
+
+        .btn-retro {
+            background: #333;
+            color: white;
+            padding: 10px;
+            border-bottom: 4px solid #000;
+            font-size: 8px;
+            transition: all 0.1s;
+        }
+        .btn-retro:active { transform: translateY(2px); border-bottom-width: 0; }
+        
+        #boot-layer { position: fixed; inset: 0; background: white; z-index: 100; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
-<body class="bg-slate-950 text-white min-h-screen flex items-center justify-center p-6">
+<body class="flex flex-col items-center justify-center min-h-screen overflow-hidden">
 
-    <div id="setup" class="fixed inset-0 bg-black z-50 flex items-center justify-center">
-        <button id="start-bgm" class="bg-red-600 px-12 py-6 rounded-full font-black text-2xl animate-pulse">
-            ⚔️ 進入戰鬥！
-        </button>
+    <div id="boot-layer">
+        <div class="text-center">
+            <h1 class="text-blue-800 text-2xl italic font-bold tracking-tighter mb-4">Nintendo</h1>
+            <p class="text-xs text-slate-400">© 1989-1996</p>
+            <button onclick="bootSystem()" class="mt-20 bg-black text-white px-8 py-4 rounded font-mono text-sm animate-pulse">
+                PUSH START BUTTON
+            </button>
+        </div>
     </div>
 
-    <div class="pixel-border bg-gb p-8 w-full max-w-sm text-slate-900 font-mono">
-        <h2 class="text-2xl font-black mb-4 underline">BATTLE MODE</h2>
-        <div class="space-y-4">
-            <p>Music: 8-bit Synth</p>
-            <p>Status: <span id="music-status" class="font-bold">PLAYING...</span></p>
-            <div class="flex gap-2">
-                <div class="w-4 h-8 bg-slate-800 animate-bounce" style="animation-delay: 0.1s"></div>
-                <div class="w-4 h-12 bg-slate-800 animate-bounce" style="animation-delay: 0.2s"></div>
-                <div class="w-4 h-6 bg-slate-800 animate-bounce" style="animation-delay: 0.3s"></div>
+    <div class="w-full max-w-sm p-4">
+        <div class="gb-screen p-6 flex flex-col justify-between text-slate-900">
+            <div>
+                <div class="flex justify-between items-center text-[10px] mb-8">
+                    <span>BATTERY ●</span>
+                    <span id="clock">12:00</span>
+                </div>
+                <h1 class="text-center text-xl mb-4">MATH MON</h1>
+                <div class="space-y-2 text-[10px]">
+                    <p id="status-msg">> SELECT MODULE</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-2">
+                <button onclick="testSound('pop')" class="border-2 border-slate-900 p-2 text-left text-[10px] hover:bg-slate-400">1. CLICK / POP</button>
+                <button onclick="testSound('hit')" class="border-2 border-slate-900 p-2 text-left text-[10px] hover:bg-slate-400">2. DAMAGE HIT</button>
+                <button onclick="testSound('evo')" class="border-2 border-slate-900 p-2 text-left text-[10px] hover:bg-slate-400">3. EVOLVE BEAT</button>
+                <button onclick="toggleBGM()" class="border-2 border-slate-900 p-2 text-left text-[10px] bg-slate-900 text-white" id="bgm-btn">4. START BGM</button>
             </div>
         </div>
-        <button onclick="toggleMusic()" class="mt-8 bg-slate-800 text-white px-4 py-2 text-sm">STOP / PLAY</button>
+        
+        <div class="mt-10 flex justify-between items-center px-4">
+            <div class="grid grid-cols-3 gap-2 opacity-50">
+                <div class="w-8 h-8 bg-black rounded"></div>
+                <div class="w-8 h-8"></div>
+                <div class="w-8 h-8 bg-black rounded"></div>
+            </div>
+            <div class="flex gap-4">
+                <div class="w-10 h-10 bg-red-900 rounded-full shadow-lg"></div>
+                <div class="w-10 h-10 bg-red-900 rounded-full shadow-lg"></div>
+            </div>
+        </div>
     </div>
 
     <script>
+        // --- 【Audio Engine 核心】 ---
         let audioCtx = null;
-        let isPlaying = false;
-        let nextNoteTime = 0;
-        let timerID = null;
-        const lookAhead = 25.0; // 檢查頻率 (ms)
-        const scheduleAheadTime = 0.1; // 預約時間 (s)
-
-        // 樂譜定義 (頻率)
-        const bassLine = [110, 110, 123, 110, 146, 110, 123, 138]; // 低音軌 A2, B2, D3...
-        const leadLine = [440, 0, 440, 0, 554, 554, 0, 659];      // 主旋律 A4, C#5, E5
+        let bgmTimer = null;
+        let isBGMPlaying = false;
         let currentStep = 0;
-        const tempo = 140; // BPM
-        const stepDuration = 60.0 / tempo / 2; // 八分音符長度
 
-        function initAudio() {
+        // 音訊初始化 (iOS 解鎖關鍵)
+        function bootSystem() {
             window.AudioContext = window.AudioContext || window.webkitAudioContext;
             audioCtx = new AudioContext();
-            nextNoteTime = audioCtx.currentTime;
-            isPlaying = true;
-            scheduler();
-        }
-
-        function scheduleNote(step, time) {
-            // 軌道 1: Bass (Triangle Wave 較溫和)
-            playOsc(bassLine[step % 8], 'triangle', time, stepDuration, 0.15);
             
-            // 軌道 2: Lead (Square Wave 尖銳感)
-            if (leadLine[step % 8] !== 0) {
-                playOsc(leadLine[step % 8], 'square', time, stepDuration * 0.8, 0.05);
-            }
+            // 播放經典開機音 "叮！"
+            playTone(400, 'square', 0, 0.1, 0.1);
+            playTone(800, 'square', 0.1, 0.4, 0.1);
+
+            document.getElementById('boot-layer').style.display = 'none';
         }
 
-        function playOsc(freq, type, startTime, duration, vol) {
+        // 通用震盪器
+        function playTone(freq, type, start, duration, vol, fade = true) {
+            if(!audioCtx) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
+            
             osc.type = type;
-            osc.frequency.setValueAtTime(freq, startTime);
-            gain.gain.setValueAtTime(vol, startTime);
-            gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + start);
+            
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime + start);
+            if(fade) gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + start + duration);
+            
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            osc.start(startTime);
-            osc.stop(startTime + duration);
+            osc.start(audioCtx.currentTime + start);
+            osc.stop(audioCtx.currentTime + start + duration);
         }
 
-        function scheduler() {
-            while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
-                scheduleNote(currentStep, nextNoteTime);
-                nextNoteTime += stepDuration;
-                currentStep++;
+        // --- 【音效庫集錦】 ---
+        function testSound(type) {
+            if(type === 'pop') playTone(880, 'square', 0, 0.05, 0.1);
+            if(type === 'hit') {
+                for(let i=0; i<5; i++) playTone(200 - (i*20), 'sawtooth', i*0.02, 0.1, 0.1);
             }
-            timerID = setTimeout(scheduler, lookAhead);
+            if(type === 'evo') {
+                for(let i=0; i<8; i++) playTone(300 + (i*100), 'square', i*0.1, 0.1, 0.05);
+            }
         }
 
-        function toggleMusic() {
-            if (isPlaying) {
-                clearTimeout(timerID);
-                isPlaying = false;
-                document.getElementById('music-status').innerText = "PAUSED";
+        // --- 【BGM 引擎】 ---
+        const tempo = 120;
+        const stepTime = 60 / tempo / 2; // 八分音符
+
+        function bgmLoop() {
+            const bass = [110, 110, 146, 110, 164, 110, 146, 123];
+            const time = audioCtx.currentTime;
+            
+            // 預約下一小節
+            playTone(bass[currentStep % 8], 'triangle', 0, stepTime, 0.2);
+            if(currentStep % 4 === 0) playTone(440, 'square', 0, 0.05, 0.05);
+
+            currentStep++;
+            bgmTimer = setTimeout(bgmLoop, stepTime * 1000);
+        }
+
+        function toggleBGM() {
+            if(isBGMPlaying) {
+                clearTimeout(bgmTimer);
+                isBGMPlaying = false;
+                document.getElementById('bgm-btn').innerText = "4. START BGM";
             } else {
-                nextNoteTime = audioCtx.currentTime;
-                isPlaying = true;
-                scheduler();
-                document.getElementById('music-status').innerText = "PLAYING...";
+                isBGMPlaying = true;
+                bgmLoop();
+                document.getElementById('bgm-btn').innerText = "4. STOP BGM";
             }
         }
-
-        document.getElementById('start-bgm').onclick = () => {
-            initAudio();
-            document.getElementById('setup').style.display = 'none';
-        };
     </script>
 </body>
 </html>

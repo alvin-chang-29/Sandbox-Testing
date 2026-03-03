@@ -2,231 +2,112 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mezastar Math - Final Evolution</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>強化戰鬥動效 - 模組測試 v2.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
-        body { font-family: 'Orbitron', sans-serif; background: #020617; color: white; overflow: hidden; }
-        
-        /* v7.7 核心戰鬥動效 */
-        @keyframes strong-shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(-4px, 2px); } 75% { transform: translate(4px, -2px); } }
-        .battling { animation: strong-shake 0.15s infinite; }
-        .battle-center-container { position: relative; width: 100%; max-width: 400px; aspect-ratio: 1/1; }
-        #grid, #block-layer { display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(10, 1fr); gap: 4px; width: 100%; height: 100%; }
-        #block-layer { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 20; }
-        .block-unit { width: 85%; height: 85%; margin: auto; border-radius: 4px; transform: scale(0); transition: 0.3s; }
-        .block-show { transform: scale(1); }
-        
-        /* 進化白光 [Engine Lab] */
-        #evo-light { position: fixed; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 1000; }
-        .evo-active { animation: evo-flash 3s forwards; }
-        @keyframes evo-flash { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+        /* 強烈震動動畫 */
+        @keyframes strong-shake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            10% { transform: translate(-8px, -5px) rotate(-3deg); }
+            30% { transform: translate(8px, 5px) rotate(3deg); }
+            50% { transform: translate(-8px, 5px) rotate(-1deg); }
+            70% { transform: translate(8px, -5px) rotate(3deg); }
+            90% { transform: translate(-5px, 2px) rotate(-1deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
 
-        .hidden { display: none; }
-        .mezastar-ui { background: rgba(15, 23, 42, 0.9); border: 2px solid #3b82f6; border-radius: 2rem; }
+        /* 呼吸光芒動畫 */
+        @keyframes aura-glow-enemy {
+            from { filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.6)) brightness(1); }
+            to { filter: drop-shadow(0 0 30px rgba(255, 50, 50, 0.9)) brightness(1.3); }
+        }
+        @keyframes aura-glow-player {
+            from { filter: drop-shadow(0 0 10px rgba(0, 150, 255, 0.6)) brightness(1); }
+            to { filter: drop-shadow(0 0 30px rgba(50, 200, 255, 0.9)) brightness(1.3); }
+        }
+
+        /* 快速閃爍 */
+        @keyframes intense-flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .battle-active-enemy {
+            animation: strong-shake 0.15s infinite, aura-glow-enemy 0.8s ease-in-out infinite alternate, intense-flash 0.3s infinite;
+        }
+
+        .battle-active-player {
+            /* 玩家側同樣震動但光芒不同色 */
+            animation: strong-shake 0.15s infinite, aura-glow-player 0.8s ease-in-out infinite alternate, intense-flash 0.3s infinite;
+        }
+
+        /* 逃跑動畫 (含搖晃位移) */
+        .escape-sequence {
+            transition: transform 4s cubic-bezier(0.45, 0.05, 0.55, 0.95), opacity 2s;
+            transform: translateX(120vw) translateY(-20px) rotate(20deg) !important;
+            animation: strong-shake 0.3s infinite !important; /* 逃跑時持續搖晃 */
+        }
     </style>
 </head>
-<body>
+<body class="bg-slate-950 flex items-center justify-center min-h-screen p-4">
 
-    <div id="evo-light"></div>
-
-    <nav class="flex justify-around p-4 bg-slate-900 border-b border-blue-900/50 z-[500] relative">
-        <button onclick="showScene('battle')" class="font-black italic text-blue-400">BATTLE</button>
-        <button onclick="showScene('bag')" class="font-black italic text-slate-400">BAG</button>
-        <button onclick="showScene('data')" class="font-black italic text-slate-400">DATA</button>
-    </nav>
-
-    <div id="scene-battle" class="p-4 flex flex-col items-center">
-        <div class="mb-4 bg-black/50 px-6 py-1 rounded-full border border-slate-700 text-sm">
-            STEP: <span id="step-label" class="text-yellow-400">1. 方塊陣型</span>
+    <div class="w-full max-w-6xl grid grid-cols-3 gap-8 items-center bg-black/50 p-12 rounded-[3rem] border-4 border-slate-800 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+        
+        <div class="flex flex-col items-center">
+            <div id="enemy" class="w-64 h-64 bg-contain bg-no-repeat bg-center transition-all"
+                 style="background-image: url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/150.png');">
+            </div>
+            <p class="mt-4 text-red-500 font-black tracking-widest">ENEMY: 超夢</p>
         </div>
 
-        <div class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-            <div id="enemy-side" class="flex flex-col items-center battling transition-all duration-1000">
-                <div id="enemy-img" class="w-40 h-40 bg-contain bg-no-repeat bg-center" style="background-image: url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/150.png');"></div>
-                <div class="w-full bg-gray-800 h-3 rounded-full mt-2 border border-white overflow-hidden">
-                    <div id="hp" class="bg-green-500 h-full w-full transition-all duration-500"></div>
-                </div>
-            </div>
-
-            <div class="flex flex-col items-center">
-                <div class="text-4xl font-black mb-6"><span id="valA-disp">3</span> × <span id="valB-disp">2</span> = <span id="q-res" class="text-red-500">?</span></div>
-                <div id="panel-1" class="battle-center-container">
-                    <div id="grid" class="bg-slate-900/50 p-2 rounded-xl border border-slate-800"></div>
-                    <div id="block-layer" class="p-2"></div>
-                </div>
-                <div id="panel-2" class="hidden flex flex-col items-center w-full max-w-[280px]">
-                    <div id="input-box" class="text-5xl font-mono bg-black w-full text-center py-4 rounded-2xl border-4 border-slate-700 text-green-400 mb-4">?</div>
-                    <div id="keypad" class="grid grid-cols-3 gap-2 w-full"></div>
-                </div>
-            </div>
-
-            <div class="flex flex-col items-center battling">
-                <div id="player-img" class="w-40 h-40 bg-contain bg-no-repeat bg-center" style="background-image: url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png'); transform: scaleX(-1);"></div>
-                <p id="player-name" class="mt-2 text-blue-400 font-bold italic">皮卡丘</p>
-            </div>
+        <div class="text-center">
+            <button onclick="toggleBattle()" id="battleBtn" class="bg-red-600 text-white text-3xl font-black px-12 py-6 rounded-full hover:bg-red-500 shadow-[0_0_20px_rgba(220,38,38,0.5)] active:scale-90 transition-all">
+                進入對戰狀態
+            </button>
+            <p id="msg" class="mt-4 text-slate-400 font-mono"></p>
         </div>
-    </div>
 
-    <div id="scene-bag" class="hidden p-8">
-        <h2 class="text-2xl font-black italic text-blue-500 mb-6">MY POKEMON BAG</h2>
-        <div id="bag-list" class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col items-center">
+            <div id="player" class="w-64 h-64 bg-contain bg-no-repeat bg-center transition-all"
+                 style="background-image: url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png'); transform: scaleX(-1);">
             </div>
-    </div>
-
-    <div id="scene-data" class="hidden p-8">
-        <h2 class="text-2xl font-black italic text-cyan-400 mb-6">BATTLE ANALYTICS</h2>
-        <div class="mezastar-ui p-6 space-y-4">
-            <p>總收服數: <span id="stat-total" class="text-yellow-400">0</span></p>
-            <p>平均答題時間: <span id="stat-time" class="text-green-400">0</span>s</p>
-            <div id="log-list" class="text-xs space-y-2 opacity-60"></div>
+            <p class="mt-4 text-blue-400 font-black tracking-widest">PLAYER: 皮卡丘</p>
         </div>
+
     </div>
 
     <script>
-        const db = new Dexie("PokeMasterDB");
-        db.version(1).stores({ logs: '++id, formula, isCorrect, time', bag: 'id, name, stage' });
+        let isBattling = false;
 
-        let valA, valB, ans, step = 0, currentInput = "", totalCaptured = 0;
-        let startTime;
+        function toggleBattle() {
+            const enemy = document.getElementById('enemy');
+            const player = document.getElementById('player');
+            const btn = document.getElementById('battleBtn');
+            const msg = document.getElementById('msg');
 
-        async function init() {
-            totalCaptured = await db.bag.count();
-            refreshQuestion();
-            buildGrid();
-        }
-
-        function showScene(s) {
-            ['battle', 'bag', 'data'].forEach(x => document.getElementById(`scene-${x}`).classList.add('hidden'));
-            document.getElementById(`scene-${s}`).classList.remove('hidden');
-            if(s === 'bag') renderBag();
-            if(s === 'data') renderData();
-        }
-
-        function refreshQuestion() {
-            valA = Math.floor(Math.random() * 8) + 2;
-            valB = Math.floor(Math.random() * 8) + 2;
-            ans = valA * valB;
-            document.getElementById('valA-disp').innerText = valA;
-            document.getElementById('valB-disp').innerText = valB;
-            document.getElementById('block-layer').innerHTML = "";
-            step = 0; currentInput = ""; startTime = Date.now();
-            document.getElementById('q-res').innerText = "?";
-            document.getElementById('panel-1').classList.remove('hidden', 'fade-out');
-            document.getElementById('panel-2').classList.add('hidden');
-            document.getElementById('hp').style.width = "100%";
-            document.getElementById('enemy-img').style.opacity = "1";
-        }
-
-        function buildGrid() {
-            const grid = document.getElementById('grid');
-            grid.innerHTML = "";
-            for (let r = 0; r <= 9; r++) {
-                for (let c = 0; c <= 9; c++) {
-                    const d = document.createElement('div');
-                    d.className = "flex items-center justify-center border border-slate-800 text-[10px]";
-                    if (r === 0 && c === 0) d.innerText = "×";
-                    else if (c === 0 && r > 0) { d.innerText = r; d.onclick = () => { if(step===0 && r===valA) startBlocks(); }; }
-                    else if (r === 0 && c > 0) { d.innerText = c; d.onclick = () => { if(step===1 && c===valB) fillBlocks(); }; }
-                    else { d.onclick = () => { if(step===2 && r===valA && c===valB) switchToStep2(); }; }
-                    grid.appendChild(d);
-                }
+            if (!isBattling) {
+                // 開始戰鬥：加入震動、光芒、閃爍
+                enemy.classList.add('battle-active-enemy');
+                player.classList.add('battle-active-player');
+                btn.innerText = "模擬失敗 (逃跑)";
+                btn.classList.replace('bg-red-600', 'bg-slate-700');
+                msg.innerText = "對戰倒數中... 感覺到了嗎？這股壓迫感！";
+                isBattling = true;
+            } else {
+                // 模擬失敗逃跑
+                enemy.classList.remove('battle-active-enemy', 'intense-flash');
+                enemy.classList.add('escape-sequence');
+                player.classList.remove('battle-active-player');
+                btn.style.display = 'none';
+                msg.innerText = "超夢逃走了！(向右搖晃滑出螢幕)";
+                
+                setTimeout(() => {
+                    alert("測試結束，重新整理可再次測試。");
+                    location.reload();
+                }, 4500);
             }
         }
-
-        function startBlocks() { step = 1; createBlock(valA, 1, 'bg-yellow-400'); }
-        function fillBlocks() { step = 2; for(let j=2; j<=valB; j++) for(let i=1; i<=valA; i++) createBlock(i, j, 'bg-blue-500'); }
-        function createBlock(r, c, cls) {
-            const wrap = document.createElement('div');
-            wrap.style.gridRow = r + 1; wrap.style.gridColumn = c + 1;
-            const b = document.createElement('div'); b.className = `block-unit ${cls}`;
-            wrap.appendChild(b); document.getElementById('block-layer').appendChild(wrap);
-            setTimeout(() => b.classList.add('block-show'), 50);
-        }
-
-        function switchToStep2() {
-            document.getElementById('panel-1').classList.add('fade-out');
-            setTimeout(() => {
-                document.getElementById('panel-1').classList.add('hidden');
-                document.getElementById('panel-2').classList.remove('hidden');
-                initKeypad();
-            }, 500);
-        }
-
-        function initKeypad() {
-            const pad = document.getElementById('keypad'); pad.innerHTML = "";
-            [1,2,3,4,5,6,7,8,9,'C',0,'OK'].forEach(k => {
-                const b = document.createElement('button');
-                b.className = "bg-slate-800 p-4 rounded-xl font-bold";
-                b.innerText = k;
-                if(k==='OK') b.className = "bg-red-600 p-4 rounded-xl font-black";
-                b.onclick = () => handleInput(k);
-                pad.appendChild(b);
-            });
-        }
-
-        async function handleInput(k) {
-            if(k === 'C') currentInput = "";
-            else if(k === 'OK') {
-                const timeTaken = (Date.now() - startTime) / 1000;
-                const correct = parseInt(currentInput) === ans;
-                await db.logs.add({ formula: `${valA}x${valB}`, isCorrect: correct, time: timeTaken });
-
-                if(correct) finishSuccess();
-                else finishFail();
-            } else if(currentInput.length < 2) currentInput += k;
-            document.getElementById('input-box').innerText = currentInput || "?";
-        }
-
-        function finishSuccess() {
-            document.getElementById('q-res').innerText = ans;
-            document.getElementById('hp').style.width = "0%";
-            document.getElementById('enemy-img').style.opacity = "0";
-            totalCaptured++;
-            db.bag.add({ id: Date.now(), name: '超夢', stage: 1 });
-            
-            if(totalCaptured % 3 === 0) triggerEvo();
-            else setTimeout(() => { alert("勝利收服！"); refreshQuestion(); }, 1000);
-        }
-
-        function finishFail() {
-            document.getElementById('enemy-img').style.filter = "brightness(5) saturate(0)";
-            setTimeout(() => {
-                document.getElementById('enemy-img').style.opacity = "0";
-                alert("寶可夢逃走了...");
-                refreshQuestion();
-            }, 500);
-        }
-
-        function triggerEvo() {
-            document.getElementById('evo-light').classList.add('evo-active');
-            setTimeout(() => {
-                document.getElementById('player-img').style.backgroundImage = "url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/26.png')";
-                document.getElementById('player-name').innerText = "雷丘";
-            }, 1500);
-            setTimeout(() => { document.getElementById('evo-light').classList.remove('evo-active'); refreshQuestion(); }, 3000);
-        }
-
-        async function renderBag() {
-            const items = await db.bag.toArray();
-            document.getElementById('bag-list').innerHTML = items.map(i => `
-                <div class="mezastar-ui p-4 text-center">
-                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/150.png" class="w-16 h-16 mx-auto">
-                    <p class="text-xs mt-2">${i.name}</p>
-                </div>
-            `).join('');
-        }
-
-        async function renderData() {
-            const logs = await db.logs.toArray();
-            document.getElementById('stat-total').innerText = await db.bag.count();
-            const avg = logs.length ? (logs.reduce((a, b) => a + b.time, 0) / logs.length).toFixed(2) : 0;
-            document.getElementById('stat-time').innerText = avg;
-        }
-
-        init();
     </script>
 </body>
 </html>

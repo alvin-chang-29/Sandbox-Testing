@@ -3,87 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mezastar Pure Impact - v13.3</title>
+    <title>Evolution Ceremony - v13.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fascinate+Inline&family=Rubik+Mono+One&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
         
-        .impact-font { font-family: 'Rubik Mono One', sans-serif; }
+        .evo-font { font-family: 'Orbitron', sans-serif; }
         
-        /* 震憾文字動畫 */
-        .text-burst {
-            animation: burst 0.6s cubic-bezier(0.15, 0.85, 0.35, 1.2) forwards;
-            filter: drop-shadow(0 0 10px currentColor);
+        /* 進化光芒動畫 */
+        .evo-glow {
+            animation: pulse-white 0.5s infinite alternate;
         }
-        @keyframes burst {
-            0% { transform: scale(0.2) translateY(50px); opacity: 0; letter-spacing: -10px; }
-            50% { transform: scale(1.3) translateY(-10px); opacity: 1; letter-spacing: 5px; }
-            100% { transform: scale(1) translateY(0); opacity: 1; letter-spacing: 2px; }
+        @keyframes pulse-white {
+            from { filter: brightness(1) drop-shadow(0 0 10px white); }
+            to { filter: brightness(2.5) drop-shadow(0 0 40px white); }
+        }
+
+        /* 背景震動 */
+        .shake { animation: shake-screen 0.1s infinite; }
+        @keyframes shake-screen {
+            0% { transform: translate(1px, 1px); }
+            50% { transform: translate(-1px, -2px); }
+            100% { transform: translate(1px, 1px); }
         }
     </style>
 </head>
-<body class="bg-slate-950 text-white min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden">
+<body class="bg-black text-white min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden">
 
-    <div id="overlay" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
-        <button id="btn-ready" class="bg-blue-600 px-16 py-8 rounded-full font-black text-2xl shadow-[0_0_40px_rgba(37,99,235,0.6)] active:scale-95 transition-all">
-            BATTLE READY
+    <div id="overlay" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center">
+        <button id="btn-init" class="bg-purple-600 px-16 py-8 rounded-full font-black text-2xl shadow-[0_0_30px_#a855f7]">
+            READY TO EVOLVE
         </button>
     </div>
 
     <div class="text-center w-full max-w-sm">
-        <div id="status-display" class="h-32 flex items-center justify-center"></div>
-
-        <div class="bg-slate-900 border-4 border-blue-500 rounded-[3rem] p-10 shadow-2xl relative">
-            <div id="combo-tag" class="absolute -top-6 -left-4 bg-red-600 px-4 py-1 rounded italic font-bold text-sm">COMBO x0</div>
-            
-            <p class="text-7xl font-black italic mb-10 text-blue-400 tracking-tighter">8 × 9</p>
-            
-            <div class="grid grid-cols-1 gap-4">
-                <button onclick="triggerImpact('EXCELLENT')" class="bg-gradient-to-r from-yellow-400 to-orange-600 py-6 rounded-2xl font-black italic text-2xl shadow-lg active:translate-y-1">EXCELLENT HIT!</button>
-                <button onclick="triggerImpact('GREAT')" class="bg-gradient-to-r from-blue-400 to-blue-600 py-4 rounded-xl font-bold italic text-lg opacity-80">GREAT HIT</button>
+        <div id="stage" class="relative w-64 h-64 mx-auto mb-12 flex items-center justify-center">
+            <div id="poke-sprite" class="w-full h-full bg-contain bg-no-repeat bg-center"
+                 style="background-image:url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/133.png')">
             </div>
+            <div id="energy-ring" class="absolute inset-0 border-4 border-blue-400 rounded-full scale-0 opacity-0 transition-all duration-300"></div>
         </div>
+
+        <h2 id="evo-text" class="evo-font text-2xl font-black italic tracking-widest text-blue-400 mb-8">POKÉMON READY</h2>
+
+        <button id="btn-evolve" onclick="startEvolution()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 py-6 rounded-2xl font-black italic text-2xl shadow-lg active:scale-95 transition">
+            TRIGGER EVOLUTION
+        </button>
     </div>
 
     <script>
-        // 核心音效庫：使用更具物理衝擊感的音源
+        // 音效配置
         const sfx = {
-            bgm: new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3'),
-            good: new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'),
-            great: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'),
-            excellent: new Audio('https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3') // 最重的金屬重擊
+            riser: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'), // 能量上升
+            explosion: new Audio('https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3'), // 最終進化
+            sparkle: new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'), // 亮粉聲
+            bgm: new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3')
         };
 
-        let combo = 0;
-
-        document.getElementById('btn-ready').onclick = () => {
-            sfx.bgm.loop = true; sfx.bgm.volume = 0.15; sfx.bgm.play();
+        document.getElementById('btn-init').onclick = () => {
+            sfx.bgm.loop = true; sfx.bgm.volume = 0.1; sfx.bgm.play();
             document.getElementById('overlay').style.display = 'none';
         };
 
-        function triggerImpact(type) {
-            // 1. 根據等級選擇音效
-            const targetSfx = sfx[type.toLowerCase()];
-            targetSfx.currentTime = 0;
-            targetSfx.volume = type === 'EXCELLENT' ? 0.9 : 0.5;
-            targetSfx.play();
+        function startEvolution() {
+            const sprite = document.getElementById('poke-sprite');
+            const ring = document.getElementById('energy-ring');
+            const text = document.getElementById('evo-text');
+            const btn = document.getElementById('btn-evolve');
 
-            // 2. 更新 Combo
-            combo++;
-            document.getElementById('combo-tag').innerText = `COMBO x${combo}`;
+            btn.disabled = true;
+            btn.style.opacity = 0.5;
 
-            // 3. 視覺文字爆發
-            const display = document.getElementById('status-display');
-            const color = type === 'EXCELLENT' ? 'text-yellow-400' : 'text-blue-300';
-            display.innerHTML = `<h2 class="text-burst impact-font text-5xl ${color}">${type}</h2>`;
+            // 1. 蓄力階段 (The Build-up)
+            sfx.bgm.volume = 0.02; // 背景音樂淡出
+            sfx.riser.play();
+            sprite.classList.add('evo-glow');
+            text.innerText = "EVOLVING...";
+            text.className = "evo-font text-2xl font-black italic tracking-widest text-yellow-400 animate-pulse";
             
-            // 震動回饋 (簡單模擬)
-            if(type === 'EXCELLENT') {
-                document.body.classList.add('bg-red-900');
-                setTimeout(() => document.body.classList.remove('bg-red-900'), 100);
-            }
+            // 畫面開始震動
+            document.body.classList.add('shake');
 
-            setTimeout(() => { display.innerHTML = ""; }, 800);
+            // 2. 轉折與爆炸 (The Climax)
+            setTimeout(() => {
+                document.body.classList.remove('shake');
+                sprite.style.transform = "scale(0)"; // 瞬間收縮
+                
+                setTimeout(() => {
+                    // 進化完成爆炸
+                    sfx.explosion.play();
+                    sfx.sparkle.play();
+                    
+                    // 更換圖片 (伊布 -> 太陽伊布)
+                    sprite.style.backgroundImage = "url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/196.png')";
+                    sprite.style.transform = "scale(1.2)";
+                    sprite.classList.remove('evo-glow');
+                    
+                    // 視覺大放射
+                    ring.classList.replace('scale-0', 'scale-150');
+                    ring.classList.replace('opacity-0', 'opacity-100');
+                    
+                    text.innerText = "EVOLVED!";
+                    text.className = "evo-font text-4xl font-black italic tracking-tighter text-white";
+                    document.body.style.backgroundColor = "#1e1b4b";
+                    
+                    setTimeout(() => {
+                        document.body.style.backgroundColor = "black";
+                        ring.classList.add('opacity-0');
+                        sfx.bgm.volume = 0.1; // 音樂恢復
+                        btn.disabled = false;
+                        btn.style.opacity = 1;
+                    }, 1000);
+
+                }, 200);
+            }, 3000); // 3秒蓄力
         }
     </script>
 </body>

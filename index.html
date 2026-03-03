@@ -3,92 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mezastar Passionate Voice - v13.2</title>
+    <title>Mezastar Pure Impact - v13.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
-        .impact-text {
-            font-family: 'Permanent+Marker', cursive;
-            text-shadow: 4px 4px 0px #be123c, 0 0 30px #fbbf24;
-            animation: impact-zoom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.5);
+        @import url('https://fonts.googleapis.com/css2?family=Fascinate+Inline&family=Rubik+Mono+One&display=swap');
+        
+        .impact-font { font-family: 'Rubik Mono One', sans-serif; }
+        
+        /* 震憾文字動畫 */
+        .text-burst {
+            animation: burst 0.6s cubic-bezier(0.15, 0.85, 0.35, 1.2) forwards;
+            filter: drop-shadow(0 0 10px currentColor);
         }
-        @keyframes impact-zoom {
-            0% { transform: scale(0.3) rotate(-15deg); opacity: 0; }
-            50% { transform: scale(1.5) rotate(10deg); }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        @keyframes burst {
+            0% { transform: scale(0.2) translateY(50px); opacity: 0; letter-spacing: -10px; }
+            50% { transform: scale(1.3) translateY(-10px); opacity: 1; letter-spacing: 5px; }
+            100% { transform: scale(1) translateY(0); opacity: 1; letter-spacing: 2px; }
         }
     </style>
 </head>
-<body class="bg-black text-white min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden">
+<body class="bg-slate-950 text-white min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden">
 
-    <div id="overlay" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center">
-        <h2 class="text-blue-400 mb-8 tracking-widest font-black italic">ULTIMATE VOICE TEST</h2>
-        <button id="btn-start" class="bg-red-600 px-16 py-8 rounded-full font-black text-2xl shadow-[0_0_30px_rgba(220,38,38,0.5)]">
-            READY? GO!
+    <div id="overlay" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
+        <button id="btn-ready" class="bg-blue-600 px-16 py-8 rounded-full font-black text-2xl shadow-[0_0_40px_rgba(37,99,235,0.6)] active:scale-95 transition-all">
+            BATTLE READY
         </button>
     </div>
 
     <div class="text-center w-full max-w-sm">
-        <div id="voice-anchor" class="h-32 flex items-center justify-center">
-            </div>
+        <div id="status-display" class="h-32 flex items-center justify-center"></div>
 
-        <div class="bg-gradient-to-b from-slate-800 to-slate-950 p-10 rounded-[3rem] border-4 border-yellow-500 shadow-[0_0_50px_rgba(251,191,36,0.3)]">
-            <p class="text-7xl font-black mb-10 text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-500">7 × 8</p>
+        <div class="bg-slate-900 border-4 border-blue-500 rounded-[3rem] p-10 shadow-2xl relative">
+            <div id="combo-tag" class="absolute -top-6 -left-4 bg-red-600 px-4 py-1 rounded italic font-bold text-sm">COMBO x0</div>
             
-            <button onclick="triggerPassionAttack()" class="w-full bg-blue-600 hover:bg-blue-400 py-6 rounded-3xl font-black italic text-3xl shadow-[0_8px_0_#1e3a8a] active:translate-y-1 active:shadow-none transition-all">
-                ATTACK!
-            </button>
+            <p class="text-7xl font-black italic mb-10 text-blue-400 tracking-tighter">8 × 9</p>
+            
+            <div class="grid grid-cols-1 gap-4">
+                <button onclick="triggerImpact('EXCELLENT')" class="bg-gradient-to-r from-yellow-400 to-orange-600 py-6 rounded-2xl font-black italic text-2xl shadow-lg active:translate-y-1">EXCELLENT HIT!</button>
+                <button onclick="triggerImpact('GREAT')" class="bg-gradient-to-r from-blue-400 to-blue-600 py-4 rounded-xl font-bold italic text-lg opacity-80">GREAT HIT</button>
+            </div>
         </div>
-        
-        <p class="mt-8 text-slate-500 text-xs">若人聲仍不夠激情，下一步將切換為純音效模式</p>
     </div>
 
     <script>
-        // 1. 預載激情語音採樣 (選擇較大聲、具侵略性的音源)
-        const voiceSamples = {
-            'EXCELLENT': 'https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3', // 帶回音的慶祝
-            'POWERFUL': 'https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3', // 複合重擊音
-            'GREAT': 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'      // 閃光音
+        // 核心音效庫：使用更具物理衝擊感的音源
+        const sfx = {
+            bgm: new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3'),
+            good: new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'),
+            great: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'),
+            excellent: new Audio('https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3') // 最重的金屬重擊
         };
-        
-        // 由於找高品質「吶喊」API 較難，這裡使用高音調處理的 SpeechSynthesis 作為備案，但加上「回響」
-        function scream(text) {
-            const msg = new SpeechSynthesisUtterance(text);
-            msg.lang = 'en-US';
-            msg.rate = 1.1;  // 語速
-            msg.pitch = 1.4; // 提高音調增加緊張感
-            msg.volume = 1.0;
-            window.speechSynthesis.speak(msg);
-        }
 
-        const bgm = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3');
-        const impactSfx = new Audio('https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3');
+        let combo = 0;
 
-        document.getElementById('btn-start').onclick = () => {
-            bgm.loop = true; bgm.volume = 0.15; bgm.play();
+        document.getElementById('btn-ready').onclick = () => {
+            sfx.bgm.loop = true; sfx.bgm.volume = 0.15; sfx.bgm.play();
             document.getElementById('overlay').style.display = 'none';
         };
 
-        function triggerPassionAttack() {
-            // 1. 播放重金屬撞擊音 (Mezastar 特色)
-            impactSfx.currentTime = 0;
-            impactSfx.volume = 0.8;
-            impactSfx.play();
+        function triggerImpact(type) {
+            // 1. 根據等級選擇音效
+            const targetSfx = sfx[type.toLowerCase()];
+            targetSfx.currentTime = 0;
+            targetSfx.volume = type === 'EXCELLENT' ? 0.9 : 0.5;
+            targetSfx.play();
 
-            // 2. 隨機激情語音
-            const labels = ["EXCELLENT", "AMAZING", "POWERFUL", "YOU WIN"];
-            const selected = labels[Math.floor(Math.random() * labels.length)];
-            
-            // 延遲 0.1 秒讓語音在爆炸聲中出現，模擬機台感
-            setTimeout(() => {
-                scream(selected);
-            }, 100);
+            // 2. 更新 Combo
+            combo++;
+            document.getElementById('combo-tag').innerText = `COMBO x${combo}`;
 
-            // 3. 視覺震盪
-            const anchor = document.getElementById('voice-anchor');
-            anchor.innerHTML = `<h2 class="impact-text text-6xl font-black text-white italic">${selected}</h2>`;
+            // 3. 視覺文字爆發
+            const display = document.getElementById('status-display');
+            const color = type === 'EXCELLENT' ? 'text-yellow-400' : 'text-blue-300';
+            display.innerHTML = `<h2 class="text-burst impact-font text-5xl ${color}">${type}</h2>`;
             
-            setTimeout(() => { anchor.innerHTML = ""; }, 1200);
+            // 震動回饋 (簡單模擬)
+            if(type === 'EXCELLENT') {
+                document.body.classList.add('bg-red-900');
+                setTimeout(() => document.body.classList.remove('bg-red-900'), 100);
+            }
+
+            setTimeout(() => { display.innerHTML = ""; }, 800);
         }
     </script>
 </body>

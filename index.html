@@ -2,65 +2,180 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>Q彈方塊測試 - v9.4</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mezastar Math: The Great Integration</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <style>
-        /* 核心Ｑ彈動畫 */
-        .block-unit {
-            width: 50px; height: 50px;
-            margin: 4px; border-radius: 8px;
-            transform: scale(0);
-            /* 模擬彈簧效果的貝茲曲線 */
-            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 
-                inset -4px -4px 0px rgba(0,0,0,0.2), 
-                0 4px 6px rgba(0,0,0,0.3);
-        }
-        .block-show { transform: scale(1); }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Permanent+Marker&display=swap');
+        body { font-family: 'Orbitron', sans-serif; background: #020617; color: white; overflow: hidden; }
         
-        /* 顏色定義 */
-        .bg-yellow-block { background-color: #facc15; border: 2px solid #ca8a04; }
-        .bg-green-block { background-color: #22c55e; border: 2px solid #166534; }
+        /* [Content Lab] 物理噴發方塊 */
+        .block-unit {
+            width: 38px; height: 38px; margin: 3px; border-radius: 8px;
+            background: linear-gradient(135deg, #fbbf24, #d97706);
+            box-shadow: 0 4px 0 #78350f, 0 8px 15px rgba(0,0,0,0.4);
+            transform: scale(0) translateY(40px);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .block-show { transform: scale(1) translateY(0); }
+
+        /* [Engine Lab] 全螢幕進化光芒 */
+        #evo-flash {
+            position: fixed; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 1000;
+        }
+        .flash-active { animation: flash-process 3s forwards; }
+        @keyframes flash-process { 0% { opacity: 0; } 45% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }
+
+        /* UI 質感 */
+        .mezastar-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+            border: 2px solid #3b82f6;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+            border-radius: 2.5rem;
+        }
     </style>
 </head>
-<body class="bg-slate-950 text-white flex flex-col items-center justify-center min-h-screen p-4">
+<body class="min-h-screen flex items-center justify-center p-4">
 
-    <div class="text-center mb-10">
-        <h1 class="text-2xl font-bold text-blue-400 mb-2">方塊堆疊觸感測試</h1>
-        <p class="text-slate-500 italic text-sm">點擊下方按鈕，感受 3 × 4 的彈跳節奏</p>
-    </div>
+    <div id="evo-flash"></div>
 
-    <div id="container" class="bg-slate-900 p-8 rounded-[2rem] border-2 border-slate-800 flex flex-wrap max-w-sm justify-start content-start min-h-[300px]">
+    <div class="w-full max-w-md mezastar-card p-6 relative overflow-hidden">
+        <div id="fx-layer" class="absolute inset-0 flex items-center justify-center pointer-events-none z-50"></div>
+
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-3">
+                <div class="w-16 h-16 bg-slate-800 rounded-2xl p-1 border border-slate-700">
+                    <img id="p-img" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png" class="w-full h-full object-contain">
+                </div>
+                <div>
+                    <h2 id="p-name" class="text-lg font-black italic text-cyan-400">小火龍</h2>
+                    <div class="w-24 bg-slate-900 h-1.5 rounded-full mt-1 border border-slate-700 overflow-hidden">
+                        <div id="exp-bar" class="h-full bg-blue-500 transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="text-[10px] text-slate-500 font-bold uppercase">Database Linked</p>
+                <p id="total-correct" class="text-xl font-black text-blue-500">0</p>
+            </div>
         </div>
 
-    <div class="mt-10 flex gap-4">
-        <button onclick="popBlocks('yellow', 3)" class="bg-yellow-500 text-black px-6 py-3 rounded-xl font-black shadow-lg active:scale-95 transition">
-            噴發黃色方塊 (被乘數)
-        </button>
-        <button onclick="popBlocks('green', 9)" class="bg-green-500 text-white px-6 py-3 rounded-xl font-black shadow-lg active:scale-95 transition">
-            補齊綠色方塊 (乘數)
-        </button>
+        <div id="stage" class="min-h-[200px] bg-black/40 rounded-[2rem] p-4 flex flex-wrap justify-center content-start mb-6 border border-white/5"></div>
+
+        <div class="space-y-4">
+            <div class="bg-slate-800/80 p-5 rounded-2xl flex justify-between items-center border-2 border-slate-700">
+                <span id="formula" class="text-3xl font-black italic">? × ?</span>
+                <input id="ans-input" type="number" pattern="\d*" class="bg-black border-2 border-cyan-500 w-24 p-2 text-center text-2xl rounded-xl focus:outline-none">
+            </div>
+            <button onclick="commitAttack()" class="w-full bg-gradient-to-b from-blue-500 to-blue-700 py-6 rounded-2xl font-black italic text-2xl shadow-lg active:translate-y-1 transition-all">ATTACK!</button>
+        </div>
     </div>
 
     <script>
-        function popBlocks(color, count) {
-            const container = document.getElementById('container');
-            const colorClass = color === 'yellow' ? 'bg-yellow-block' : 'bg-green-block';
-            
-            for (let i = 0; i < count; i++) {
-                // 延遲生成，製造節奏感
+        // --- 初始化資料庫 [Analytics Lab] ---
+        const db = new Dexie("MezastarMasterDB");
+        db.version(1).stores({
+            my_pockets: 'id, name, stage, exp',
+            battle_logs: '++id, formula, isCorrect, reactionTime'
+        });
+
+        const EVOLVE_CHAIN = [
+            { id: 4, name: "小火龍" }, { id: 5, name: "火恐龍" }, { id: 6, name: "噴火龍" }
+        ];
+
+        let currentStage = 0, currentExp = 0, totalCorrect = 0;
+        let qAns = 0, startTime = 0;
+
+        async function init() {
+            // 從資料庫恢復進度 (若有的話)
+            const saved = await db.my_pockets.get(1);
+            if (saved) {
+                currentStage = saved.stage;
+                currentExp = saved.exp;
+                updatePokeUI();
+            }
+            generateRound();
+        }
+
+        function generateRound() {
+            const a = Math.floor(Math.random() * 8) + 2, b = Math.floor(Math.random() * 8) + 2;
+            qAns = a * b;
+            document.getElementById('formula').innerText = `${a} × ${b}`;
+            document.getElementById('ans-input').value = "";
+            document.getElementById('ans-input').focus();
+            startTime = Date.now();
+
+            // [Content Lab] 方塊噴發
+            const stage = document.getElementById('stage');
+            stage.innerHTML = "";
+            for(let i=0; i<qAns; i++) {
                 setTimeout(() => {
-                    const b = document.createElement('div');
-                    b.className = `block-unit ${colorClass}`;
-                    container.appendChild(b);
-                    
-                    // 強制瀏覽器重繪後啟動動畫
-                    requestAnimationFrame(() => {
-                        b.classList.add('block-show');
-                    });
-                }, i * 80); // 每個方塊間隔 80ms 噴發
+                    const block = document.createElement('div');
+                    block.className = 'block-unit';
+                    stage.appendChild(block);
+                    requestAnimationFrame(() => block.classList.add('block-show'));
+                }, i * 15);
             }
         }
+
+        async function commitAttack() {
+            const userVal = parseInt(document.getElementById('ans-input').value);
+            const reactTime = (Date.now() - startTime) / 1000;
+            const isCorrect = userVal === qAns;
+
+            // [Analytics Lab] 寫入資料庫
+            await db.battle_logs.add({ formula: `${qAns}`, isCorrect, reactionTime: reactTime });
+
+            if(isCorrect) {
+                totalCorrect++;
+                currentExp += 34; // 約 3 題進化
+                document.getElementById('total-correct').innerText = totalCorrect;
+                document.getElementById('exp-bar').style.width = currentExp + "%";
+                
+                showFX("EXCELLENT!");
+                
+                if(currentExp >= 100 && currentStage < 2) {
+                    await triggerEvolution();
+                } else {
+                    setTimeout(generateRound, 1000);
+                }
+            } else {
+                showFX("MISS!", "text-red-500");
+            }
+        }
+
+        async function triggerEvolution() {
+            // [Engine Lab] 進化震撼
+            document.getElementById('evo-flash').classList.add('flash-active');
+            
+            setTimeout(async () => {
+                currentStage++;
+                currentExp = 0;
+                updatePokeUI();
+                document.getElementById('exp-bar').style.width = "0%";
+                
+                // [Growth Lab] 存檔進資料庫
+                await db.my_pockets.put({ id: 1, name: EVOLVE_CHAIN[currentStage].name, stage: currentStage, exp: 0 });
+                
+                document.getElementById('evo-flash').classList.remove('flash-active');
+                generateRound();
+            }, 3000);
+        }
+
+        function updatePokeUI() {
+            const p = EVOLVE_CHAIN[currentStage];
+            document.getElementById('p-name').innerText = p.name;
+            document.getElementById('p-img').src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${p.id}.png`;
+        }
+
+        function showFX(t, c="text-yellow-400") {
+            const fx = document.getElementById('fx-layer');
+            fx.innerHTML = `<h2 class="text-5xl font-black italic ${c} animate-bounce">${t}</h2>`;
+            setTimeout(() => fx.innerHTML = "", 800);
+        }
+
+        init();
     </script>
 </body>
 </html>

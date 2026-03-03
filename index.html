@@ -3,85 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mezastar Math Collection - v15.0</title>
+    <title>Mezastar Math Sensory Boost - v15.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap');
-        body { font-family: 'Orbitron', sans-serif; background: #020617; -webkit-tap-highlight-color: transparent; overflow: hidden; }
-        .mezastar-border { border: 2px solid #3b82f6; box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Permanent+Marker&display=swap');
+        body { font-family: 'Orbitron', sans-serif; background: #020617; overflow: hidden; touch-action: manipulation; }
         
-        /* 寶可夢卡片發光效果 */
-        .poke-glow { filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.8)); transition: all 0.5s; }
-        
-        /* 方塊與動畫層級 */
+        /* 強化方塊動畫：物理噴發感 */
         .block-unit {
-            width: 40px; height: 40px; margin: 3px; border-radius: 8px;
+            width: 38px; height: 38px; margin: 3px; border-radius: 8px;
             background: linear-gradient(135deg, #fbbf24, #d97706);
-            transform: scale(0); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 0 #78350f, 0 8px 15px rgba(0,0,0,0.4);
+            transform: scale(0) translateY(50px);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .block-show { transform: scale(1); }
-        
-        #evo-overlay { position: fixed; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 200; }
-        .evo-flash { animation: flash-white 3s ease-in-out forwards; }
-        @keyframes flash-white { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
+        .block-show { transform: scale(1) translateY(0); }
+
+        /* 進化時的能量抖動 */
+        .energy-surge { animation: surge 0.1s infinite; filter: brightness(2) contrast(1.5); }
+        @keyframes surge {
+            0% { transform: translate(2px, 2px) scale(1.1); }
+            50% { transform: translate(-2px, -2px) scale(1.15); }
+            100% { transform: translate(2px, 2px) scale(1.1); }
+        }
+
+        /* 全螢幕爆裂閃光 */
+        #evo-whiteout {
+            position: fixed; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 200;
+        }
+        .whiteout-active { animation: whiteout 3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        @keyframes whiteout {
+            0% { opacity: 0; } 40% { opacity: 1; } 60% { opacity: 1; } 100% { opacity: 0; }
+        }
+
+        /* 打擊文字特效 */
+        .hit-text {
+            font-family: 'Permanent Marker', cursive;
+            animation: hit-zoom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.5) forwards;
+            text-shadow: 0 0 20px rgba(251, 191, 36, 0.8);
+        }
+        @keyframes hit-zoom {
+            0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+            100% { transform: scale(1) rotate(5deg); opacity: 1; }
+        }
     </style>
 </head>
-<body class="text-white min-h-screen flex flex-col items-center justify-center p-4">
+<body class="text-white min-h-screen flex items-center justify-center p-4">
 
     <div id="overlay" class="fixed inset-0 bg-black z-[300] flex flex-col items-center justify-center">
-        <h1 class="text-4xl font-black italic text-blue-500 mb-8">MEZASTAR EVOLVE</h1>
-        <button id="start-btn" class="bg-blue-600 px-16 py-8 rounded-full font-black text-2xl shadow-2xl active:scale-95 transition">GET READY!</button>
+        <h1 class="text-5xl font-black italic text-blue-500 mb-10 tracking-tighter">ULTIMATE MODE</h1>
+        <button id="start-btn" class="bg-blue-600 px-20 py-8 rounded-full font-black text-2xl shadow-[0_0_50px_rgba(37,99,235,0.6)] active:scale-90 transition">GET READY!</button>
     </div>
 
-    <div id="evo-overlay"></div>
+    <div id="evo-whiteout"></div>
 
-    <div class="w-full max-w-md">
-        <div class="mezastar-border bg-slate-900/95 p-6 rounded-[2.5rem] relative overflow-hidden">
-            <div id="quest-text" class="absolute inset-0 flex items-center justify-center text-5xl font-black italic text-yellow-400 pointer-events-none z-50"></div>
+    <div class="w-full max-w-md mezastar-border bg-slate-900/95 p-6 rounded-[3rem] border-2 border-blue-500 relative overflow-hidden">
+        
+        <div id="fx-layer" class="absolute inset-0 flex items-center justify-center pointer-events-none z-[100]"></div>
 
-            <div class="flex justify-between items-start mb-4">
-                <div class="flex items-center gap-4">
-                    <div id="poke-img-container" class="w-20 h-20 bg-slate-800 rounded-2xl p-2">
-                        <img id="poke-img" src="" class="w-full h-full object-contain poke-glow">
-                    </div>
-                    <div>
-                        <h2 id="poke-name" class="text-xl font-black italic text-blue-300">---</h2>
-                        <p id="poke-stage" class="text-[10px] text-slate-500 font-bold tracking-widest">BASIC FORM</p>
-                    </div>
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-4">
+                <div class="w-20 h-20 bg-slate-800 rounded-2xl p-2 border border-slate-700">
+                    <img id="p-img" src="" class="w-full h-full object-contain">
                 </div>
-                <div class="text-right">
-                    <p class="text-[10px] text-slate-500">SCORE: <span id="score-val">0</span></p>
-                    <p class="text-[10px] text-yellow-500">LEVEL: <span id="level-val">1</span></p>
+                <div>
+                    <h2 id="p-name" class="text-xl font-black italic text-cyan-400">---</h2>
+                    <p id="p-stage" class="text-[10px] text-slate-500 font-bold">READY TO FIGHT</p>
                 </div>
             </div>
+            <div class="text-right text-xs font-black text-blue-500">SCORE: <span id="s-val">0</span></div>
+        </div>
 
-            <div id="stage" class="min-h-[160px] bg-black/20 rounded-3xl p-4 flex flex-wrap justify-center content-start mb-6"></div>
+        <div id="stage" class="min-h-[200px] bg-black/40 rounded-[2rem] p-4 flex flex-wrap justify-center content-start mb-6"></div>
 
-            <div class="grid grid-cols-2 gap-3">
-                <div class="col-span-2 bg-slate-800 p-4 rounded-2xl flex justify-between items-center border border-slate-700">
-                    <span id="formula" class="text-3xl font-black">? × ? =</span>
-                    <input id="ans-input" type="number" pattern="\d*" class="bg-black border-2 border-blue-500 w-28 p-3 text-center text-3xl rounded-xl focus:outline-none focus:border-cyan-400">
-                </div>
-                <button onclick="checkAnswer()" class="bg-gradient-to-b from-blue-500 to-blue-700 py-6 rounded-2xl font-black italic text-xl shadow-lg active:translate-y-1">ATTACK!</button>
-                <button onclick="nextQuestion()" class="bg-slate-700/50 py-6 rounded-2xl font-bold text-sm text-slate-400">SKIP</button>
+        <div class="space-y-4">
+            <div class="bg-slate-800 p-5 rounded-3xl flex justify-between items-center border-2 border-slate-700">
+                <span id="formula" class="text-4xl font-black text-white italic">? × ?</span>
+                <input id="ans" type="number" pattern="\d*" class="bg-black border-2 border-cyan-500 w-28 p-3 text-center text-3xl rounded-2xl focus:outline-none shadow-[0_0_15px_rgba(6,182,212,0.3)]">
             </div>
+            <button onclick="attack()" class="w-full bg-gradient-to-b from-blue-400 to-blue-700 py-6 rounded-[2rem] font-black italic text-3xl shadow-[0_8px_0_#1e3a8a] active:translate-y-2 active:shadow-none transition-all">ATTACK!</button>
         </div>
     </div>
 
     <script>
-        // --- 1. 寶可夢進化矩陣資料庫 ---
-        const POKEDEX = [
-            { stage1: { id: 4, name: "小火龍" }, stage2: { id: 5, name: "火恐龍" }, stage3: { id: 6, name: "噴火龍" } },
-            { stage1: { id: 7, name: "傑尼龜" }, stage2: { id: 8, name: "卡咪龜" }, stage3: { id: 9, name: "水箭龜" } },
-            { stage1: { id: 1, name: "妙蛙種子" }, stage2: { id: 2, name: "妙蛙草" }, stage3: { id: 3, name: "妙蛙花" } },
-            { stage1: { id: 172, name: "皮丘" }, stage2: { id: 25, name: "皮卡丘" }, stage3: { id: 26, name: "雷丘" } }
+        const DEX = [
+            { s1:{id:4, n:"小火龍"}, s2:{id:5, n:"火恐龍"}, s3:{id:6, n:"噴火龍"} },
+            { s1:{id:172, n:"皮丘"}, s2:{id:25, n:"皮卡丘"}, s3:{id:26, n:"雷丘"} }
         ];
+        let chain = DEX[Math.floor(Math.random()*DEX.length)], lv = 1, ans = 0, score = 0;
 
-        let currentChain = POKEDEX[0]; // 初始進化鏈
-        let currentEvolutionLevel = 1; // 1: 基本, 2: 一階, 3: 二階
-
-        // 音效
         const sfx = {
             bgm: new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3'),
             pop: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'),
@@ -89,91 +99,70 @@
             evo: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3')
         };
 
-        let currentAns = 0, score = 0;
-
-        document.getElementById('start-btn').onclick = function() {
-            Object.values(sfx).forEach(track => { track.play().then(() => { track.pause(); track.currentTime = 0; }); });
+        document.getElementById('start-btn').onclick = () => {
+            Object.values(sfx).forEach(s => { s.play().then(()=>s.pause()); });
             sfx.bgm.loop = true; sfx.bgm.volume = 0.15; sfx.bgm.play();
             document.getElementById('overlay').style.display = 'none';
-            updatePokeDisplay();
-            nextQuestion();
+            updateUI(); next();
         };
 
-        // 更新寶可夢顯示 
-        function updatePokeDisplay() {
-            const data = currentChain[`stage${currentEvolutionLevel}`];
-            document.getElementById('poke-name').innerText = data.name;
-            document.getElementById('poke-img').src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${data.id}.png`;
-            document.getElementById('poke-stage').innerText = currentEvolutionLevel === 1 ? "BASIC FORM" : (currentEvolutionLevel === 2 ? "STAGE 1" : "FINAL FORM");
-            document.getElementById('level-val').innerText = currentEvolutionLevel;
+        function updateUI() {
+            const d = chain[`s${lv}`];
+            document.getElementById('p-name').innerText = d.n;
+            document.getElementById('p-img').src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${d.id}.png`;
+            document.getElementById('p-stage').innerText = lv === 1 ? "BASIC" : (lv === 2 ? "STAGE 1" : "MAX POWER");
         }
 
-        function nextQuestion() {
-            const stage = document.getElementById('stage');
-            stage.innerHTML = "";
-            const a = Math.floor(Math.random() * 8) + 2;
-            const b = Math.floor(Math.random() * 8) + 2;
-            currentAns = a * b;
-            document.getElementById('formula').innerText = `${a} × ${b} =`;
-            document.getElementById('ans-input').value = "";
-            document.getElementById('ans-input').focus();
-            
-            for(let i=0; i < currentAns; i++) {
+        function next() {
+            const stg = document.getElementById('stage');
+            stg.innerHTML = "";
+            const a = Math.floor(Math.random()*8)+2, b = Math.floor(Math.random()*8)+2;
+            ans = a * b;
+            document.getElementById('formula').innerText = `${a} × ${b}`;
+            document.getElementById('ans').value = "";
+            document.getElementById('ans').focus();
+
+            // 強化噴發動畫
+            for(let i=0; i<ans; i++) {
                 setTimeout(() => {
-                    const block = document.createElement('div');
-                    block.className = 'block-unit';
-                    stage.appendChild(block);
+                    const b = document.createElement('div');
+                    b.className = 'block-unit';
+                    stg.appendChild(b);
                     sfx.pop.cloneNode().play();
-                    requestAnimationFrame(() => block.classList.add('block-show'));
-                }, i * 20);
+                    requestAnimationFrame(() => b.classList.add('block-show'));
+                }, i * 15);
             }
         }
 
-        function checkAnswer() {
-            const val = parseInt(document.getElementById('ans-input').value);
-            if(val === currentAns) {
-                score++;
-                document.getElementById('score-val').innerText = score;
+        function attack() {
+            if(parseInt(document.getElementById('ans').value) === ans) {
+                score++; document.getElementById('s-val').innerText = score;
                 sfx.hit.currentTime = 0; sfx.hit.play();
-
-                // 設定：每算對 3 題進化一次
-                if(score % 3 === 0 && currentEvolutionLevel < 3) {
-                    performEvolution();
-                } else if(score % 3 === 0 && currentEvolutionLevel === 3) {
-                    // 滿級後切換下一條進化鏈
-                    currentEvolutionLevel = 1;
-                    currentChain = POKEDEX[Math.floor(Math.random() * POKEDEX.length)];
-                    showText("NEW CHALLENGER!");
-                    setTimeout(() => { updatePokeDisplay(); nextQuestion(); }, 1000);
-                } else {
-                    showText("EXCELLENT!");
-                    setTimeout(nextQuestion, 1000);
-                }
-            } else {
-                showText("MISS!", "text-red-500");
-            }
+                
+                if(score % 3 === 0 && lv < 3) evolve();
+                else { flashFX("EXCELLENT!"); setTimeout(next, 1000); }
+            } else { flashFX("MISS!", "text-red-500"); }
         }
 
-        function showText(txt, color="text-yellow-400") {
-            const el = document.getElementById('quest-text');
-            el.innerText = txt;
-            el.className = `absolute inset-0 flex items-center justify-center text-4xl font-black italic ${color} animate-bounce z-50`;
-            setTimeout(() => { el.innerText = ""; }, 800);
+        function flashFX(t, c="text-yellow-400") {
+            const l = document.getElementById('fx-layer');
+            l.innerHTML = `<h2 class="hit-text text-6xl ${c}">${t}</h2>`;
+            setTimeout(() => l.innerHTML = "", 800);
         }
 
-        function performEvolution() {
-            sfx.bgm.volume = 0.05;
-            sfx.evo.play();
-            document.getElementById('evo-overlay').classList.add('evo-flash');
-            showText("EVOLVING...", "text-white");
+        function evolve() {
+            sfx.bgm.volume = 0.05; sfx.evo.play();
+            document.getElementById('p-img').classList.add('energy-surge');
+            document.getElementById('evo-whiteout').classList.add('whiteout-active');
+            flashFX("EVOLVING...", "text-purple-400");
 
             setTimeout(() => {
-                currentEvolutionLevel++;
-                updatePokeDisplay();
+                lv++; updateUI();
                 sfx.hit.play();
-                document.getElementById('evo-overlay').classList.remove('evo-flash');
+                document.getElementById('p-img').classList.remove('energy-surge');
+                document.getElementById('evo-whiteout').classList.remove('whiteout-active');
                 sfx.bgm.volume = 0.15;
-                nextQuestion();
+                next();
             }, 3000);
         }
     </script>

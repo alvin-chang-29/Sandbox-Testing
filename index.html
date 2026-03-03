@@ -2,181 +2,99 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mezastar Math - Laboratory Integration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>進化光芒特效測試 - v9.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Permanent+Marker&display=swap');
+        /* 進化前的白光震動 */
+        @keyframes evo-white-pulse {
+            0% { filter: brightness(1) contrast(1); transform: scale(1); }
+            20% { filter: brightness(20) contrast(0); transform: scale(1.05); }
+            40% { filter: brightness(1) contrast(1); transform: scale(1); }
+            60% { filter: brightness(20) contrast(0); transform: scale(1.1); }
+            100% { filter: brightness(1) contrast(1); transform: scale(1); }
+        }
         
-        body { font-family: 'Orbitron', sans-serif; background: #020617; color: white; overflow: hidden; touch-action: manipulation; }
+        /* 最終炸開的光芒動畫 */
+        @keyframes blast {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+
+        .evo-anim { animation: evo-white-pulse 0.5s infinite; }
         
-        /* 【Mezastar UI】高級邊框與漸層 */
-        .mezastar-panel {
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
-            border: 2px solid #3b82f6;
-            box-shadow: 0 0 30px rgba(59, 130, 246, 0.4), inset 0 0 15px rgba(59, 130, 246, 0.2);
-            border-radius: 3rem;
+        #evo-overlay { 
+            position: fixed; inset: 0; 
+            background: white; z-index: 1000; 
+            display: none; align-items: center; justify-content: center; 
+            flex-direction: column;
+            transition: background 0.5s;
         }
 
-        /* 【Content Lab】Q 彈物理方塊 */
-        .block-unit {
-            width: 40px; height: 40px; margin: 3px; border-radius: 8px;
-            background: linear-gradient(135deg, #fbbf24, #d97706);
-            box-shadow: 0 4px 0 #78350f, 0 8px 15px rgba(0,0,0,0.4);
-            transform: scale(0) translateY(40px);
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        .blast-ring {
+            position: absolute; width: 200px; height: 200px;
+            border: 10px solid gold; border-radius: 50%;
+            display: none; animation: blast 0.6s ease-out;
         }
-        .block-show { transform: scale(1) translateY(0); }
-
-        /* 【Engine Lab】進化震盪與白光 */
-        #evo-whiteout {
-            position: fixed; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 1000;
-        }
-        .whiteout-active { animation: whiteout-key 3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-        @keyframes whiteout-key { 0% { opacity: 0; } 40% { opacity: 1; } 60% { opacity: 1; } 100% { opacity: 0; } }
-
-        .energy-surge { animation: surge 0.1s infinite; filter: brightness(2) contrast(1.2); }
-        @keyframes surge {
-            0% { transform: translate(2px, 2px) scale(1.1); }
-            50% { transform: translate(-2px, -2px) scale(1.12); }
-            100% { transform: translate(2px, 2px) scale(1.1); }
-        }
-
-        /* 攻擊文字特效 */
-        .hit-text {
-            font-family: 'Permanent Marker', cursive;
-            animation: hit-zoom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.5) forwards;
-            text-shadow: 0 0 25px rgba(251, 191, 36, 0.9);
-        }
-        @keyframes hit-zoom { 0% { transform: scale(0) rotate(-20deg); opacity: 0; } 100% { transform: scale(1) rotate(5deg); opacity: 1; } }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="bg-slate-950 text-white flex flex-col items-center justify-center min-h-screen">
 
-    <div id="evo-whiteout"></div>
-
-    <div class="w-full max-w-md mezastar-panel p-8 relative overflow-hidden">
-        
-        <div id="fx-layer" class="absolute inset-0 flex items-center justify-center pointer-events-none z-[100]"></div>
-
-        <div class="flex justify-between items-center mb-8 relative z-10">
-            <div class="flex items-center gap-4">
-                <div class="w-20 h-20 bg-slate-800 rounded-3xl p-2 border border-slate-700 shadow-inner">
-                    <img id="p-img" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png" class="w-full h-full object-contain">
-                </div>
-                <div>
-                    <h2 id="p-name" class="text-xl font-black italic text-cyan-400 tracking-tighter">小火龍</h2>
-                    <div class="w-32 bg-slate-900 h-2 rounded-full mt-2 overflow-hidden border border-slate-700">
-                        <div id="exp-bar" class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 w-0 transition-all duration-500"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="text-right">
-                <span class="text-[10px] text-slate-500 font-bold block">COLLECTION</span>
-                <span id="score-val" class="text-2xl font-black text-blue-500">0</span>
-            </div>
-        </div>
-
-        <div id="stage" class="min-h-[220px] bg-black/40 rounded-[2.5rem] p-5 flex flex-wrap justify-center content-start mb-8 border border-slate-800/50">
-            </div>
-
-        <div class="space-y-4 relative z-10">
-            <div class="bg-slate-800/80 p-5 rounded-[2rem] flex justify-between items-center border-2 border-slate-700">
-                <span id="formula" class="text-4xl font-black text-white italic tracking-tighter">? × ?</span>
-                <input id="ans-input" type="number" pattern="\d*" class="bg-black border-2 border-cyan-500 w-28 p-3 text-center text-3xl rounded-2xl focus:outline-none shadow-[0_0_15px_rgba(6,182,212,0.4)]">
-            </div>
-            <button onclick="handleAttack()" class="w-full bg-gradient-to-b from-blue-500 to-blue-700 py-6 rounded-[2rem] font-black italic text-3xl shadow-[0_8px_0_#1e3a8a] active:translate-y-2 active:shadow-none transition-all">
-                ATTACK!
+    <div class="text-center">
+        <h1 class="text-2xl font-bold mb-8 text-slate-400">進化系統測試沙盒</h1>
+        <div class="bg-slate-900 p-10 rounded-[3rem] border-2 border-slate-800 shadow-2xl">
+            <div id="preview-img" class="w-48 h-48 bg-contain bg-no-repeat bg-center mb-6" 
+                 style="background-image:url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png')"></div>
+            <p class="text-xl font-bold text-orange-400 mb-6">小火龍 (EXP: 50/50)</p>
+            <button onclick="startEvolution()" class="bg-yellow-500 text-black px-10 py-4 rounded-full font-black text-xl hover:scale-105 active:scale-95 transition">
+                觸發進化！
             </button>
         </div>
     </div>
 
+    <div id="evo-overlay">
+        <div id="blast-circle" class="blast-ring"></div>
+        <div id="evo-img-flash" class="w-72 h-72 bg-contain bg-no-repeat bg-center relative z-10 transition-all duration-500"></div>
+        <h2 id="evo-txt-flash" class="mt-12 text-4xl font-black text-slate-900 z-10 text-center px-6">
+            等等... <br> 小火龍的樣子有點奇怪！
+        </h2>
+    </div>
+
     <script>
-        const POKEDEX = {
-            chain: [4, 5, 6], // 小火龍系列
-            names: ["小火龍", "火恐恐", "噴火龍"]
-        };
-        
-        let level = 0; // 0, 1, 2
-        let score = 0;
-        let currentAns = 0;
+        function startEvolution() {
+            const ov = document.getElementById('evo-overlay');
+            const img = document.getElementById('evo-img-flash');
+            const txt = document.getElementById('evo-txt-flash');
+            const ring = document.getElementById('blast-circle');
 
-        // 初始化
-        function init() {
-            generateQuestion();
-        }
+            // 1. 顯示過場
+            ov.style.display = 'flex';
+            img.style.backgroundImage = "url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png')";
+            img.classList.add('evo-anim');
 
-        function generateQuestion() {
-            const stage = document.getElementById('stage');
-            stage.innerHTML = "";
-            const a = Math.floor(Math.random() * 8) + 2;
-            const b = Math.floor(Math.random() * 8) + 2;
-            currentAns = a * b;
-            document.getElementById('formula').innerText = `${a} × ${b}`;
-            document.getElementById('ans-input').value = "";
-            document.getElementById('ans-input').focus();
-
-            // 【Content Lab】方塊噴發邏輯
-            for(let i=0; i < currentAns; i++) {
-                setTimeout(() => {
-                    const block = document.createElement('div');
-                    block.className = 'block-unit';
-                    stage.appendChild(block);
-                    requestAnimationFrame(() => block.classList.add('block-show'));
-                }, i * 15);
-            }
-        }
-
-        function handleAttack() {
-            const val = parseInt(document.getElementById('ans-input').value);
-            if(val === currentAns) {
-                score++;
-                document.getElementById('score-val').innerText = score;
-                const expPercent = (score % 3) * 33.3; 
-                document.getElementById('exp-bar').style.width = expPercent + "%";
-
-                if(score % 3 === 0 && level < 2) {
-                    triggerEvolution();
-                } else {
-                    showFX("EXCELLENT!");
-                    setTimeout(generateQuestion, 1000);
-                }
-            } else {
-                showFX("MISS!", "text-red-500");
-            }
-        }
-
-        function showFX(txt, color = "text-yellow-400") {
-            const fx = document.getElementById('fx-layer');
-            fx.innerHTML = `<h2 class="hit-text text-6xl ${color}">${txt}</h2>`;
-            setTimeout(() => fx.innerHTML = "", 800);
-        }
-
-        // 【Engine Lab】進化儀式整合
-        function triggerEvolution() {
-            const img = document.getElementById('p-img');
-            const whiteout = document.getElementById('evo-whiteout');
-            
-            // 1. 蓄力
-            img.classList.add('energy-surge');
-            whiteout.classList.add('whiteout-active');
-            showFX("EVOLVING...", "text-purple-400");
-
+            // 2. 模擬進化的緊張感 (3秒後進化)
             setTimeout(() => {
-                // 2. 變化
-                level++;
-                img.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${POKEDEX.chain[level]}.png`;
-                document.getElementById('p-name').innerText = POKEDEX.names[level];
-                document.getElementById('exp-bar').style.width = "0%";
+                // 炸開光芒
+                ring.style.display = 'block';
                 
-                // 3. 恢復
-                img.classList.remove('energy-surge');
-                whiteout.classList.remove('whiteout-active');
-                generateQuestion();
+                // 更換背景與文字
+                ov.style.backgroundColor = 'rgba(0,0,0,0.95)';
+                img.classList.remove('evo-anim');
+                img.style.backgroundImage = "url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/5.png')"; // 火恐龍
+                img.style.transform = "scale(1.3)";
+                
+                txt.innerHTML = "恭喜！<br><span class='text-yellow-400 text-6xl'>小火龍進化成火恐龍了！</span>";
+                txt.className = "mt-12 font-black z-10 text-center px-6 transition-all duration-700";
+
+                // 3. 結束過場回歸主畫面
+                setTimeout(() => {
+                    ov.style.opacity = '0';
+                    setTimeout(() => {
+                        location.reload(); // 測試完重置
+                    }, 500);
+                }, 4000);
             }, 3000);
         }
-
-        init();
     </script>
 </body>
 </html>

@@ -2,56 +2,155 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mezastar 強制發聲版 - v11.1</title>
+    <title>戰鬥紀錄與分析 - v9.5 測試版</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .mezastar-theme { background: radial-gradient(circle, #1e293b, #020617); }
-        .glow-btn { box-shadow: 0 0 15px #3b82f6; }
-    </style>
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="mezastar-theme text-white min-h-screen flex items-center justify-center p-6">
+<body class="bg-slate-950 text-white p-6 md:p-12">
 
-    <div id="overlay" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
-        <h1 class="text-4xl font-black italic mb-10 text-blue-500">MEZASTAR MATH</h1>
-        <p class="text-slate-500 mb-6 text-sm">請確認側邊開關未開啟靜音</p>
-        <button id="unlock-btn" class="bg-blue-600 px-20 py-8 rounded-full font-black text-2xl glow-btn active:scale-90 transition">
-            GET READY!
-        </button>
-    </div>
+    <div class="max-w-5xl mx-auto">
+        <header class="flex justify-between items-center mb-10">
+            <div>
+                <h1 class="text-3xl font-black text-blue-400 tracking-wider">戰鬥紀錄與分析系統</h1>
+                <p class="text-slate-500 mt-2">分析你的數學戰力與寶可夢成長紀錄</p>
+            </div>
+            <button onclick="simulateBattleData()" class="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-full font-bold transition-all active:scale-95">
+                模擬產生一場戰鬥數據
+            </button>
+        </header>
 
-    <div class="text-center">
-        <div class="mb-10 text-2xl font-black italic text-blue-300">SYSTEM READY</div>
-        <button onclick="playMezastarHit()" class="bg-red-600 px-12 py-6 rounded-2xl font-bold text-xl glow-btn">
-            攻擊音效測試
-        </button>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 bg-slate-900 p-8 rounded-[2rem] border-2 border-slate-800">
+                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <span class="w-2 h-6 bg-red-500 block"></span> 數學弱點偵測 (錯誤題數統計)
+                </h3>
+                <div class="h-64">
+                    <canvas id="weaknessChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 p-8 rounded-[2rem] border-2 border-slate-800 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-xl font-bold mb-6 italic text-yellow-500">成就勳章</h3>
+                    <div id="medals" class="grid grid-cols-2 gap-4">
+                        </div>
+                </div>
+                <div class="mt-8 pt-8 border-t border-slate-800">
+                    <p class="text-slate-500 text-sm">平均 KO 時間</p>
+                    <p id="avg-time" class="text-4xl font-black text-white">-- s</p>
+                </div>
+            </div>
+
+            <div class="lg:col-span-3 bg-slate-900 p-8 rounded-[2rem] border-2 border-slate-800">
+                <h3 class="text-xl font-bold mb-6">最近對戰日誌</h3>
+                <div id="battle-list" class="space-y-4 max-h-80 overflow-y-auto pr-4">
+                    </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // 1. 預先建立 Audio 物件 (不要在 function 裡才 new)
-        const hitSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3');
-        const startSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-        const bgm = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3');
-
-        // 2. 關鍵解鎖函數
-        document.getElementById('unlock-btn').addEventListener('click', function() {
-            // 在這個同步的點擊事件中，立刻「摸一下」所有音軌
-            hitSound.play().then(() => { hitSound.pause(); hitSound.currentTime = 0; });
-            startSound.play(); // 播放開場音樂
-            
-            bgm.loop = true;
-            bgm.volume = 0.2;
-            bgm.play();
-
-            document.getElementById('overlay').style.display = 'none';
+        // 1. 初始化 Dexie
+        const db = new Dexie("PokemonAnalysisDB");
+        db.version(1).stores({
+            battle_logs: '++id, date, enemyName, result, totalTime, errors'
         });
 
-        // 3. 測試播放
-        function playMezastarHit() {
-            // 直接播放預載好的物件，不要有任何邏輯判斷
-            hitSound.currentTime = 0;
-            hitSound.play();
+        let myChart;
+
+        // 2. 模擬數據產生
+        async function simulateBattleData() {
+            const enemies = ["超夢", "噴火龍", "皮卡丘", "烈空坐"];
+            const results = ["Success", "Escape", "Defeat"];
+            const possibleErrors = ["7x8", "8x9", "6x7", "7x6", "9x4", "8x6"];
+            
+            await db.battle_logs.add({
+                date: new Date().toLocaleDateString(),
+                enemyName: enemies[Math.floor(Math.random()*enemies.length)],
+                result: results[Math.floor(Math.random()*results.length)],
+                totalTime: Math.floor(Math.random() * 60) + 5,
+                errors: [possibleErrors[Math.floor(Math.random()*possibleErrors.length)]]
+            });
+            renderAnalysis();
         }
+
+        // 3. 渲染分析畫面
+        async function renderAnalysis() {
+            const logs = await db.battle_logs.toArray();
+            if (logs.length === 0) return;
+
+            // 統計錯誤分布
+            const errorStats = {};
+            let totalTime = 0;
+            let successCount = 0;
+
+            logs.forEach(log => {
+                totalTime += log.totalTime;
+                if(log.result === 'Success') successCount++;
+                log.errors.forEach(err => {
+                    const num = err.split('x')[0]; // 抓取被乘數作為統計基準
+                    errorStats[num] = (errorStats[num] || 0) + 1;
+                });
+            });
+
+            // 更新圖表
+            updateChart(errorStats);
+
+            // 更新平均時間
+            document.getElementById('avg-time').innerText = Math.round(totalTime / logs.length);
+
+            // 更新列表
+            const list = document.getElementById('battle-list');
+            list.innerHTML = logs.reverse().map(log => `
+                <div class="bg-black/40 p-4 rounded-2xl border-l-4 ${log.result === 'Success' ? 'border-green-500' : 'border-red-500'} flex justify-between items-center">
+                    <div>
+                        <span class="font-bold text-lg">${log.enemyName}</span>
+                        <span class="ml-4 text-xs text-slate-500">${log.date}</span>
+                        <div class="text-sm mt-1">
+                            ${log.errors.map(e => `<span class="text-red-400 mr-2">✘ ${e}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-black ${log.result === 'Success' ? 'text-green-400' : 'text-red-400'}">${log.result}</p>
+                        <p class="text-xs text-slate-500">${log.totalTime}s</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateChart(stats) {
+            const ctx = document.getElementById('weaknessChart').getContext('2d');
+            const labels = ['2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x'];
+            const data = labels.map(l => stats[l[0]] || 0);
+
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '錯誤次數',
+                        data: data,
+                        backgroundColor: 'rgba(239, 68, 68, 0.5)',
+                        borderColor: '#ef4444',
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        renderAnalysis();
     </script>
 </body>
 </html>

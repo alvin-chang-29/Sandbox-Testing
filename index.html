@@ -2,103 +2,166 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>戰鬥紀錄與分析 - 模組 v8.6</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>寶可夢對戰：雙關卡整合 v7.7</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* 戰鬥動效 */
+        @keyframes strong-shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(-4px, 2px); } 75% { transform: translate(4px, -2px); } }
+        .battling { animation: strong-shake 0.15s infinite; }
+        
+        /* 容器與層級 */
+        .battle-center-container { position: relative; width: 100%; max-width: 400px; aspect-ratio: 1/1; }
+        #grid, #block-layer { display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(10, 1fr); gap: 4px; width: 100%; height: 100%; }
+        #block-layer { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 20; }
+        
+        .block-unit { width: 85%; height: 85%; margin: auto; border-radius: 4px; transform: scale(0); transition: 0.3s; }
+        .block-show { transform: scale(1); }
+
+        /* 精靈球按鈕震動 */
+        .pokeball-btn:active { animation: strong-shake 0.1s infinite; transform: scale(0.9); }
+        
+        /* 消失/顯現動畫 */
+        .fade-out { opacity: 0; transform: translateX(-50px); pointer-events: none; transition: 0.5s; }
+        .fade-in { opacity: 1; transform: translateX(0); transition: 0.5s; }
+        
+        .flash-red-target { z-index: 100 !important; background: #ef4444 !important; animation: pulse 0.5s infinite alternate; }
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
+    </style>
 </head>
-<body class="bg-slate-950 text-white p-6">
+<body class="bg-slate-950 text-white min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden">
 
-    <div class="max-w-4xl mx-auto">
-        <header class="mb-10">
-            <h1 class="text-3xl font-black text-blue-400">戰鬥紀錄與分析</h1>
-            <p class="text-slate-500">檢視你的冒險歷程與數學戰力</p>
-        </header>
+    <div class="mb-6 bg-black/50 px-8 py-2 rounded-full border border-slate-700 text-xl font-bold">
+        STEP: <span id="step-label" class="text-yellow-400">1. 方塊陣型</span>
+    </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 text-center">
-                <p class="text-slate-500 text-sm">總對戰次數</p>
-                <p class="text-4xl font-black mt-2">42</p>
-            </div>
-            <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 text-center">
-                <p class="text-slate-500 text-sm">成功收服率</p>
-                <p class="text-4xl font-black mt-2 text-green-400">85%</p>
-            </div>
-            <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 text-center">
-                <p class="text-slate-500 text-sm">平均 KO 時間</p>
-                <p class="text-4xl font-black mt-2 text-yellow-500">18s</p>
+    <div class="w-full max-w-6xl grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+        <div id="enemy-side" class="flex flex-col items-center battling">
+            <div class="w-48 h-48 md:w-64 md:h-64 bg-contain bg-no-repeat bg-center" style="background-image: url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/150.png');"></div>
+            <div class="w-full bg-gray-800 h-4 rounded-full mt-4 border border-white">
+                <div id="hp" class="bg-green-500 h-full w-full transition-all duration-500"></div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800">
-                <h3 class="text-xl font-bold mb-6 italic">數學弱點偵測 (錯誤次數)</h3>
-                <canvas id="errorChart"></canvas>
+        <div class="flex flex-col items-center overflow-hidden">
+            <div class="text-5xl font-black mb-8">3 × 2 = <span id="q-res" class="text-red-500">?</span></div>
+
+            <div id="panel-1" class="battle-center-container fade-in">
+                <div id="grid" class="bg-slate-900/50 p-2 rounded-xl"></div>
+                <div id="block-layer" class="p-2"></div>
             </div>
 
-            <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 h-[400px] overflow-y-auto">
-                <h3 class="text-xl font-bold mb-6 italic">最近 5 場對戰詳情</h3>
-                <div id="history-list" class="space-y-4">
+            <div id="panel-2" class="hidden opacity-0 flex flex-col items-center w-full max-w-[320px]">
+                <div id="input-box" class="text-6xl font-mono bg-black w-full text-center py-6 rounded-2xl border-4 border-slate-700 text-green-400 mb-6">?</div>
+                <div id="keypad" class="grid grid-cols-3 gap-3 w-full">
                     </div>
             </div>
+        </div>
+
+        <div class="flex flex-col items-center battling">
+            <div class="w-48 h-48 md:w-64 md:h-64 bg-contain bg-no-repeat bg-center" style="background-image: url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png'); transform: scaleX(-1);"></div>
+            <p class="mt-4 text-blue-400 font-bold">皮卡丘</p>
         </div>
     </div>
 
     <script>
-        // 模擬戰鬥紀錄數據
-        const battleHistory = [
-            { enemy: "超夢", result: "Success", time: "15s", errors: ["7x8"], date: "2024/05/20" },
-            { enemy: "噴火龍", result: "Escape", time: "60s", errors: ["8x9", "8x7"], date: "2024/05/19" },
-            { enemy: "皮卡丘", result: "Success", time: "10s", errors: [], date: "2024/05/19" },
-            { enemy: "烈空坐", result: "Failed", time: "45s", errors: ["9x9"], date: "2024/05/18" },
-            { enemy: "水箭龜", result: "Success", time: "22s", errors: ["6x7"], date: "2024/05/17" }
-        ];
+        const valA = 3, valB = 2, ans = 6;
+        let step = 0, currentInput = "";
 
-        function initHistory() {
-            const list = document.getElementById('history-list');
-            battleHistory.forEach(b => {
-                const item = document.createElement('div');
-                item.className = "bg-black/40 p-4 rounded-xl border-l-4 " + 
-                                (b.result === 'Success' ? 'border-green-500' : 'border-red-500');
-                item.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <span class="font-bold text-lg">${b.enemy}</span>
-                        <span class="text-xs text-slate-500">${b.date}</span>
-                    </div>
-                    <p class="text-xs mt-1 ${b.result === 'Success' ? 'text-green-400' : 'text-red-400'}">${b.result} - 耗時 ${b.time}</p>
-                    <div class="mt-2 flex flex-wrap gap-1">
-                        ${b.errors.map(e => `<span class="bg-red-900/30 text-red-400 text-[10px] px-2 py-0.5 rounded">錯題: ${e}</span>`).join('')}
-                    </div>
-                `;
-                list.appendChild(item);
-            });
-        }
-
-        function initChart() {
-            const ctx = document.getElementById('errorChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x'],
-                    datasets: [{
-                        label: '錯誤題數統計',
-                        data: [2, 1, 4, 0, 8, 12, 15, 9], // 模擬數據
-                        backgroundColor: 'rgba(239, 68, 68, 0.6)',
-                        borderColor: '#ef4444',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: '#334155' } },
-                        x: { grid: { display: false } }
-                    },
-                    plugins: { legend: { display: false } }
+        function init() {
+            const grid = document.getElementById('grid');
+            for (let r = 0; r <= 9; r++) {
+                for (let c = 0; c <= 9; c++) {
+                    const d = document.createElement('div');
+                    d.className = "flex items-center justify-center font-bold text-sm border border-slate-800 rounded cursor-pointer";
+                    if (r === 0 && c === 0) d.innerText = "×";
+                    else if (c === 0 && r > 0) { 
+                        d.innerText = r; d.className += " text-yellow-400"; 
+                        if(r===valA) d.classList.add('bg-yellow-900/50','border-yellow-400');
+                        d.onclick = () => { if(step===0 && r===valA) startBlocks(); };
+                    } else if (r === 0 && c > 0) {
+                        d.innerText = c; d.className += " text-green-400 opacity-20";
+                        d.id = `col-${c}`;
+                        d.onclick = () => { if(step===1 && c===valB) fillBlocks(); };
+                    } else {
+                        d.id = `target-${r}-${c}`;
+                        d.innerText = r*c; d.className += " text-transparent";
+                        d.onclick = () => { if(step===2 && r===valA && c===valB) switchToStep2(); };
+                    }
+                    grid.appendChild(d);
                 }
+            }
+        }
+
+        function startBlocks() {
+            step = 1;
+            document.getElementById(`col-${valB}`).classList.replace('opacity-20', 'bg-green-900/50');
+            for(let i=1; i<=valA; i++) createBlock(i, 1, 'bg-yellow-400');
+        }
+
+        function fillBlocks() {
+            step = 2;
+            for(let j=2; j<=valB; j++) for(let i=1; i<=valA; i++) createBlock(i, j, 'bg-green-500');
+            document.getElementById(`target-${valA}-${valB}`).classList.add('flash-red-target', '!text-white');
+        }
+
+        function createBlock(r, c, cls) {
+            const wrap = document.createElement('div');
+            wrap.style.gridRow = r + 1; wrap.style.gridColumn = c + 1;
+            const b = document.createElement('div');
+            b.className = `block-unit ${cls}`;
+            wrap.appendChild(b);
+            document.getElementById('block-layer').appendChild(wrap);
+            setTimeout(() => b.classList.add('block-show'), 50);
+        }
+
+        function switchToStep2() {
+            const p1 = document.getElementById('panel-1');
+            const p2 = document.getElementById('panel-2');
+            p1.classList.add('fade-out');
+            setTimeout(() => {
+                p1.classList.add('hidden');
+                p2.classList.remove('hidden');
+                setTimeout(() => p2.classList.add('fade-in', 'opacity-100'), 50);
+                document.getElementById('step-label').innerText = "2. 計算捕獲";
+                document.getElementById('step-label').className = "text-red-500";
+                initKeypad();
+            }, 500);
+        }
+
+        function initKeypad() {
+            const pad = document.getElementById('keypad');
+            [1,2,3,4,5,6,7,8,9,'C',0,'OK'].forEach(k => {
+                const b = document.createElement('button');
+                if(k === 'OK') {
+                    b.className = "pokeball-btn bg-white rounded-full flex items-center justify-center p-2 border-4 border-red-600";
+                    b.innerHTML = `<div class="w-8 h-8 bg-red-600 rounded-full border-2 border-black flex items-center justify-center"><div class="w-2 h-2 bg-white rounded-full"></div></div>`;
+                } else {
+                    b.className = "bg-slate-700 p-4 rounded-xl text-2xl font-bold active:bg-blue-500";
+                    b.innerText = k;
+                }
+                b.onclick = () => handleInput(k);
+                pad.appendChild(b);
             });
         }
 
-        initHistory();
-        initChart();
+        function handleInput(k) {
+            if(k === 'C') currentInput = "";
+            else if(k === 'OK') {
+                if(parseInt(currentInput) === ans) finishBattle();
+                else { currentInput = ""; alert("哎呀！寶可夢掙脫了，再算一次！"); }
+            } else if(currentInput.length < 2) currentInput += k;
+            document.getElementById('input-box').innerText = currentInput || "?";
+        }
+
+        function finishBattle() {
+            document.getElementById('q-res').innerText = ans;
+            document.getElementById('hp').style.width = "0%";
+            document.getElementById('enemy-side').classList.remove('battling');
+            document.getElementById('panel-2').innerHTML = "<h2 class='text-4xl font-bold text-yellow-400 mt-10'>成功收服！</h2>";
+        }
+
+        init();
     </script>
 </body>
 </html>

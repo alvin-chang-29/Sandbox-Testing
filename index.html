@@ -3,56 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mezastar 強制發聲版 - v11.1</title>
+    <title>Mezastar Battle Impact - v13.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .mezastar-theme { background: radial-gradient(circle, #1e293b, #020617); }
-        .glow-btn { box-shadow: 0 0 15px #3b82f6; }
+        .impact-shake { animation: shake 0.2s ease-in-out; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px) rotate(-1deg); }
+            75% { transform: translateX(10px) rotate(1deg); }
+        }
+        .block-unit {
+            width: 40px; height: 40px; margin: 4px; border-radius: 8px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            box-shadow: 0 4px 0 #1e3a8a, 0 8px 15px rgba(0,0,0,0.3);
+            transform: scale(0);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .block-show { transform: scale(1); }
     </style>
 </head>
-<body class="mezastar-theme text-white min-h-screen flex items-center justify-center p-6">
+<body class="bg-slate-950 text-white min-h-screen flex flex-col items-center justify-center p-6">
 
-    <div id="overlay" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
-        <h1 class="text-4xl font-black italic mb-10 text-blue-500">MEZASTAR MATH</h1>
-        <p class="text-slate-500 mb-6 text-sm">請確認側邊開關未開啟靜音</p>
-        <button id="unlock-btn" class="bg-blue-600 px-20 py-8 rounded-full font-black text-2xl glow-btn active:scale-90 transition">
-            GET READY!
+    <div id="overlay" class="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center">
+        <button id="unlock-btn" class="bg-blue-600 px-16 py-8 rounded-full font-black text-2xl shadow-[0_0_20px_#2563eb] active:scale-90 transition">
+            BATTLE START!
         </button>
     </div>
 
-    <div class="text-center">
-        <div class="mb-10 text-2xl font-black italic text-blue-300">SYSTEM READY</div>
-        <button onclick="playMezastarHit()" class="bg-red-600 px-12 py-6 rounded-2xl font-bold text-xl glow-btn">
-            攻擊音效測試
+    <div id="battle-box" class="w-full max-w-sm bg-slate-900 p-8 rounded-[3rem] border-2 border-blue-500/50 text-center">
+        <div id="enemy" class="w-40 h-40 mx-auto bg-contain bg-no-repeat bg-center mb-6" 
+             style="background-image:url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png')"></div>
+        
+        <div id="container" class="flex flex-wrap justify-center min-h-[120px] mb-8 bg-black/30 p-4 rounded-2xl">
+            </div>
+
+        <button onclick="executeAttack()" class="w-full bg-red-600 py-5 rounded-2xl font-black italic text-2xl shadow-[0_6px_0_#991b1b] active:translate-y-1 active:shadow-none transition-all">
+            Z-MOVE ATTACK!
         </button>
     </div>
 
     <script>
-        // 1. 預先建立 Audio 物件 (不要在 function 裡才 new)
-        const hitSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3');
-        const startSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-        const bgm = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3');
+        // 預載 Mezastar 風格高品質音效
+        const sounds = {
+            spawn: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'), // 輕快彈出
+            impact: new Audio('https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3'), // 沉重打擊
+            bgm: new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3')      // 快速節奏
+        };
 
-        // 2. 關鍵解鎖函數
-        document.getElementById('unlock-btn').addEventListener('click', function() {
-            // 在這個同步的點擊事件中，立刻「摸一下」所有音軌
-            hitSound.play().then(() => { hitSound.pause(); hitSound.currentTime = 0; });
-            startSound.play(); // 播放開場音樂
-            
-            bgm.loop = true;
-            bgm.volume = 0.2;
-            bgm.play();
-
+        // 解鎖邏輯
+        document.getElementById('unlock-btn').addEventListener('click', () => {
+            Object.values(sounds).forEach(s => {
+                s.play().then(() => { s.pause(); s.currentTime = 0; });
+            });
+            sounds.bgm.loop = true;
+            sounds.bgm.volume = 0.2;
+            sounds.bgm.play();
             document.getElementById('overlay').style.display = 'none';
+            spawnBlocks(12); // 初始化生成 3x4 方塊
         });
 
-        // 3. 測試播放
-        function playMezastarHit() {
-            // 直接播放預載好的物件，不要有任何邏輯判斷
-            hitSound.currentTime = 0;
-            hitSound.play();
+        // 模擬方塊生成的連鎖音效
+        function spawnBlocks(count) {
+            const container = document.getElementById('container');
+            container.innerHTML = "";
+            for(let i=0; i<count; i++) {
+                setTimeout(() => {
+                    const b = document.createElement('div');
+                    b.className = 'block-unit';
+                    container.appendChild(b);
+                    
+                    // 播放彈出音，稍微調整語調增加隨機感
+                    const s = sounds.spawn.cloneNode();
+                    s.volume = 0.15;
+                    s.play();
+                    
+                    requestAnimationFrame(() => b.classList.add('block-show'));
+                }, i * 70);
+            }
+        }
+
+        // 模擬最終攻擊的震撼感
+        function executeAttack() {
+            // 播放重擊音
+            sounds.impact.currentTime = 0;
+            sounds.impact.volume = 0.6;
+            sounds.impact.play();
+
+            // 視覺震動回饋
+            const box = document.getElementById('battle-box');
+            box.classList.add('impact-shake');
+            setTimeout(() => box.classList.remove('impact-shake'), 200);
+
+            // 攻擊完後清空方塊準備下一回
+            setTimeout(() => spawnBlocks(Math.floor(Math.random()*10) + 5), 1000);
         }
     </script>
 </body>
 </html>
-

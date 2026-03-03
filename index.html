@@ -3,162 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GB Math - Audio System v10.5</title>
+    <title>Mezastar Style Math - v11.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-        
-        :root {
-            --gb-dark: #0f380f;
-            --gb-mid: #306230;
-            --gb-light: #8bac0f;
-            --gb-bright: #9bbc0f;
+        /* 現代感 UI：漸層與發光特效 */
+        .mezastar-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid #3b82f6;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+            border-radius: 2rem;
         }
-
-        body { font-family: 'Press Start 2P', cursive; background: #1a1a1a; }
-        
-        /* GameBoy 螢幕風格 */
-        .gb-screen {
-            background-color: var(--gb-light);
-            border: 20px solid #555;
-            border-radius: 10px 10px 50px 10px;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
-            aspect-ratio: 10 / 9;
-            image-rendering: pixelated;
-        }
-
-        .btn-retro {
-            background: #333;
-            color: white;
-            padding: 10px;
-            border-bottom: 4px solid #000;
-            font-size: 8px;
+        .btn-action {
+            background: linear-gradient(to bottom, #3b82f6, #1d4ed8);
+            box-shadow: 0 4px 0 #172554, 0 10px 20px rgba(0,0,0,0.4);
             transition: all 0.1s;
         }
-        .btn-retro:active { transform: translateY(2px); border-bottom-width: 0; }
+        .btn-action:active { transform: translateY(4px); box-shadow: 0 0 0 #172554; }
         
-        #boot-layer { position: fixed; inset: 0; background: white; z-index: 100; display: flex; align-items: center; justify-content: center; }
+        /* 動態背景 */
+        body { background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%); }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen overflow-hidden">
+<body class="text-white min-h-screen flex items-center justify-center p-6">
 
-    <div id="boot-layer">
-        <div class="text-center">
-            <h1 class="text-blue-800 text-2xl italic font-bold tracking-tighter mb-4">Nintendo</h1>
-            <p class="text-xs text-slate-400">© 1989-1996</p>
-            <button onclick="bootSystem()" class="mt-20 bg-black text-white px-8 py-4 rounded font-mono text-sm animate-pulse">
-                PUSH START BUTTON
-            </button>
+    <div id="overlay" class="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center">
+        <div class="mb-10 text-center animate-bounce">
+            <h1 class="text-5xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">
+                MEZASTAR MATH
+            </h1>
         </div>
+        <button onclick="initMezastarSystem()" class="btn-action px-16 py-6 rounded-full font-black text-2xl">
+            GET READY!
+        </button>
     </div>
 
-    <div class="w-full max-w-sm p-4">
-        <div class="gb-screen p-6 flex flex-col justify-between text-slate-900">
-            <div>
-                <div class="flex justify-between items-center text-[10px] mb-8">
-                    <span>BATTERY ●</span>
-                    <span id="clock">12:00</span>
-                </div>
-                <h1 class="text-center text-xl mb-4">MATH MON</h1>
-                <div class="space-y-2 text-[10px]">
-                    <p id="status-msg">> SELECT MODULE</p>
-                </div>
+    <div class="w-full max-w-lg">
+        <div class="mezastar-card p-8 text-center relative overflow-hidden">
+            <div id="poke-img" class="w-48 h-48 mx-auto bg-contain bg-no-repeat bg-center mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]"
+                 style="background-image:url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png')">
+            </div>
+            
+            <h2 class="text-3xl font-black italic mb-2 text-blue-300">PIKACHU</h2>
+            <div class="w-full bg-slate-800 h-4 rounded-full mb-8 overflow-hidden border border-slate-700">
+                <div id="hp-bar" class="h-full bg-gradient-to-r from-green-400 to-blue-500 w-full transition-all duration-500"></div>
             </div>
 
-            <div class="grid grid-cols-1 gap-2">
-                <button onclick="testSound('pop')" class="border-2 border-slate-900 p-2 text-left text-[10px] hover:bg-slate-400">1. CLICK / POP</button>
-                <button onclick="testSound('hit')" class="border-2 border-slate-900 p-2 text-left text-[10px] hover:bg-slate-400">2. DAMAGE HIT</button>
-                <button onclick="testSound('evo')" class="border-2 border-slate-900 p-2 text-left text-[10px] hover:bg-slate-400">3. EVOLVE BEAT</button>
-                <button onclick="toggleBGM()" class="border-2 border-slate-900 p-2 text-left text-[10px] bg-slate-900 text-white" id="bgm-btn">4. START BGM</button>
-            </div>
-        </div>
-        
-        <div class="mt-10 flex justify-between items-center px-4">
-            <div class="grid grid-cols-3 gap-2 opacity-50">
-                <div class="w-8 h-8 bg-black rounded"></div>
-                <div class="w-8 h-8"></div>
-                <div class="w-8 h-8 bg-black rounded"></div>
-            </div>
-            <div class="flex gap-4">
-                <div class="w-10 h-10 bg-red-900 rounded-full shadow-lg"></div>
-                <div class="w-10 h-10 bg-red-900 rounded-full shadow-lg"></div>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="triggerAction('hit')" class="btn-action p-4 rounded-xl font-bold italic text-sm">ATTACK!</button>
+                <button onclick="triggerAction('pop')" class="btn-action p-4 rounded-xl font-bold italic text-sm text-yellow-300">TAG IN!</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- 【Audio Engine 核心】 ---
-        let audioCtx = null;
-        let bgmTimer = null;
-        let isBGMPlaying = false;
-        let currentStep = 0;
-
-        // 音訊初始化 (iOS 解鎖關鍵)
-        function bootSystem() {
-            window.AudioContext = window.AudioContext || window.webkitAudioContext;
-            audioCtx = new AudioContext();
+        // 【Audio Lab】現代音效引擎 (Mezastar 風格採樣)
+        const MezastarAudio = {
+            // 使用現代、高品質的音效來源
+            samples: {
+                'start': 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3', // 震撼開場
+                'hit': 'https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3',   // 金屬打擊感
+                'pop': 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3',   // 科技感彈出
+                'bgm': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3'       // 動感 BGM
+            },
+            cache: {},
             
-            // 播放經典開機音 "叮！"
-            playTone(400, 'square', 0, 0.1, 0.1);
-            playTone(800, 'square', 0.1, 0.4, 0.1);
+            async init() {
+                window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+                
+                // 預載音效
+                for (let key in this.samples) {
+                    const res = await fetch(this.samples[key]);
+                    const arrayBuffer = await res.arrayBuffer();
+                    this.cache[key] = await this.ctx.decodeAudioData(arrayBuffer);
+                }
+            },
 
-            document.getElementById('boot-layer').style.display = 'none';
+            play(key, vol = 0.5) {
+                if (!this.cache[key]) return;
+                const source = this.ctx.createBufferSource();
+                source.buffer = this.cache[key];
+                const gainNode = this.ctx.createGain();
+                gainNode.gain.value = vol;
+                source.connect(gainNode);
+                gainNode.connect(this.ctx.destination);
+                source.start(0);
+            }
+        };
+
+        async function initMezastarSystem() {
+            document.getElementById('overlay').classList.add('opacity-0');
+            await MezastarAudio.init();
+            MezastarAudio.play('start');
+            
+            // 延遲隱藏遮罩
+            setTimeout(() => {
+                document.getElementById('overlay').style.display = 'none';
+                // 播放動感 BGM
+                const bgm = new Audio(MezastarAudio.samples.bgm);
+                bgm.loop = true;
+                bgm.volume = 0.2;
+                bgm.play();
+            }, 500);
         }
 
-        // 通用震盪器
-        function playTone(freq, type, start, duration, vol, fade = true) {
-            if(!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + start);
-            
-            gain.gain.setValueAtTime(vol, audioCtx.currentTime + start);
-            if(fade) gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + start + duration);
-            
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(audioCtx.currentTime + start);
-            osc.stop(audioCtx.currentTime + start + duration);
-        }
-
-        // --- 【音效庫集錦】 ---
-        function testSound(type) {
-            if(type === 'pop') playTone(880, 'square', 0, 0.05, 0.1);
+        function triggerAction(type) {
+            MezastarAudio.play(type);
             if(type === 'hit') {
-                for(let i=0; i<5; i++) playTone(200 - (i*20), 'sawtooth', i*0.02, 0.1, 0.1);
-            }
-            if(type === 'evo') {
-                for(let i=0; i<8; i++) playTone(300 + (i*100), 'square', i*0.1, 0.1, 0.05);
-            }
-        }
-
-        // --- 【BGM 引擎】 ---
-        const tempo = 120;
-        const stepTime = 60 / tempo / 2; // 八分音符
-
-        function bgmLoop() {
-            const bass = [110, 110, 146, 110, 164, 110, 146, 123];
-            const time = audioCtx.currentTime;
-            
-            // 預約下一小節
-            playTone(bass[currentStep % 8], 'triangle', 0, stepTime, 0.2);
-            if(currentStep % 4 === 0) playTone(440, 'square', 0, 0.05, 0.05);
-
-            currentStep++;
-            bgmTimer = setTimeout(bgmLoop, stepTime * 1000);
-        }
-
-        function toggleBGM() {
-            if(isBGMPlaying) {
-                clearTimeout(bgmTimer);
-                isBGMPlaying = false;
-                document.getElementById('bgm-btn').innerText = "4. START BGM";
-            } else {
-                isBGMPlaying = true;
-                bgmLoop();
-                document.getElementById('bgm-btn').innerText = "4. STOP BGM";
+                const bar = document.getElementById('hp-bar');
+                bar.style.width = (parseInt(bar.style.width) || 100) - 10 + "%";
             }
         }
     </script>

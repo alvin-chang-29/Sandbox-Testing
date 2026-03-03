@@ -3,97 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pokémon Cry System - v13.5</title>
+    <title>Mezastar Math Ultimate Beta</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <style>
-        .poke-card {
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            cursor: pointer;
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap');
+        body { font-family: 'Orbitron', sans-serif; background: #020617; -webkit-tap-highlight-color: transparent; }
+        .mezastar-border { border: 2px solid #3b82f6; box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+        .hp-bar { transition: width 0.5s ease-out; background: linear-gradient(90deg, #10b981, #3b82f6); }
+        .block-unit {
+            width: 45px; height: 45px; margin: 4px; border-radius: 8px;
+            background: linear-gradient(135deg, #fbbf24, #d97706);
+            transform: scale(0); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .poke-card:active { transform: scale(0.9) rotate(-5deg); }
-        .cry-wave {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            border: 4px solid #fbbf24; border-radius: 50%;
-            animation: ripple 0.6s ease-out forwards;
-            opacity: 0; pointer-events: none;
-        }
-        @keyframes ripple {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(1.5); opacity: 0; }
-        }
+        .block-show { transform: scale(1); }
+        .text-pop { animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
-<body class="bg-slate-950 text-white min-h-screen flex flex-col items-center justify-center p-6">
+<body class="text-white min-h-screen flex flex-col items-center justify-center p-4">
 
-    <div id="overlay" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
-        <button id="btn-unlock" class="bg-blue-600 px-16 py-8 rounded-full font-black text-2xl shadow-2xl">
-            LOAD POKE-CRIES
-        </button>
+    <div id="overlay" class="fixed inset-0 bg-black z-[100] flex flex-col items-center justify-center">
+        <h1 class="text-4xl font-black italic text-blue-500 mb-8">MEZASTAR MATH</h1>
+        <button id="start-btn" class="bg-blue-600 px-16 py-6 rounded-full font-black text-2xl shadow-2xl active:scale-95 transition">GET READY!</button>
     </div>
 
-    <div class="text-center w-full max-w-lg">
-        <h2 class="text-blue-400 font-black italic tracking-widest mb-10 text-xl">點擊寶可夢聽聽看叫聲！</h2>
-
-        <div class="grid grid-cols-2 gap-8">
-            <div onclick="playCry(25)" class="poke-card relative bg-slate-800 p-6 rounded-3xl border-2 border-yellow-500/30">
-                <div id="ripple-25"></div>
-                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" class="w-32 h-32 mx-auto drop-shadow-xl">
-                <p class="mt-4 font-black text-yellow-500">PIKACHU</p>
+    <div class="w-full max-w-md">
+        <div class="mezastar-border bg-slate-900/90 p-6 rounded-[2.5rem] relative overflow-hidden">
+            <div class="flex justify-between items-end mb-4">
+                <div>
+                    <h2 id="poke-name" class="text-xl font-black italic text-blue-300">CHARIZARD</h2>
+                    <div class="w-48 bg-slate-800 h-3 rounded-full mt-2 border border-slate-700">
+                        <div id="hp-indicator" class="hp-bar h-full w-full"></div>
+                    </div>
+                </div>
+                <div class="text-right text-[10px] text-slate-500">SCORE: <span id="score-val">0</span></div>
             </div>
 
-            <div onclick="playCry(6)" class="poke-card relative bg-slate-800 p-6 rounded-3xl border-2 border-red-500/30">
-                <div id="ripple-6"></div>
-                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png" class="w-32 h-32 mx-auto drop-shadow-xl">
-                <p class="mt-4 font-black text-red-500">CHARIZARD</p>
+            <div id="stage" class="relative min-h-[180px] bg-black/20 rounded-3xl p-4 flex flex-wrap justify-center content-start mb-6">
+                <div id="quest-text" class="absolute inset-0 flex items-center justify-center text-5xl font-black italic text-yellow-400 pointer-events-none"></div>
             </div>
-        </div>
 
-        <div class="mt-16 p-4 bg-slate-900 rounded-2xl border border-slate-700">
-            <p class="text-xs text-slate-500 leading-relaxed">
-                提示：皮卡丘會發出可愛的人聲，<br>噴火龍則是經典的 8-bit 電子咆哮音。
-            </p>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="col-span-2 bg-slate-800 p-4 rounded-2xl flex justify-between items-center">
+                    <span id="formula" class="text-2xl font-black">? × ? =</span>
+                    <input id="ans-input" type="number" pattern="\d*" class="bg-black border-2 border-blue-500 w-24 p-2 text-center text-2xl rounded-xl focus:outline-none">
+                </div>
+                <button onclick="checkAnswer()" class="bg-blue-600 py-6 rounded-2xl font-black italic text-xl shadow-lg active:translate-y-1">ATTACK!</button>
+                <button onclick="nextQuestion()" class="bg-slate-700 py-6 rounded-2xl font-bold text-sm text-slate-300">SKIP</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // 音效管理器
-        const cries = {
-            // 皮卡丘 (使用人聲採樣)
-            25: new Audio('https://www.myinstants.com/media/sounds/pikachu_hi.mp3'),
-            // 噴火龍 (使用官方原始叫聲音效)
-            6: new Audio('https://play.pokemonshowdown.com/audio/cries/charizard.mp3')
+        // 設定檔 (包含叫聲存根)
+        const CONFIG = {
+            enableCries: false, // 預設關閉叫聲
+            targetEvolutionScore: 3 // 測試用：滿3分進化
         };
 
-        const sfxPop = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
+        // 音效引擎
+        const sfx = {
+            bgm: new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3'),
+            pop: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'),
+            hit: new Audio('https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3'),
+            evolve: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3')
+        };
 
-        document.getElementById('btn-unlock').onclick = () => {
-            // 預解鎖所有叫聲
-            Object.values(cries).forEach(c => {
-                c.play().then(() => { c.pause(); c.currentTime = 0; });
-            });
+        const db = new Dexie("MezastarMathDB");
+        db.version(1).stores({ progress: '++id, date, score' });
+
+        let currentAns = 0;
+        let score = 0;
+
+        document.getElementById('start-btn').onclick = () => {
+            // 同步解鎖音效
+            Object.values(sfx).forEach(s => { s.play().then(()=>s.pause()); });
+            sfx.bgm.loop = true; sfx.bgm.volume = 0.1; sfx.bgm.play();
             document.getElementById('overlay').style.display = 'none';
+            nextQuestion();
         };
 
-        function playCry(id) {
-            // 1. 播放叫聲
-            const cry = cries[id];
-            if(cry) {
-                cry.currentTime = 0;
-                cry.volume = 0.8;
-                cry.play();
+        function nextQuestion() {
+            const a = Math.floor(Math.random() * 8) + 2;
+            const b = Math.floor(Math.random() * 8) + 2;
+            currentAns = a * b;
+            document.getElementById('formula').innerText = `${a} × ${b} =`;
+            document.getElementById('ans-input').value = "";
+            document.getElementById('ans-input').focus();
+            
+            const stage = document.getElementById('stage');
+            stage.querySelectorAll('.block-unit').forEach(el => el.remove());
+            for(let i=0; i < (a*b); i++) {
+                setTimeout(() => {
+                    const block = document.createElement('div');
+                    block.className = 'block-unit';
+                    stage.appendChild(block);
+                    sfx.pop.cloneNode().play();
+                    requestAnimationFrame(() => block.classList.add('block-show'));
+                }, i * 15);
             }
+        }
 
-            // 2. 播放基礎點擊音
-            sfxPop.currentTime = 0;
-            sfxPop.volume = 0.2;
-            sfxPop.play();
+        function checkAnswer() {
+            const userAns = parseInt(document.getElementById('ans-input').value);
+            if(userAns === currentAns) {
+                score++;
+                document.getElementById('score-val').innerText = score;
+                sfx.hit.currentTime = 0; sfx.hit.play();
+                
+                if(score >= CONFIG.targetEvolutionScore) {
+                    triggerEvolution();
+                } else {
+                    showEffect("EXCELLENT!");
+                    setTimeout(nextQuestion, 1000);
+                }
+            } else {
+                showEffect("MISS!", "text-red-500");
+            }
+        }
 
-            // 3. 視覺波紋特效
-            const rippleContainer = document.getElementById(`ripple-${id}`);
-            const ripple = document.createElement('div');
-            ripple.className = 'cry-wave';
-            rippleContainer.appendChild(ripple);
-            setTimeout(() => ripple.remove(), 600);
+        function showEffect(txt, color = "text-yellow-400") {
+            const q = document.getElementById('quest-text');
+            q.innerText = txt;
+            q.className = `absolute inset-0 flex items-center justify-center text-5xl font-black italic ${color} text-pop`;
+            setTimeout(() => { q.innerText = ""; }, 800);
+        }
+
+        function triggerEvolution() {
+            sfx.bgm.pause();
+            sfx.evolve.play();
+            showEffect("EVOLUTION!");
+            document.getElementById('stage').classList.add('animate-pulse');
+            
+            setTimeout(() => {
+                db.progress.add({ date: new Date().toLocaleString(), score: score });
+                alert("進化成功！守護靈進化為更強大的形態！");
+                location.reload();
+            }, 4000);
         }
     </script>
 </body>

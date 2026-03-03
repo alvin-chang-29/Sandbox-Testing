@@ -3,99 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mezastar Battle Impact - v13.0</title>
+    <title>Mezastar Voice Master - v13.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .impact-shake { animation: shake 0.2s ease-in-out; }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px) rotate(-1deg); }
-            75% { transform: translateX(10px) rotate(1deg); }
+        @import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
+        .voice-text {
+            font-family: 'Bungee', cursive;
+            animation: text-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .block-unit {
-            width: 40px; height: 40px; margin: 4px; border-radius: 8px;
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            box-shadow: 0 4px 0 #1e3a8a, 0 8px 15px rgba(0,0,0,0.3);
-            transform: scale(0);
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        @keyframes text-pop {
+            0% { transform: scale(0.5) rotate(-10deg); opacity: 0; }
+            100% { transform: scale(1) rotate(5deg); opacity: 1; }
         }
-        .block-show { transform: scale(1); }
+        .combo-glow { text-shadow: 0 0 20px #fbbf24; }
     </style>
 </head>
-<body class="bg-slate-950 text-white min-h-screen flex flex-col items-center justify-center p-6">
+<body class="bg-slate-950 text-white min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden">
 
-    <div id="overlay" class="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center">
-        <button id="unlock-btn" class="bg-blue-600 px-16 py-8 rounded-full font-black text-2xl shadow-[0_0_20px_#2563eb] active:scale-90 transition">
-            BATTLE START!
+    <div id="overlay" class="fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center">
+        <h1 class="text-blue-500 font-black text-4xl mb-12 italic">VOICE SYSTEM</h1>
+        <button id="btn-start" class="bg-yellow-500 text-black px-16 py-8 rounded-full font-black text-2xl animate-pulse">
+            GET READY!
         </button>
     </div>
 
-    <div id="battle-box" class="w-full max-w-sm bg-slate-900 p-8 rounded-[3rem] border-2 border-blue-500/50 text-center">
-        <div id="enemy" class="w-40 h-40 mx-auto bg-contain bg-no-repeat bg-center mb-6" 
-             style="background-image:url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png')"></div>
-        
-        <div id="container" class="flex flex-wrap justify-center min-h-[120px] mb-8 bg-black/30 p-4 rounded-2xl">
+    <div class="w-full max-w-sm text-center relative">
+        <div id="voice-display" class="h-20 flex items-center justify-center mb-4">
             </div>
 
-        <button onclick="executeAttack()" class="w-full bg-red-600 py-5 rounded-2xl font-black italic text-2xl shadow-[0_6px_0_#991b1b] active:translate-y-1 active:shadow-none transition-all">
-            Z-MOVE ATTACK!
-        </button>
+        <div class="bg-slate-900 p-8 rounded-[3rem] border-4 border-blue-600 shadow-2xl relative">
+            <div class="absolute -top-6 -right-4 bg-yellow-500 text-black px-4 py-2 rounded-full font-black italic transform rotate-12">
+                COMBO: <span id="combo-count">0</span>
+            </div>
+            
+            <div class="w-full aspect-square bg-slate-800 rounded-2xl mb-8 flex items-center justify-center border-2 border-slate-700">
+                <p class="text-6xl font-black italic text-blue-400">3 × 4</p>
+            </div>
+
+            <button onclick="successAction()" class="w-full bg-gradient-to-b from-blue-400 to-blue-700 py-6 rounded-2xl font-black italic text-3xl shadow-lg active:scale-95 transition">
+                ATTACK!
+            </button>
+        </div>
     </div>
 
     <script>
-        // 預載 Mezastar 風格高品質音效
+        // 音效與語音庫 (使用 Web Audio 合成語音或高品質採樣)
         const sounds = {
-            spawn: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'), // 輕快彈出
-            impact: new Audio('https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3'), // 沉重打擊
-            bgm: new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3')      // 快速節奏
+            bgm: new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3'),
+            impact: new Audio('https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3')
         };
 
-        // 解鎖邏輯
-        document.getElementById('unlock-btn').addEventListener('click', () => {
-            Object.values(sounds).forEach(s => {
-                s.play().then(() => { s.pause(); s.currentTime = 0; });
-            });
+        // 語音短句庫 (模擬熱血旁白)
+        const voicePhrases = ["GREAT!", "EXCELLENT!", "AMAZING!", "YOU GOT IT!", "POWERFUL!"];
+        let combo = 0;
+
+        document.getElementById('btn-start').onclick = () => {
             sounds.bgm.loop = true;
-            sounds.bgm.volume = 0.2;
+            sounds.bgm.volume = 0.1;
             sounds.bgm.play();
             document.getElementById('overlay').style.display = 'none';
-            spawnBlocks(12); // 初始化生成 3x4 方塊
-        });
+        };
 
-        // 模擬方塊生成的連鎖音效
-        function spawnBlocks(count) {
-            const container = document.getElementById('container');
-            container.innerHTML = "";
-            for(let i=0; i<count; i++) {
-                setTimeout(() => {
-                    const b = document.createElement('div');
-                    b.className = 'block-unit';
-                    container.appendChild(b);
-                    
-                    // 播放彈出音，稍微調整語調增加隨機感
-                    const s = sounds.spawn.cloneNode();
-                    s.volume = 0.15;
-                    s.play();
-                    
-                    requestAnimationFrame(() => b.classList.add('block-show'));
-                }, i * 70);
-            }
-        }
-
-        // 模擬最終攻擊的震撼感
-        function executeAttack() {
-            // 播放重擊音
+        function successAction() {
+            // 1. 播放攻擊音效
             sounds.impact.currentTime = 0;
-            sounds.impact.volume = 0.6;
             sounds.impact.play();
 
-            // 視覺震動回饋
-            const box = document.getElementById('battle-box');
-            box.classList.add('impact-shake');
-            setTimeout(() => box.classList.remove('impact-shake'), 200);
+            // 2. 更新 Combo
+            combo++;
+            document.getElementById('combo-count').innerText = combo;
 
-            // 攻擊完後清空方塊準備下一回
-            setTimeout(() => spawnBlocks(Math.floor(Math.random()*10) + 5), 1000);
+            // 3. 語音激勵 (使用瀏覽器內建語音合成，確保 100% 成功且不佔空間)
+            const speech = new SpeechSynthesisUtterance();
+            const phrase = voicePhrases[Math.floor(Math.random() * voicePhrases.length)];
+            
+            speech.text = phrase;
+            speech.lang = 'en-US';
+            speech.rate = 1.2; // 語速快一點比較熱血
+            speech.pitch = 1.1; // 音調高一點
+            speech.volume = 1.0;
+
+            // 語音播放時稍微降低 BGM
+            sounds.bgm.volume = 0.03;
+            window.speechSynthesis.speak(speech);
+            speech.onend = () => { sounds.bgm.volume = 0.1; };
+
+            // 4. 視覺彈出
+            const display = document.getElementById('voice-display');
+            display.innerHTML = `<h2 class="voice-text text-5xl font-black text-yellow-400 italic combo-glow">${phrase}</h2>`;
+            
+            // 1秒後清空
+            setTimeout(() => { display.innerHTML = ""; }, 1000);
         }
     </script>
 </body>

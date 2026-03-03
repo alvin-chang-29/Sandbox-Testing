@@ -2,155 +2,202 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>戰鬥紀錄與分析 - v9.5 測試版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mezastar Math - Ultimate Assembly</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap');
+        body { font-family: 'Orbitron', sans-serif; background: #020617; color: white; overflow: hidden; }
+        
+        .mezastar-ui { background: rgba(15, 23, 42, 0.9); border: 2px solid #3b82f6; box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+        .tab-btn { transition: all 0.3s; border-bottom: 3px solid transparent; }
+        .tab-active { border-bottom: 3px solid #3b82f6; color: #3b82f6; }
+        
+        /* Ｑ彈方塊 [Content Lab] */
+        .block-unit {
+            width: 35px; height: 35px; margin: 2px; border-radius: 6px;
+            background: linear-gradient(135deg, #fbbf24, #d97706);
+            transform: scale(0); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .block-show { transform: scale(1); }
+
+        /* 進化光芒 [Engine Lab] */
+        #evo-light {
+            position: fixed; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 1000;
+        }
+        .evo-flash-anim { animation: flash 3s forwards; }
+        @keyframes flash { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+
+        .hidden { display: none; }
+    </style>
 </head>
-<body class="bg-slate-950 text-white p-6 md:p-12">
+<body>
 
-    <div class="max-w-5xl mx-auto">
-        <header class="flex justify-between items-center mb-10">
-            <div>
-                <h1 class="text-3xl font-black text-blue-400 tracking-wider">戰鬥紀錄與分析系統</h1>
-                <p class="text-slate-500 mt-2">分析你的數學戰力與寶可夢成長紀錄</p>
-            </div>
-            <button onclick="simulateBattleData()" class="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-full font-bold transition-all active:scale-95">
-                模擬產生一場戰鬥數據
-            </button>
-        </header>
+    <div id="evo-light"></div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2 bg-slate-900 p-8 rounded-[2rem] border-2 border-slate-800">
-                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
-                    <span class="w-2 h-6 bg-red-500 block"></span> 數學弱點偵測 (錯誤題數統計)
-                </h3>
-                <div class="h-64">
-                    <canvas id="weaknessChart"></canvas>
+    <div class="flex flex-col h-screen max-w-md mx-auto relative">
+        
+        <nav class="flex justify-around p-4 bg-slate-900 border-b border-slate-800 z-50">
+            <button onclick="switchTab('battle')" id="nav-battle" class="tab-btn tab-active font-black italic">BATTLE</button>
+            <button onclick="switchTab('bag')" id="nav-bag" class="tab-btn font-black italic">BAG</button>
+            <button onclick="switchTab('data')" id="nav-data" class="tab-btn font-black italic">DATA</button>
+        </nav>
+
+        <main class="flex-grow overflow-y-auto p-4 relative">
+            
+            <section id="tab-battle" class="space-y-4">
+                <div class="mezastar-ui rounded-[2rem] p-6 relative">
+                    <div id="combat-fx" class="absolute inset-0 flex items-center justify-center pointer-events-none z-50"></div>
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-16 h-16 bg-slate-800 rounded-xl p-1">
+                                <img id="active-poke-img" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png" class="w-full h-full object-contain">
+                            </div>
+                            <h2 id="active-poke-name" class="font-black italic text-blue-400">小火龍</h2>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[10px] text-slate-500 uppercase">EXP Gauge</div>
+                            <div class="w-24 bg-slate-800 h-2 rounded-full overflow-hidden mt-1">
+                                <div id="exp-bar" class="bg-blue-500 h-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="block-stage" class="min-h-[160px] bg-black/40 rounded-3xl p-4 flex flex-wrap justify-center content-start"></div>
                 </div>
-            </div>
 
-            <div class="bg-slate-900 p-8 rounded-[2rem] border-2 border-slate-800 flex flex-col justify-between">
-                <div>
-                    <h3 class="text-xl font-bold mb-6 italic text-yellow-500">成就勳章</h3>
-                    <div id="medals" class="grid grid-cols-2 gap-4">
+                <div class="mezastar-ui rounded-3xl p-6 space-y-4">
+                    <div class="flex justify-between items-center bg-black/50 p-4 rounded-2xl border border-blue-900">
+                        <span id="formula" class="text-3xl font-black italic text-white">4 × 3 = ?</span>
+                        <input id="ans-input" type="number" pattern="\d*" class="w-24 bg-transparent border-b-2 border-blue-500 text-3xl text-center focus:outline-none">
+                    </div>
+                    <button onclick="processAttack()" class="w-full bg-blue-600 py-6 rounded-2xl font-black italic text-2xl shadow-lg active:scale-95 transition">ATTACK!</button>
+                </div>
+            </section>
+
+            <section id="tab-bag" class="hidden space-y-4">
+                <h2 class="text-2xl font-black italic text-blue-500 mb-4">COLLECTION</h2>
+                <div id="poke-list" class="grid grid-cols-2 gap-4">
+                    </div>
+            </section>
+
+            <section id="tab-data" class="hidden space-y-4">
+                <h2 class="text-2xl font-black italic text-cyan-400 mb-4">ANALYTICS</h2>
+                <div class="mezastar-ui rounded-2xl p-6">
+                    <canvas id="statChart" class="w-full h-48"></canvas>
+                    <div id="history-log" class="mt-6 space-y-2 text-xs">
                         </div>
                 </div>
-                <div class="mt-8 pt-8 border-t border-slate-800">
-                    <p class="text-slate-500 text-sm">平均 KO 時間</p>
-                    <p id="avg-time" class="text-4xl font-black text-white">-- s</p>
-                </div>
-            </div>
-
-            <div class="lg:col-span-3 bg-slate-900 p-8 rounded-[2rem] border-2 border-slate-800">
-                <h3 class="text-xl font-bold mb-6">最近對戰日誌</h3>
-                <div id="battle-list" class="space-y-4 max-h-80 overflow-y-auto pr-4">
-                    </div>
-            </div>
-        </div>
+            </section>
+        </main>
     </div>
 
     <script>
-        // 1. 初始化 Dexie
-        const db = new Dexie("PokemonAnalysisDB");
-        db.version(1).stores({
-            battle_logs: '++id, date, enemyName, result, totalTime, errors'
-        });
+        // --- 數據庫初始化 [Analytics Lab] ---
+        const db = new Dexie("MezastarUltimateDB");
+        db.version(1).stores({ logs: '++id, timestamp, formula, isCorrect, timeTaken', collection: 'id, name, level, exp' });
 
-        let myChart;
+        // --- 核心遊戲變數 ---
+        let currentAns = 0, currentExp = 0, currentLevel = 1;
+        let startTime = Date.now();
+        const POKEDEX = [
+            { id: 4, name: "小火龍", evolutions: [4, 5, 6] },
+            { id: 7, name: "傑尼龜", evolutions: [7, 8, 9] },
+            { id: 1, name: "妙蛙種子", evolutions: [1, 2, 3] }
+        ];
+        let myTeam = POKEDEX[0];
 
-        // 2. 模擬數據產生
-        async function simulateBattleData() {
-            const enemies = ["超夢", "噴火龍", "皮卡丘", "烈空坐"];
-            const results = ["Success", "Escape", "Defeat"];
-            const possibleErrors = ["7x8", "8x9", "6x7", "7x6", "9x4", "8x6"];
-            
-            await db.battle_logs.add({
-                date: new Date().toLocaleDateString(),
-                enemyName: enemies[Math.floor(Math.random()*enemies.length)],
-                result: results[Math.floor(Math.random()*results.length)],
-                totalTime: Math.floor(Math.random() * 60) + 5,
-                errors: [possibleErrors[Math.floor(Math.random()*possibleErrors.length)]]
+        // --- 標籤切換系統 ---
+        function switchTab(tabName) {
+            ['battle', 'bag', 'data'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                document.getElementById(`nav-${t}`).classList.remove('tab-active');
             });
-            renderAnalysis();
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.getElementById(`nav-${tabName}`).classList.add('tab-active');
+            if(tabName === 'data') renderAnalytics();
+            if(tabName === 'bag') renderBag();
         }
 
-        // 3. 渲染分析畫面
-        async function renderAnalysis() {
-            const logs = await db.battle_logs.toArray();
-            if (logs.length === 0) return;
+        // --- 戰鬥與方塊生成 [Content Lab] ---
+        function generateQuestion() {
+            const a = Math.floor(Math.random() * 8) + 2;
+            const b = Math.floor(Math.random() * 8) + 2;
+            currentAns = a * b;
+            document.getElementById('formula').innerText = `${a} × ${b} = ?`;
+            document.getElementById('ans-input').value = "";
+            startTime = Date.now();
 
-            // 統計錯誤分布
-            const errorStats = {};
-            let totalTime = 0;
-            let successCount = 0;
+            const stage = document.getElementById('block-stage');
+            stage.innerHTML = "";
+            for(let i=0; i<currentAns; i++) {
+                setTimeout(() => {
+                    const b = document.createElement('div');
+                    b.className = 'block-unit';
+                    stage.appendChild(b);
+                    requestAnimationFrame(() => b.classList.add('block-show'));
+                }, i * 20);
+            }
+        }
 
-            logs.forEach(log => {
-                totalTime += log.totalTime;
-                if(log.result === 'Success') successCount++;
-                log.errors.forEach(err => {
-                    const num = err.split('x')[0]; // 抓取被乘數作為統計基準
-                    errorStats[num] = (errorStats[num] || 0) + 1;
-                });
-            });
+        async function processAttack() {
+            const userAns = parseInt(document.getElementById('ans-input').value);
+            const timeTaken = (Date.now() - startTime) / 1000;
+            const isCorrect = userAns === currentAns;
 
-            // 更新圖表
-            updateChart(errorStats);
+            // 紀錄數據 [Analytics Lab]
+            await db.logs.add({ timestamp: Date.now(), formula: document.getElementById('formula').innerText, isCorrect, timeTaken });
 
-            // 更新平均時間
-            document.getElementById('avg-time').innerText = Math.round(totalTime / logs.length);
+            if(isCorrect) {
+                currentExp += 25;
+                document.getElementById('exp-bar').style.width = currentExp + "%";
+                showCombatText("EXCELLENT!", "text-yellow-400");
+                if(currentExp >= 100) triggerEvolution();
+                else setTimeout(generateQuestion, 1200);
+            } else {
+                showCombatText("MISS!", "text-red-500");
+            }
+        }
 
-            // 更新列表
-            const list = document.getElementById('battle-list');
-            list.innerHTML = logs.reverse().map(log => `
-                <div class="bg-black/40 p-4 rounded-2xl border-l-4 ${log.result === 'Success' ? 'border-green-500' : 'border-red-500'} flex justify-between items-center">
-                    <div>
-                        <span class="font-bold text-lg">${log.enemyName}</span>
-                        <span class="ml-4 text-xs text-slate-500">${log.date}</span>
-                        <div class="text-sm mt-1">
-                            ${log.errors.map(e => `<span class="text-red-400 mr-2">✘ ${e}</span>`).join('')}
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <p class="font-black ${log.result === 'Success' ? 'text-green-400' : 'text-red-400'}">${log.result}</p>
-                        <p class="text-xs text-slate-500">${log.totalTime}s</p>
-                    </div>
+        // --- 進化儀式 [Engine Lab] ---
+        function triggerEvolution() {
+            const light = document.getElementById('evo-light');
+            light.classList.add('evo-flash-anim');
+            showCombatText("EVOLVING!", "text-purple-400");
+
+            setTimeout(() => {
+                currentLevel = Math.min(3, currentLevel + 1);
+                currentExp = 0;
+                document.getElementById('exp-bar').style.width = "0%";
+                const newId = myTeam.evolutions[currentLevel - 1];
+                document.getElementById('active-poke-img').src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${newId}.png`;
+                
+                light.classList.remove('evo-flash-anim');
+                generateQuestion();
+            }, 3000);
+        }
+
+        function showCombatText(txt, color) {
+            const fx = document.getElementById('combat-fx');
+            fx.innerHTML = `<h2 class="text-4xl font-black italic ${color} animate-bounce">${txt}</h2>`;
+            setTimeout(() => fx.innerHTML = "", 1000);
+        }
+
+        // --- 數據呈現 [Analytics Lab] ---
+        async function renderAnalytics() {
+            const logs = await db.logs.orderBy('timestamp').reverse().limit(5).toArray();
+            const history = document.getElementById('history-log');
+            history.innerHTML = logs.map(l => `
+                <div class="flex justify-between border-b border-slate-800 pb-1">
+                    <span>${l.formula}</span>
+                    <span class="${l.isCorrect ? 'text-green-500' : 'text-red-500'}">${l.isCorrect ? 'SUCCESS' : 'FAIL'} (${l.timeTaken}s)</span>
                 </div>
             `).join('');
         }
 
-        function updateChart(stats) {
-            const ctx = document.getElementById('weaknessChart').getContext('2d');
-            const labels = ['2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x'];
-            const data = labels.map(l => stats[l[0]] || 0);
-
-            if (myChart) myChart.destroy();
-            myChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '錯誤次數',
-                        data: data,
-                        backgroundColor: 'rgba(239, 68, 68, 0.5)',
-                        borderColor: '#ef4444',
-                        borderWidth: 2,
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
-                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
-                    },
-                    plugins: { legend: { display: false } }
-                }
-            });
-        }
-
-        renderAnalysis();
+        // 初始化
+        generateQuestion();
     </script>
 </body>
 </html>

@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mezastar Math: Ultimate v34.0</title>
+    <title>Mezastar Math: Learning v35.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+TC:wght@900&display=swap');
         body { font-family: 'Orbitron', 'Noto Sans TC', sans-serif; background: #020617; color: white; overflow: hidden; user-select: none; }
         
-        /* 視覺特效區 */
+        /* 視覺特效 */
         .burst-stage { perspective: 1200px; position: relative; width: 100vw; height: 50vh; overflow: hidden; }
         .poke-burst-unit { position: absolute; width: 150px; height: 150px; top: 50%; left: 50%; margin: -75px; opacity: 0; animation: burst-fly 3s ease-in infinite; }
         @keyframes burst-fly { 0% { transform: translateZ(-1000px) scale(0); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateZ(1200px) scale(8); opacity: 0; } }
@@ -27,13 +27,16 @@
         .guide-flash { animation: guide-pulse 0.6s infinite alternate; border: 4px solid #facc15 !important; color: #facc15 !important; }
         @keyframes guide-pulse { from { opacity: 1; filter: brightness(1.2); } to { opacity: 0.3; filter: brightness(2.5); } }
         
-        /* 佈局組件 */
-        .scene { position: absolute; inset: 0; transition: opacity 0.5s; background: #020617; }
-        .hidden { display: none !important; }
-        .poke-info-box { text-align: center; background: rgba(0,0,0,0.8); padding: 12px; border-radius: 1.5rem; border: 2px solid rgba(255,255,255,0.1); width: 100%; min-height: 140px; display: flex; flex-direction: column; justify-content: center; }
-        .hp-fill { background: #ef4444; transition: width 1.5s ease-in-out; }
+        /* 果凍方塊 */
         .block-unit { width: 90%; height: 90%; margin: auto; border-radius: 8px; background: radial-gradient(circle at 30% 30%, #fbbf24, #d97706); transform: scale(0); transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .block-show { transform: scale(1); }
+        .ans-critical { animation: ans-impact 0.6s infinite alternate; text-shadow: 0 0 40px #facc15; }
+        @keyframes ans-impact { from { transform: scale(1.1); filter: brightness(1.5); } to { transform: scale(1.4); filter: brightness(2.5); } }
+
+        .scene { position: absolute; inset: 0; transition: opacity 0.5s; background: #020617; }
+        .hidden { display: none !important; }
+        .poke-info-box { text-align: center; background: rgba(0,0,0,0.8); padding: 12px; border-radius: 1.5rem; border: 2px solid rgba(255,255,255,0.1); width: 100%; min-height: 140px; }
+        .hp-fill { background: #ef4444; transition: width 0.5s ease-out; }
     </style>
 </head>
 <body>
@@ -59,14 +62,13 @@
             <div id="enemy-box" class="flex flex-col items-center w-1/4">
                 <div id="enemy-sprite" class="poke-large bg-contain bg-no-repeat bg-center aura-glow text-red-500"></div>
                 <div class="poke-info-box mt-4">
-                    <p id="e-name-zh" class="text-3xl font-black mb-1 text-white">載入中...</p>
-                    <p id="e-name-en" class="text-[10px] text-slate-300 font-bold uppercase tracking-widest leading-none"></p>
-                    <p id="e-name-jp" class="text-[10px] text-slate-400 font-bold leading-tight mb-1"></p>
-                    <p id="e-type" class="text-xs text-yellow-500 font-bold"></p>
+                    <p id="e-name-zh" class="text-2xl font-black mb-1 text-white">---</p>
+                    <p id="e-name-en" class="text-[10px] text-slate-300 font-bold uppercase tracking-widest leading-none">---</p>
+                    <p id="e-name-jp" class="text-[10px] text-slate-400 font-bold leading-tight mb-1">---</p>
+                    <p id="e-type" class="text-xs text-yellow-500 font-bold">---</p>
                     <div class="w-full h-5 bg-red-950 rounded-full mt-3 overflow-hidden border border-white">
                         <div id="e-hp" class="hp-fill h-full w-full"></div>
                     </div>
-                    <button onclick="refreshEnemy()" class="mt-4 bg-slate-800 px-6 py-2 rounded-full text-[10px] border border-slate-600">挑戰其他寶可夢</button>
                 </div>
             </div>
 
@@ -75,19 +77,16 @@
                     <div id="grid" class="grid grid-cols-10 grid-rows-10 gap-1 h-full w-full"></div>
                     <div id="block-layer" class="absolute inset-0 p-2 grid grid-cols-10 grid-rows-10 gap-1 pointer-events-none"></div>
                 </div>
-                <button id="btn-go" onclick="startCombat()" class="bg-blue-600 mt-24 px-12 py-4 rounded-2xl font-black italic text-2xl border-b-[8px] border-blue-900 shadow-2xl">上吧！<span class="p-name-zh">路卡利歐</span></button>
+                <button id="btn-go" onclick="startCombat()" class="bg-blue-600 mt-24 px-12 py-4 rounded-2xl font-black italic text-2xl border-b-[8px] border-blue-900 shadow-2xl">上吧！<span class="p-name-zh">皮卡丘</span></button>
             </div>
 
             <div id="player-box" class="flex flex-col items-center w-1/4">
                 <div id="player-sprite" class="poke-large bg-contain bg-no-repeat bg-center aura-glow text-blue-500" style="transform: scaleX(-1);"></div>
                 <div class="poke-info-box mt-4">
-                    <p class="p-name-zh text-3xl font-black text-blue-400 mb-1">路卡利歐</p>
-                    <p id="p-name-en" class="text-[10px] text-slate-300 font-bold uppercase tracking-widest leading-none">LUCARIO</p>
-                    <p id="p-name-jp" class="text-[10px] text-slate-400 font-bold leading-tight mb-1">ルカリオ</p>
-                    <p id="p-type" class="text-xs text-blue-500 font-bold">👊 格鬥系</p>
-                    <div class="w-full h-5 bg-blue-950 rounded-full mt-3 overflow-hidden border border-white">
-                        <div id="p-hp" class="hp-fill h-full w-full"></div>
-                    </div>
+                    <p class="p-name-zh text-2xl font-black text-blue-400 mb-1">---</p>
+                    <p id="p-name-en" class="text-[10px] text-slate-300 font-bold uppercase leading-none">---</p>
+                    <p id="p-name-jp" class="text-[10px] text-slate-400 font-bold leading-tight mb-1">---</p>
+                    <p id="p-type" class="text-xs text-blue-500 font-bold">---</p>
                     <button onclick="openBag()" class="mt-4 bg-slate-800 px-10 py-3 rounded-2xl border-2 border-slate-500 active:scale-90 transition">🎒 背包</button>
                 </div>
             </div>
@@ -96,17 +95,14 @@
 
     <div id="scene-capture" class="scene hidden flex flex-col items-center justify-center z-[2000] p-10">
         <div id="cap-sprite" class="w-[450px] h-[450px] bg-contain bg-no-repeat bg-center mb-10 animate-bounce"></div>
-        <div class="flex items-center gap-12 mb-10">
-            <div class="w-32 h-32 bg-contain bg-no-repeat bg-center animate-spin" style="background-image: url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png');"></div>
-            <div class="bg-slate-900 p-10 rounded-[3rem] border-8 border-yellow-500 text-center shadow-2xl">
-                <h2 id="cap-name-zh" class="text-5xl font-black text-yellow-400 italic mb-2">---</h2>
-                <p id="cap-name-lang" class="text-[14px] text-slate-300 font-bold uppercase leading-none"></p>
-                <p class="text-white text-3xl font-black mt-4">成功收服了！！</p>
-            </div>
+        <div class="bg-slate-900 p-10 rounded-[3rem] border-8 border-yellow-500 text-center shadow-2xl">
+            <h2 id="cap-name-zh" class="text-5xl font-black text-yellow-400 italic mb-2">---</h2>
+            <p id="cap-name-lang" class="text-slate-400 text-lg font-bold uppercase tracking-widest leading-none"></p>
+            <p class="text-white text-3xl font-black mt-4">成功收服了！！</p>
         </div>
-        <div class="flex gap-10">
+        <div class="flex gap-10 mt-10">
             <button onclick="changeScene('main')" class="bg-slate-700 px-16 py-8 rounded-3xl font-black text-2xl">繼續冒險</button>
-            <button onclick="captureAndStore()" class="bg-red-600 px-16 py-8 rounded-3xl font-black text-2xl">收服寶可夢</button>
+            <button onclick="captureAndStore()" class="bg-red-600 px-16 py-8 rounded-3xl font-black text-2xl ball-shake">收服寶可夢</button>
         </div>
     </div>
 
@@ -119,40 +115,29 @@
     </div>
 
     <script>
-        const db = new Dexie("MezastarFinalDB_v34");
+        const db = new Dexie("MezastarLearnDB");
         db.version(1).stores({ bag: 'id, name, en, jp, type, count' });
 
-        // 核心修正：將截圖中的 #725 火斑喵、#279 大嘴鷗 完整登錄入全字典
         const FULL_POKEDEX = {
             25: { zh: "皮卡丘", en: "PIKACHU", jp: "ピカチュウ", type: "⚡ 電系" },
             6: { zh: "噴火龍", en: "CHARIZARD", jp: "リザードン", type: "🔥 火系" },
             150: { zh: "超夢", en: "MEWTWO", jp: "ミュウツー", type: "🔮 超能力" },
             448: { zh: "路卡利歐", en: "LUCARIO", jp: "ルカリオ", type: "👊 格鬥系" },
             725: { zh: "火斑喵", en: "LITTEN", jp: "ニャビー", type: "🔥 火系" },
-            727: { zh: "熾焰咆哮虎", en: "INCINEROAR", jp: "ガオガエン", type: "🔥 惡系" },
-            279: { zh: "大嘴鷗", en: "PELIPPER", jp: "ペリッパー", type: "💧 水/飛行" },
+            279: { zh: "大嘴鷗", en: "PELIPPER", jp: "ペリッパー", type: "💧 水系" },
             906: { zh: "新葉喵", en: "SPRIGATITO", jp: "ニャオハ", type: "🍃 草系" },
             909: { zh: "呆火鱷", en: "FUECOCO", jp: "ホゲータ", type: "🔥 火系" },
             912: { zh: "潤水鴨", en: "QUAXLY", jp: "クワッス", type: "💧 水系" },
             133: { zh: "伊布", en: "EEVEE", jp: "イーブイ", type: "⚪ 一般系" },
             94: { zh: "耿鬼", en: "GENGAR", jp: "ゲンガー", type: "👻 幽靈系" },
-            149: { zh: "快龍", en: "DRAGONITE", jp: "カイリュー", type: "🐲 龍系" },
-            384: { zh: "烈空坐", en: "RAYQUAZA", jp: "レックウザ", type: "🐲 龍系" },
-            1000: { zh: "賽富豪", en: "GHOLDENGO", jp: "サーフゴー", type: "🪙 鋼系" },
-            744: { zh: "岩狗狗", en: "ROCKRUFF", jp: "イワンコ", type: "🪨 岩石系" },
-            815: { zh: "閃焰騰王", en: "CINDERACE", jp: "エースバーン", type: "🔥 火系" },
-            1: { zh: "妙蛙種子", en: "BULBASAUR", jp: "フシギダネ", type: "🍃 草系" },
-            4: { zh: "小火龍", en: "CHARMANDER", jp: "ヒトカゲ", type: "🔥 火系" },
-            7: { zh: "傑尼龜", en: "SQUIRTLE", jp: "ゼニガメ", type: "💧 水系" }
+            384: { zh: "烈空坐", en: "RAYQUAZA", jp: "レックウザ", type: "🐲 龍系" }
         };
 
-        let valA, valB, ans, playerPoke = FULL_POKEDEX[448], enemyPoke = {}, currentStep = 'wait';
+        let valA, currentB = 1, ans, playerPoke = FULL_POKEDEX[25], enemyPoke = {}, currentStep = 'wait';
 
         async function init() {
             if (await db.bag.count() === 0) {
-                const initialList = Object.keys(FULL_POKEDEX).map(id => ({
-                    id: parseInt(id), name: FULL_POKEDEX[id].zh, en: FULL_POKEDEX[id].en, jp: FULL_POKEDEX[id].jp, type: FULL_POKEDEX[id].type, count: 1
-                }));
+                const initialList = Object.keys(FULL_POKEDEX).map(id => ({ id: parseInt(id), ...FULL_POKEDEX[id], count: 1 }));
                 await db.bag.bulkAdd(initialList);
             }
             initStartScene(); buildGrid(); refreshEnemy();
@@ -160,7 +145,7 @@
 
         function initStartScene() {
             const box = document.getElementById('burst-box');
-            [25, 6, 725, 150, 448, 279, 906, 133, 384, 1000].forEach((id, i) => {
+            Object.keys(FULL_POKEDEX).slice(0,10).forEach((id, i) => {
                 const img = document.createElement('img');
                 img.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
                 img.className = 'poke-burst-unit'; img.style.animationDelay = `${i * 0.3}s`;
@@ -169,14 +154,9 @@
         }
 
         async function refreshEnemy() {
-            // 隨機抽選 1-1025 號，如果不在 FULL_POKEDEX 裡，就重新抽選直到有名稱為止
-            let randomID;
-            do {
-                randomID = Math.floor(Math.random() * 1025) + 1;
-            } while (!FULL_POKEDEX[randomID]);
-
-            enemyPoke = { id: randomID, ...FULL_POKEDEX[randomID] };
-            
+            const ids = Object.keys(FULL_POKEDEX);
+            const randomID = ids[Math.floor(Math.random() * ids.length)];
+            enemyPoke = { id: parseInt(randomID), ...FULL_POKEDEX[randomID] };
             document.getElementById('enemy-sprite').style.backgroundImage = `url(https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${randomID}.png)`;
             document.getElementById('e-name-zh').innerText = enemyPoke.zh;
             document.getElementById('e-name-en').innerText = enemyPoke.en;
@@ -186,13 +166,13 @@
         }
 
         function resetBattleUI() {
-            valA = Math.floor(Math.random() * 8) + 2; valB = Math.floor(Math.random() * 8) + 2; ans = valA * valB;
+            valA = Math.floor(Math.random() * 8) + 2; 
+            currentB = 1; // 重新從 1 開始教學
             currentStep = 'wait';
-            document.getElementById('q-a').innerText = valA; document.getElementById('q-b').innerText = valB;
-            document.getElementById('q-ans').innerText = "?"; document.getElementById('q-ans').className = "text-slate-800 transition-all";
+            updateFormula();
             document.getElementById('e-hp').style.width = "100%";
             document.getElementById('player-sprite').style.backgroundImage = `url(https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${playerPoke.id}.png)`;
-            document.querySelectorAll('.p-name-zh').forEach(el => el.innerText = playerPoke.zh);
+            document.querySelectorAll('.p-name-zh').forEach(el => el.innerText = playerPoke.zh || playerPoke.name);
             document.getElementById('p-name-en').innerText = playerPoke.en;
             document.getElementById('p-name-jp').innerText = playerPoke.jp;
             document.getElementById('p-type').innerText = playerPoke.type;
@@ -202,6 +182,14 @@
             document.getElementById('player-box').classList.remove('battling');
             document.getElementById('btn-go').classList.remove('hidden');
             clearFlashes();
+        }
+
+        function updateFormula() {
+            document.getElementById('q-a').innerText = valA;
+            document.getElementById('q-b').innerText = currentB;
+            document.getElementById('q-ans').innerText = "?";
+            document.getElementById('q-ans').className = "text-slate-800 transition-all";
+            document.getElementById('q-ans').onclick = null;
         }
 
         function startCombat() {
@@ -214,14 +202,17 @@
 
         function updateGuide() {
             clearFlashes();
-            const svg = document.getElementById('guide-line-svg'); svg.classList.add('hidden');
+            const svg = document.getElementById('guide-line-svg');
+            svg.classList.add('hidden');
             if(currentStep === 'selectA') {
                 const aEl = document.getElementById('q-a'); const rEl = document.getElementById(`row-${valA}`);
                 aEl.classList.add('guide-flash'); rEl.classList.add('guide-flash'); drawGuide(aEl, rEl);
             } else if(currentStep === 'selectB') {
-                const bEl = document.getElementById('q-b'); const cEl = document.getElementById(`col-${valB}`);
+                const bEl = document.getElementById('q-b'); const cEl = document.getElementById(`col-${currentB}`);
                 bEl.classList.add('guide-flash'); cEl.classList.add('guide-flash'); drawGuide(bEl, cEl);
-            } else if(currentStep === 'finish') { document.getElementById('q-ans').classList.add('guide-flash'); }
+            } else if(currentStep === 'finish') {
+                document.getElementById('q-ans').classList.add('guide-flash');
+            }
         }
 
         function drawGuide(el1, el2) {
@@ -232,27 +223,51 @@
             svg.classList.remove('hidden');
         }
 
-        function handleRow(r) { if(currentStep === 'selectA' && r === valA) { currentStep = 'selectB'; for(let i=1; i<=valA; i++) createBlock(i, 1); updateGuide(); } }
+        function handleRow(r) {
+            if(currentStep === 'selectA' && r === valA) {
+                // 如果是本回合第一次按 Y 軸，填滿第一欄
+                currentStep = 'selectB';
+                for(let i=1; i<=valA; i++) createBlock(i, 1);
+                updateGuide();
+            }
+        }
+
         function handleCol(c) {
-            if(currentStep === 'selectB' && c === valB) {
-                currentStep = 'animating'; document.getElementById('guide-line-svg').classList.add('hidden');
-                for(let j=2; j<=valB; j++) { setTimeout(() => { for(let i=1; i<=valA; i++) createBlock(i, j); if(j === valB) showAnsFinal(); }, (j-1) * 300); }
+            if(currentStep === 'selectB' && c === currentB) {
+                // 填滿該乘數對應的整欄方塊
+                if(currentB > 1) {
+                    for(let i=1; i<=valA; i++) createBlock(i, currentB);
+                }
+                currentStep = 'finish';
+                showAnsFinal();
             }
         }
 
         function showAnsFinal() {
-            currentStep = 'finish';
-            const qa = document.getElementById('q-ans'); qa.innerText = ans;
+            const qa = document.getElementById('q-ans');
+            qa.innerText = valA * currentB;
             qa.className = "text-slate-400 guide-flash cursor-pointer px-4 border-4 border-yellow-400 rounded-3xl";
             qa.onclick = () => {
-                qa.classList.remove('guide-flash'); qa.classList.add('text-white', 'ans-critical');
-                document.getElementById('e-hp').style.width = "0%";
+                qa.classList.remove('guide-flash');
+                qa.classList.add('text-white', 'ans-critical');
+                // 扣一點點血
+                const newHp = 100 - (currentB * 11.1);
+                document.getElementById('e-hp').style.width = newHp + "%";
+
                 setTimeout(() => {
-                    changeScene('capture');
-                    document.getElementById('cap-sprite').style.backgroundImage = document.getElementById('enemy-sprite').style.backgroundImage;
-                    document.getElementById('cap-name-zh').innerText = enemyPoke.zh;
-                    document.getElementById('cap-name-lang').innerText = `${enemyPoke.en} / ${enemyPoke.jp}`;
-                }, 2000);
+                    if(currentB < 9) {
+                        currentB++;
+                        currentStep = 'selectB'; // 基底被乘數不用重選，直接選下一個乘數
+                        updateFormula();
+                        updateGuide();
+                    } else {
+                        // 完成 1-9 教學，進入收服
+                        changeScene('capture');
+                        document.getElementById('cap-sprite').style.backgroundImage = document.getElementById('enemy-sprite').style.backgroundImage;
+                        document.getElementById('cap-name-zh').innerText = enemyPoke.zh;
+                        document.getElementById('cap-name-lang').innerText = `${enemyPoke.en} / ${enemyPoke.jp}`;
+                    }
+                }, 1000);
             };
             updateGuide();
         }
@@ -260,7 +275,7 @@
         async function captureAndStore() {
             const existing = await db.bag.get(enemyPoke.id);
             if(existing) await db.bag.update(enemyPoke.id, { count: (existing.count || 1) + 1 });
-            else await db.bag.add({ id: enemyPoke.id, name: enemyPoke.zh, en: enemyPoke.en, jp: enemyPoke.jp, type: enemyPoke.type, count: 1 });
+            else await db.bag.add({...enemyPoke, count: 1});
             openBag();
         }
 
@@ -269,31 +284,33 @@
             const items = await db.bag.toArray();
             const grid = document.getElementById('bag-grid');
             grid.innerHTML = items.map(i => `
-                <div onclick="selectPoke(${i.id})" class="bg-slate-800 p-8 rounded-[3rem] text-center border-4 border-slate-700 hover:border-blue-500 cursor-pointer relative shadow-xl active:scale-95 transition">
-                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${i.id}.png" class="w-full h-auto scale-125 mb-4">
-                    <p class="text-2xl font-black text-white leading-none">${i.name}</p>
-                    <p class="text-[9px] text-slate-300 font-bold uppercase mt-1">${i.en}</p>
+                <div onclick="selectPoke(${i.id})" class="bg-slate-800 p-8 rounded-[3rem] text-center border-4 border-slate-700 hover:border-blue-500 cursor-pointer relative shadow-xl">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${i.id}.png" class="w-full h-auto scale-125">
+                    <p class="text-2xl font-black text-white">${i.zh || i.name}</p>
                     <p class="text-blue-400 font-bold mt-2 text-xs">${i.type}</p>
-                    ${i.count > 1 ? `<div class="absolute bottom-6 right-6 bg-red-600 text-white px-4 py-1 rounded-full text-2xl font-black">x${i.count}</div>` : ''}
+                    ${i.count > 1 ? `<div class="absolute bottom-6 right-6 bg-red-600 text-white px-4 py-1 rounded-full text-2xl font-black shadow-lg">x${i.count}</div>` : ''}
                 </div>
             `).join('');
         }
 
-        function selectPoke(id) { db.bag.get(id).then(p => { playerPoke = { id: p.id, zh: p.name, en: p.en, jp: p.jp, type: p.type }; changeScene('main'); resetBattleUI(); }); }
+        function selectPoke(id) { db.bag.get(id).then(p => { playerPoke = p; changeScene('main'); resetBattleUI(); }); }
         function buildGrid() {
             const grid = document.getElementById('grid'); grid.innerHTML = "";
             for (let r = 0; r <= 9; r++) {
                 for (let c = 0; c <= 9; c++) {
                     const d = document.createElement('div'); d.className = "flex items-center justify-center border border-slate-800 font-bold text-xs cursor-pointer";
-                    if (c === 0 && r > 0) { d.innerText = r; d.id = `row-${r}`; d.classList.add('text-yellow-500'); d.onclick = () => handleRow(r); }
-                    else if (r === 0 && c > 0) { d.innerText = c; d.id = `col-${c}`; d.classList.add('text-blue-400'); d.onclick = () => handleCol(c); }
+                    if (c === 0 && r > 0) { d.innerText = r; d.id = `row-${r}`; d.onclick = () => handleRow(r); }
+                    else if (r === 0 && c > 0) { d.innerText = c; d.id = `col-${c}`; d.onclick = () => handleCol(c); }
                     grid.appendChild(d);
                 }
             }
         }
         function createBlock(r, c) {
+            const id = `blk-${r}-${c}`;
+            if(document.getElementById(id)) return;
             const wrap = document.createElement('div'); wrap.style.gridRow = r + 1; wrap.style.gridColumn = c + 1;
-            const b = document.createElement('div'); b.className = "block-unit"; wrap.appendChild(b); document.getElementById('block-layer').appendChild(wrap);
+            const b = document.createElement('div'); b.className = "block-unit"; b.id = id;
+            wrap.appendChild(b); document.getElementById('block-layer').appendChild(wrap);
             setTimeout(() => b.classList.add('block-show'), 50);
         }
         function changeScene(s) { document.querySelectorAll('.scene').forEach(sc => sc.classList.add('hidden')); document.getElementById(`scene-${s}`).classList.remove('hidden'); }

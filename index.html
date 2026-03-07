@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mezastar Math: Learning v35.0</title>
+    <title>Mezastar Math: Learning Ultimate v36.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <style>
@@ -35,7 +35,7 @@
 
         .scene { position: absolute; inset: 0; transition: opacity 0.5s; background: #020617; }
         .hidden { display: none !important; }
-        .poke-info-box { text-align: center; background: rgba(0,0,0,0.8); padding: 12px; border-radius: 1.5rem; border: 2px solid rgba(255,255,255,0.1); width: 100%; min-height: 140px; }
+        .poke-info-box { text-align: center; background: rgba(0,0,0,0.8); padding: 12px; border-radius: 1.5rem; border: 2px solid rgba(255,255,255,0.1); width: 100%; min-height: 140px; position: relative; }
         .hp-fill { background: #ef4444; transition: width 0.5s ease-out; }
     </style>
 </head>
@@ -69,6 +69,7 @@
                     <div class="w-full h-5 bg-red-950 rounded-full mt-3 overflow-hidden border border-white">
                         <div id="e-hp" class="hp-fill h-full w-full"></div>
                     </div>
+                    <button id="btn-refresh-enemy" onclick="refreshEnemy()" class="mt-4 bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-full text-[10px] border border-slate-600 transition active:scale-90">挑戰其他寶可夢</button>
                 </div>
             </div>
 
@@ -77,17 +78,17 @@
                     <div id="grid" class="grid grid-cols-10 grid-rows-10 gap-1 h-full w-full"></div>
                     <div id="block-layer" class="absolute inset-0 p-2 grid grid-cols-10 grid-rows-10 gap-1 pointer-events-none"></div>
                 </div>
-                <button id="btn-go" onclick="startCombat()" class="bg-blue-600 mt-24 px-12 py-4 rounded-2xl font-black italic text-2xl border-b-[8px] border-blue-900 shadow-2xl">上吧！<span class="p-name-zh">皮卡丘</span></button>
+                <button id="btn-go" onclick="startCombat()" class="bg-blue-600 mt-24 px-12 py-4 rounded-2xl font-black italic text-2xl border-b-[8px] border-blue-900 shadow-2xl active:translate-y-2">上吧！<span class="p-name-zh">皮卡丘</span></button>
             </div>
 
             <div id="player-box" class="flex flex-col items-center w-1/4">
                 <div id="player-sprite" class="poke-large bg-contain bg-no-repeat bg-center aura-glow text-blue-500" style="transform: scaleX(-1);"></div>
                 <div class="poke-info-box mt-4">
-                    <p class="p-name-zh text-2xl font-black text-blue-400 mb-1">---</p>
-                    <p id="p-name-en" class="text-[10px] text-slate-300 font-bold uppercase leading-none">---</p>
-                    <p id="p-name-jp" class="text-[10px] text-slate-400 font-bold leading-tight mb-1">---</p>
-                    <p id="p-type" class="text-xs text-blue-500 font-bold">---</p>
-                    <button onclick="openBag()" class="mt-4 bg-slate-800 px-10 py-3 rounded-2xl border-2 border-slate-500 active:scale-90 transition">🎒 背包</button>
+                    <p class="p-name-zh text-2xl font-black text-blue-400 mb-1">皮卡丘</p>
+                    <p id="p-name-en" class="text-[10px] text-slate-300 font-bold uppercase tracking-widest leading-none">Pikachu</p>
+                    <p id="p-name-jp" class="text-[10px] text-slate-400 font-bold leading-tight mb-1">ピカチュウ</p>
+                    <p id="p-type" class="text-xs text-blue-500 font-bold">⚡ 電系</p>
+                    <button onclick="openBag()" class="mt-4 bg-slate-800 hover:bg-slate-700 px-10 py-3 rounded-2xl border-2 border-slate-500 active:scale-90 transition">🎒 背包</button>
                 </div>
             </div>
         </div>
@@ -115,7 +116,7 @@
     </div>
 
     <script>
-        const db = new Dexie("MezastarLearnDB");
+        const db = new Dexie("MezastarStableDB");
         db.version(1).stores({ bag: 'id, name, en, jp, type, count' });
 
         const FULL_POKEDEX = {
@@ -133,6 +134,7 @@
             384: { zh: "烈空坐", en: "RAYQUAZA", jp: "レックウザ", type: "🐲 龍系" }
         };
 
+        // 修正2：明確指定預設角色
         let valA, currentB = 1, ans, playerPoke = FULL_POKEDEX[25], enemyPoke = {}, currentStep = 'wait';
 
         async function init() {
@@ -140,7 +142,18 @@
                 const initialList = Object.keys(FULL_POKEDEX).map(id => ({ id: parseInt(id), ...FULL_POKEDEX[id], count: 1 }));
                 await db.bag.bulkAdd(initialList);
             }
+            // 修正2：確保初始化時執行更新 UI，顯示皮卡丘
+            updatePlayerUI();
             initStartScene(); buildGrid(); refreshEnemy();
+        }
+
+        function updatePlayerUI() {
+            const sprite = document.getElementById('player-sprite');
+            if (sprite) sprite.style.backgroundImage = `url(https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${playerPoke.id || 25}.png)`;
+            document.querySelectorAll('.p-name-zh').forEach(el => el.innerText = playerPoke.zh || playerPoke.name);
+            document.getElementById('p-name-en').innerText = playerPoke.en;
+            document.getElementById('p-name-jp').innerText = playerPoke.jp;
+            document.getElementById('p-type').innerText = playerPoke.type;
         }
 
         function initStartScene() {
@@ -167,15 +180,11 @@
 
         function resetBattleUI() {
             valA = Math.floor(Math.random() * 8) + 2; 
-            currentB = 1; // 重新從 1 開始教學
+            currentB = 1; 
             currentStep = 'wait';
             updateFormula();
             document.getElementById('e-hp').style.width = "100%";
-            document.getElementById('player-sprite').style.backgroundImage = `url(https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${playerPoke.id}.png)`;
-            document.querySelectorAll('.p-name-zh').forEach(el => el.innerText = playerPoke.zh || playerPoke.name);
-            document.getElementById('p-name-en').innerText = playerPoke.en;
-            document.getElementById('p-name-jp').innerText = playerPoke.jp;
-            document.getElementById('p-type').innerText = playerPoke.type;
+            document.getElementById('btn-refresh-enemy').classList.remove('hidden');
             document.getElementById('block-layer').innerHTML = "";
             document.getElementById('guide-line-svg').classList.add('hidden');
             document.getElementById('enemy-box').classList.remove('battling');
@@ -195,6 +204,7 @@
         function startCombat() {
             currentStep = 'selectA';
             document.getElementById('btn-go').classList.add('hidden');
+            document.getElementById('btn-refresh-enemy').classList.add('hidden');
             document.getElementById('enemy-box').classList.add('battling');
             document.getElementById('player-box').classList.add('battling');
             updateGuide();
@@ -225,7 +235,6 @@
 
         function handleRow(r) {
             if(currentStep === 'selectA' && r === valA) {
-                // 如果是本回合第一次按 Y 軸，填滿第一欄
                 currentStep = 'selectB';
                 for(let i=1; i<=valA; i++) createBlock(i, 1);
                 updateGuide();
@@ -234,10 +243,7 @@
 
         function handleCol(c) {
             if(currentStep === 'selectB' && c === currentB) {
-                // 填滿該乘數對應的整欄方塊
-                if(currentB > 1) {
-                    for(let i=1; i<=valA; i++) createBlock(i, currentB);
-                }
+                if(currentB > 1) { for(let i=1; i<=valA; i++) createBlock(i, currentB); }
                 currentStep = 'finish';
                 showAnsFinal();
             }
@@ -250,18 +256,12 @@
             qa.onclick = () => {
                 qa.classList.remove('guide-flash');
                 qa.classList.add('text-white', 'ans-critical');
-                // 扣一點點血
                 const newHp = 100 - (currentB * 11.1);
                 document.getElementById('e-hp').style.width = newHp + "%";
-
                 setTimeout(() => {
                     if(currentB < 9) {
-                        currentB++;
-                        currentStep = 'selectB'; // 基底被乘數不用重選，直接選下一個乘數
-                        updateFormula();
-                        updateGuide();
+                        currentB++; currentStep = 'selectB'; updateFormula(); updateGuide();
                     } else {
-                        // 完成 1-9 教學，進入收服
                         changeScene('capture');
                         document.getElementById('cap-sprite').style.backgroundImage = document.getElementById('enemy-sprite').style.backgroundImage;
                         document.getElementById('cap-name-zh').innerText = enemyPoke.zh;
@@ -284,16 +284,24 @@
             const items = await db.bag.toArray();
             const grid = document.getElementById('bag-grid');
             grid.innerHTML = items.map(i => `
-                <div onclick="selectPoke(${i.id})" class="bg-slate-800 p-8 rounded-[3rem] text-center border-4 border-slate-700 hover:border-blue-500 cursor-pointer relative shadow-xl">
+                <div onclick="selectPoke(${i.id})" class="bg-slate-800 p-8 rounded-[3rem] text-center border-4 border-slate-700 hover:border-blue-500 cursor-pointer relative shadow-xl active:scale-95 transition">
                     <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${i.id}.png" class="w-full h-auto scale-125">
                     <p class="text-2xl font-black text-white">${i.zh || i.name}</p>
                     <p class="text-blue-400 font-bold mt-2 text-xs">${i.type}</p>
-                    ${i.count > 1 ? `<div class="absolute bottom-6 right-6 bg-red-600 text-white px-4 py-1 rounded-full text-2xl font-black shadow-lg">x${i.count}</div>` : ''}
+                    ${i.count > 1 ? `<div class="absolute bottom-6 right-6 bg-red-600 text-white px-4 py-1 rounded-full text-2xl font-black">x${i.count}</div>` : ''}
                 </div>
             `).join('');
         }
 
-        function selectPoke(id) { db.bag.get(id).then(p => { playerPoke = p; changeScene('main'); resetBattleUI(); }); }
+        function selectPoke(id) { 
+            db.bag.get(id).then(p => { 
+                playerPoke = p; 
+                changeScene('main'); 
+                updatePlayerUI(); // 確保更換後圖案與文字同步
+                resetBattleUI(); 
+            }); 
+        }
+
         function buildGrid() {
             const grid = document.getElementById('grid'); grid.innerHTML = "";
             for (let r = 0; r <= 9; r++) {
@@ -305,15 +313,23 @@
                 }
             }
         }
+
         function createBlock(r, c) {
-            const id = `blk-${r}-${c}`;
-            if(document.getElementById(id)) return;
+            const id = `blk-${r}-${c}`; if(document.getElementById(id)) return;
             const wrap = document.createElement('div'); wrap.style.gridRow = r + 1; wrap.style.gridColumn = c + 1;
             const b = document.createElement('div'); b.className = "block-unit"; b.id = id;
             wrap.appendChild(b); document.getElementById('block-layer').appendChild(wrap);
             setTimeout(() => b.classList.add('block-show'), 50);
         }
-        function changeScene(s) { document.querySelectorAll('.scene').forEach(sc => sc.classList.add('hidden')); document.getElementById(`scene-${s}`).classList.remove('hidden'); }
+
+        function changeScene(s) { 
+            document.querySelectorAll('.scene').forEach(sc => sc.classList.add('hidden')); 
+            document.getElementById(`scene-${s}`).classList.remove('hidden'); 
+            if(s === 'main') {
+                const gridBox = document.getElementById('block-layer');
+                if(gridBox.children.length > 50) resetBattleUI(); // 如果是從收服回來，重置戰場
+            }
+        }
         function clearFlashes() { document.querySelectorAll('.guide-flash').forEach(el => el.classList.remove('guide-flash')); }
         init();
     </script>

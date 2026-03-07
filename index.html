@@ -3,66 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mezastar Math: Ultimate v21.0</title>
+    <title>Mezastar Math: Ultimate v22.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+TC:wght@900&display=swap');
-        
-        body { 
-            font-family: 'Orbitron', 'Noto Sans TC', sans-serif; 
-            background: #020617; color: white; overflow: hidden; 
-            user-select: none; -webkit-tap-highlight-color: transparent;
-        }
+        body { font-family: 'Orbitron', 'Noto Sans TC', sans-serif; background: #020617; color: white; overflow: hidden; user-select: none; -webkit-tap-highlight-color: transparent; }
 
-        /* 爆炸開場 */
-        .poke-burst {
-            position: absolute; width: 160px; height: 160px;
-            animation: burst-out 1.5s cubic-bezier(0.15, 0.85, 0.35, 1.2) forwards;
-            opacity: 0;
-        }
-        @keyframes burst-out {
-            0% { transform: translateZ(-600px) scale(0); opacity: 0; }
-            100% { transform: translateZ(1000px) scale(6); opacity: 0; }
-        }
+        /* 爆炸開場動畫 */
+        .poke-burst { position: absolute; width: 160px; height: 160px; animation: burst-out 1.5s cubic-bezier(0.15, 0.85, 0.35, 1.2) forwards; opacity: 0; }
+        @keyframes burst-out { 0% { transform: translateZ(-600px) scale(0); opacity: 0; } 100% { transform: translateZ(1000px) scale(6); opacity: 0; } }
 
-        /* 矩陣 1.5倍 */
+        /* 畫面層級 */
+        .scene { position: absolute; inset: 0; width: 100%; height: 100%; transition: opacity 0.4s; z-index: 10; }
+        .hidden { display: none !important; }
+
+        /* 戰鬥與 UI 強化 */
         .matrix-scale { transform: scale(1.5); transform-origin: center; }
-
-        /* 雙方同步震撼震動 */
         .battling { animation: strong-shake 0.1s infinite; }
         @keyframes strong-shake { 0% { transform: translate(-3px, 3px); } 50% { transform: translate(3px, -3px); } }
+        
+        .aura-fire { filter: drop-shadow(0 0 40px #ef4444); }
+        .aura-blue { filter: drop-shadow(0 0 40px #3b82f6); }
 
-        /* 果凍方塊 */
-        .block-unit {
-            width: 90%; height: 90%; margin: auto; border-radius: 8px;
-            background: radial-gradient(circle at 30% 30%, #fbbf24, #d97706);
-            transform: scale(0); transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
+        .block-unit { width: 90%; height: 90%; margin: auto; border-radius: 8px; background: radial-gradient(circle at 30% 30%, #fbbf24, #d97706); transform: scale(0); transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .block-show { transform: scale(1); }
 
-        /* 答案閃爍特效 */
-        .ans-glow-slow {
-            animation: glow-pulse 1.5s infinite alternate;
-            color: #facc15;
-            text-shadow: 0 0 20px #facc15;
-            cursor: pointer;
-        }
-        @keyframes glow-pulse { from { opacity: 0.5; transform: scale(1.2); } to { opacity: 1; transform: scale(1.4); } }
+        .ans-glow-slow { animation: glow-pulse 1.2s infinite alternate; color: #facc15; text-shadow: 0 0 25px #facc15; cursor: pointer; }
+        @keyframes glow-pulse { from { opacity: 0.6; transform: scale(1); } to { opacity: 1; transform: scale(1.3); } }
 
         .guide-flash { animation: guide-pulse 0.6s infinite alternate; border: 4px solid #facc15 !important; }
         @keyframes guide-pulse { from { filter: brightness(1.2); } to { filter: brightness(2.2); } }
-
-        .scene { position: absolute; inset: 0; width: 100%; height: 100%; transition: opacity 0.4s; }
-        .hidden { display: none !important; }
+        
         .hp-fill { background: #ef4444; transition: width 1s ease-in-out; }
     </style>
 </head>
 <body>
 
-    <div id="evo-light" class="fixed inset-0 bg-white opacity-0 pointer-events-none z-[2000] transition-opacity duration-1000"></div>
-
-    <div id="scene-start" class="scene flex flex-col items-center justify-center bg-black z-[1000]">
+    <div id="scene-start" class="scene flex flex-col items-center justify-center bg-black">
         <div class="relative w-64 h-64 flex items-center justify-center mb-12">
             <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" class="poke-burst">
             <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png" class="poke-burst" style="animation-delay: 0.2s;">
@@ -75,18 +53,18 @@
     </div>
 
     <div id="scene-main" class="scene hidden flex flex-col p-6">
-        <div class="text-center py-8 bg-slate-900/90 rounded-3xl mb-8 border-b-8 border-blue-600">
-            <div class="text-8xl font-black italic tracking-tighter">
+        <div class="text-center py-10 bg-slate-900/90 rounded-3xl mb-8 border-b-8 border-blue-600">
+            <div class="text-[120px] font-black italic tracking-tighter leading-none">
                 <span id="q-a">?</span> × <span id="q-b">?</span> = <span id="q-ans">?</span>
             </div>
         </div>
 
         <div class="flex-grow flex items-center justify-around">
             <div class="flex flex-col items-center w-1/4">
-                <div id="enemy-sprite" class="w-80 h-80 bg-contain bg-no-repeat bg-center transition-all" style="filter: drop-shadow(0 0 30px #ef4444);"></div>
+                <div id="enemy-sprite" class="w-80 h-80 bg-contain bg-no-repeat bg-center aura-fire"></div>
                 <div class="mt-4 text-center bg-black/60 p-6 rounded-[2rem] w-full border-2 border-white/20">
                     <p id="e-name-zh" class="text-3xl font-black text-white">---</p>
-                    <p id="e-name-other" class="text-sm text-slate-400 font-bold uppercase">--- / ---</p>
+                    <p id="e-name-other" class="text-sm text-slate-400 font-bold">--- / ---</p>
                     <div class="w-full h-6 bg-red-950 rounded-full mt-4 border-2 border-white overflow-hidden">
                         <div id="e-hp" class="hp-fill h-full w-full"></div>
                     </div>
@@ -95,7 +73,7 @@
             </div>
 
             <div class="flex flex-col items-center">
-                <div class="matrix-scale bg-slate-900 border-4 border-blue-500 w-[300px] h-[300px] p-2 relative rounded-3xl">
+                <div class="matrix-scale bg-slate-900 border-4 border-blue-500 w-[300px] h-[300px] p-2 relative rounded-3xl shadow-2xl">
                     <div id="grid" class="grid grid-cols-10 grid-rows-10 gap-1 h-full w-full"></div>
                     <div id="block-layer" class="absolute inset-0 p-2 grid grid-cols-10 grid-rows-10 gap-1 pointer-events-none"></div>
                 </div>
@@ -105,7 +83,7 @@
             </div>
 
             <div class="flex flex-col items-center w-1/4">
-                <div id="player-sprite" class="w-80 h-80 bg-contain bg-no-repeat bg-center" style="transform: scaleX(-1); filter: drop-shadow(0 0 30px #3b82f6);"></div>
+                <div id="player-sprite" class="w-80 h-80 bg-contain bg-no-repeat bg-center aura-blue" style="transform: scaleX(-1);"></div>
                 <div class="mt-4 text-center bg-black/60 p-6 rounded-[2rem] w-full border-2 border-blue-500/40">
                     <p class="p-name-display text-3xl font-black text-blue-400">皮卡丘</p>
                     <p id="p-name-other" class="text-sm text-slate-400 font-bold uppercase">Pikachu / ピカチュウ</p>
@@ -122,25 +100,34 @@
 
     <div id="scene-capture" class="scene hidden flex flex-col items-center justify-center bg-black/95 z-[2000]">
         <div id="cap-sprite" class="w-[500px] h-[500px] bg-contain bg-no-repeat bg-center mb-10 animate-bounce"></div>
-        <div class="bg-slate-900/90 p-12 rounded-[4rem] border-8 border-yellow-500 text-center shadow-2xl">
+        <div class="bg-slate-900/90 p-12 rounded-[4rem] border-8 border-yellow-500 text-center">
             <h2 id="cap-name-zh" class="text-6xl font-black text-yellow-400 italic mb-2">---</h2>
-            <p id="cap-name-other" class="text-slate-400 text-xl font-bold uppercase tracking-widest">--- / ---</p>
-            <p class="text-white text-4xl font-black mt-10 tracking-widest">成功收服了！！</p>
+            <p id="cap-name-other" class="text-slate-400 text-xl font-bold uppercase">--- / ---</p>
+            <p class="text-white text-4xl font-black mt-10">成功收服了！！</p>
         </div>
         <button onclick="changeScene('main')" class="mt-16 bg-red-600 px-20 py-8 rounded-3xl font-black text-3xl">下一個挑戰</button>
     </div>
 
+    <div id="scene-bag" class="scene hidden bg-slate-950 p-12 z-[3000] overflow-y-auto">
+        <div class="flex justify-between items-center mb-12 border-b-8 border-blue-900 pb-8">
+            <h2 class="text-5xl font-black italic text-blue-400">POKEMON BAG</h2>
+            <button onclick="closeBag()" class="bg-slate-800 w-20 h-20 rounded-full text-5xl font-bold border-4 border-slate-600">✕</button>
+        </div>
+        <div id="bag-grid" class="grid grid-cols-2 md:grid-cols-5 gap-12"></div>
+    </div>
+
     <script>
-        const db = new Dexie("MezastarPokeDB_v21");
+        const db = new Dexie("MezastarPokeDB_v22");
         db.version(1).stores({ bag: 'id, name, en, jp' });
 
-        // 音軌設定
-        const AUDIO = {
-            start: new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'), // 動感
-            main: new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3'),  // 神祕
-            battle: new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3'), // 搖滾
-            capture: new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3')  // 溫馨
+        // 音訊引擎：不再一開始就載入，避免鎖死
+        const audioPaths = {
+            start: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+            main: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
+            battle: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3',
+            capture: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'
         };
+        const AUDIO = { start: new Audio(), main: new Audio(), battle: new Audio(), capture: new Audio() };
 
         const POKEDEX = [
             {id: 25, zh: "皮卡丘", en: "Pikachu", jp: "ピカチュウ"},
@@ -155,29 +142,47 @@
 
         let valA, valB, ans, playerPoke = POKEDEX[0], enemyPoke = {};
 
+        // --- 核心修復：主啟動程序 ---
         function masterStart() {
-            // 一鍵解鎖所有音訊
-            Object.values(AUDIO).forEach(a => { a.play().then(() => { a.pause(); a.currentTime = 0; }); });
-            AUDIO.start.loop = true; AUDIO.start.play();
-            setTimeout(() => changeScene('main'), 1500);
+            // 1. 立即執行畫面切換 (確保 UI 反應)
+            changeScene('main');
+
+            // 2. 非同步處理音訊，不讓它擋住 UI
+            setTimeout(() => {
+                Object.keys(AUDIO).forEach(key => {
+                    AUDIO[key].src = audioPaths[key];
+                    AUDIO[key].load();
+                });
+                playBGM('main');
+            }, 100);
+        }
+
+        function playBGM(scene) {
+            Object.values(AUDIO).forEach(a => a.pause());
+            const track = AUDIO[scene];
+            if (track) {
+                track.loop = true;
+                track.play().catch(e => console.log("Music play blocked", e));
+            }
         }
 
         function changeScene(s) {
             document.querySelectorAll('.scene').forEach(sc => sc.classList.add('hidden'));
-            document.getElementById(`scene-${s}`).classList.remove('hidden');
-            Object.values(AUDIO).forEach(a => a.pause());
-            if(s === 'main') { AUDIO.main.loop = true; AUDIO.main.play(); resetBattleUI(); }
-            if(s === 'capture') { AUDIO.capture.loop = true; AUDIO.capture.play(); }
+            const target = document.getElementById(`scene-${s}`);
+            target.classList.remove('hidden');
+            if (s === 'main') { playBGM('main'); resetBattleUI(); }
+            if (s === 'capture') { playBGM('capture'); }
         }
 
         async function init() {
-            if (await db.bag.count() === 0) await db.bag.bulkAdd(POKEDEX.map(p => ({id: p.id, name: p.zh, en: p.en, jp: p.jp})));
+            if (await db.bag.count() === 0) {
+                await db.bag.bulkAdd(POKEDEX.map(p => ({id: p.id, name: p.zh, en: p.en, jp: p.jp})));
+            }
             buildGrid();
         }
 
         function refreshEnemy() {
-            const randIdx = Math.floor(Math.random() * POKEDEX.length);
-            enemyPoke = POKEDEX[randIdx];
+            enemyPoke = POKEDEX[Math.floor(Math.random() * POKEDEX.length)];
             document.getElementById('enemy-sprite').style.backgroundImage = `url(https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${enemyPoke.id}.png)`;
             document.getElementById('e-name-zh').innerText = enemyPoke.zh;
             document.getElementById('e-name-other').innerText = `${enemyPoke.en} / ${enemyPoke.jp}`;
@@ -188,16 +193,18 @@
             valA = Math.floor(Math.random() * 8) + 2; valB = Math.floor(Math.random() * 8) + 2; ans = valA * valB;
             document.getElementById('q-a').innerText = valA; document.getElementById('q-b').innerText = valB;
             document.getElementById('q-ans').innerText = "?";
-            document.getElementById('q-ans').className = "";
+            document.getElementById('q-ans').className = "text-slate-800 bg-slate-800/50 px-8 rounded-3xl";
             document.getElementById('e-hp').style.width = "100%";
             document.getElementById('enemy-sprite').classList.remove('battling');
             document.getElementById('player-sprite').classList.remove('battling');
             document.getElementById('block-layer').innerHTML = "";
-            buildGrid();
+            document.querySelectorAll('.guide-flash').forEach(el => el.classList.remove('guide-flash'));
+            document.getElementById('btn-go').classList.remove('hidden');
         }
 
         function startBattle() {
-            AUDIO.battle.loop = true; AUDIO.battle.play(); AUDIO.main.pause();
+            playBGM('battle');
+            document.getElementById('btn-go').classList.add('hidden');
             document.getElementById('enemy-sprite').classList.add('battling');
             document.getElementById('player-sprite').classList.add('battling');
             document.getElementById('q-a').classList.add('guide-flash');
@@ -210,8 +217,13 @@
                 for (let c = 0; c <= 9; c++) {
                     const d = document.createElement('div');
                     d.className = "flex items-center justify-center border border-slate-800 font-bold text-xs cursor-pointer";
-                    if (c === 0 && r > 0) { d.innerText = r; d.id = `row-${r}`; d.onclick = () => handleRow(r); }
-                    else if (r === 0 && c > 0) { d.innerText = c; d.id = `col-${c}`; d.onclick = () => handleCol(c); }
+                    if (c === 0 && r > 0) { 
+                        d.innerText = r; d.id = `row-${r}`; d.classList.add('text-yellow-500');
+                        d.onclick = () => handleRow(r); 
+                    } else if (r === 0 && c > 0) { 
+                        d.innerText = c; d.id = `col-${c}`; d.classList.add('text-blue-400');
+                        d.onclick = () => handleCol(c); 
+                    }
                     grid.appendChild(d);
                 }
             }
@@ -220,14 +232,17 @@
         function handleRow(r) {
             if(r === valA) {
                 document.getElementById(`row-${valA}`).classList.remove('guide-flash');
+                document.getElementById('q-a').classList.remove('guide-flash');
                 for(let i=1; i<=valA; i++) createBlock(i, 1);
                 document.getElementById(`col-${valB}`).classList.add('guide-flash');
+                document.getElementById('q-b').classList.add('guide-flash');
             }
         }
 
         function handleCol(c) {
             if(c === valB) {
                 document.getElementById(`col-${valB}`).classList.remove('guide-flash');
+                document.getElementById('q-b').classList.remove('guide-flash');
                 for(let j=2; j<=valB; j++) setTimeout(() => { for(let i=1; i<=valA; i++) createBlock(i, j); }, (j-1) * 300);
                 setTimeout(() => {
                     const qa = document.getElementById('q-ans');
@@ -254,6 +269,29 @@
                 document.getElementById('cap-name-other').innerText = `${enemyPoke.en} / ${enemyPoke.jp}`;
             }, 1000);
         }
+
+        async function openBag() {
+            document.getElementById('scene-bag').classList.remove('hidden');
+            const items = await db.bag.toArray();
+            const list = document.getElementById('bag-grid');
+            list.innerHTML = items.map(i => `
+                <div onclick="selectPoke(${i.id},'${i.name}','${i.en}','${i.jp}')" class="bg-slate-800 p-10 rounded-[3rem] text-center border-4 border-slate-700 hover:border-blue-500 cursor-pointer transition">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${i.id}.png" class="w-24 h-24 mx-auto scale-150 mb-8">
+                    <p class="text-3xl font-black mt-8 text-white">${i.name}</p>
+                </div>
+            `).join('');
+        }
+
+        function selectPoke(id, n, e, j) {
+            playerPoke = {id, name: n, en: e, jp: j};
+            closeBag();
+            document.getElementById('player-sprite').style.backgroundImage = `url(https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png)`;
+            document.querySelectorAll('.p-name-display').forEach(el => el.innerText = n);
+            document.getElementById('p-name-other').innerText = `${e} / ${j}`;
+        }
+
+        function closeBag() { document.getElementById('scene-bag').classList.add('hidden'); }
+        function enterHub() { changeScene('main'); }
 
         init();
     </script>

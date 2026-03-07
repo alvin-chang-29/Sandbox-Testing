@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mezastar Math: Ultimate Adventure</title>
+    <title>Mezastar Math: Ultimate v28.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <style>
@@ -11,29 +11,34 @@
         
         body { font-family: 'Orbitron', 'Noto Sans TC', sans-serif; background: #020617; color: white; overflow: hidden; user-select: none; }
 
-        /* 1. 遊戲開始畫面：3D 爆炸特效 */
-        .burst-stage { perspective: 1200px; position: relative; width: 100vw; height: 60vh; overflow: hidden; }
-        .poke-burst-unit { position: absolute; width: 150px; height: 150px; top: 50%; left: 50%; margin: -75px; opacity: 0; pointer-events: none; }
+        /* 1. 遊戲開始畫面：3D 爆炸衝出 (速度降低 50%) */
+        .burst-stage { perspective: 1200px; position: relative; width: 100vw; height: 50vh; overflow: hidden; }
+        .poke-burst-unit { 
+            position: absolute; width: 150px; height: 150px; top: 50%; left: 50%; margin: -75px; opacity: 0; 
+            animation: burst-fly 3s ease-in infinite; 
+        }
         @keyframes burst-fly {
             0% { transform: translateZ(-1000px) scale(0); opacity: 0; }
             20% { opacity: 1; }
-            100% { transform: translateZ(1000px) scale(8); opacity: 0; }
+            100% { transform: translateZ(1200px) scale(8); opacity: 0; }
         }
 
-        /* 2. 主畫面與戰鬥：巨大化與矩陣 */
-        .matrix-scale { transform: scale(1.5); transform-origin: center; margin: 80px 0; }
-        .poke-large { width: 320px; height: 320px; }
+        /* 2. 主畫面佈局：防重疊系統 */
+        .matrix-scale { transform: scale(1.5); transform-origin: center; z-index: 10; }
+        .poke-large { width: 320px; height: 320px; transition: 0.3s; }
         
         /* 屬性渲染光芒 */
         .aura-glow { filter: drop-shadow(0 0 50px currentColor); }
         .battling { animation: strong-shake 0.1s infinite; }
         @keyframes strong-shake { 0% { transform: translate(-3px, 3px); } 50% { transform: translate(3px, -3px); } }
 
-        /* 3. 座標引導系統 */
+        /* 3. 虛線引導系統 (SVG) */
         #guide-line-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
         .dash-line { stroke: #facc15; stroke-width: 6; stroke-dasharray: 12, 12; animation: dash-move 0.5s linear infinite; }
         @keyframes dash-move { to { stroke-dashoffset: -24; } }
-        .guide-flash { animation: guide-pulse 0.6s infinite alternate; box-shadow: 0 0 30px #facc15; border: 4px solid #facc15 !important; }
+
+        /* 元素閃爍引導 */
+        .guide-flash { animation: guide-pulse 0.6s infinite alternate; border: 4px solid #facc15 !important; color: #facc15 !important; }
         @keyframes guide-pulse { from { opacity: 1; filter: brightness(1.2); } to { opacity: 0.3; filter: brightness(2.5); } }
 
         /* 4. 果凍方塊 */
@@ -45,17 +50,20 @@
         .block-show { transform: scale(1); }
 
         /* 終結技特效 */
-        .ans-critical { animation: ans-impact 0.6s infinite alternate; text-shadow: 0 0 30px #facc15, 0 0 60px #facc15; font-size: 1.4em; }
-        @keyframes ans-impact { from { transform: scale(1.2); filter: brightness(1.5); } to { transform: scale(1.5); filter: brightness(2.5); } }
+        .ans-critical { animation: ans-impact 0.6s infinite alternate; text-shadow: 0 0 30px #facc15, 0 0 60px #facc15; }
+        @keyframes ans-impact { from { transform: scale(1.1); filter: brightness(1.5); } to { transform: scale(1.4); filter: brightness(2.5); } }
 
         .scene { position: absolute; inset: 0; transition: opacity 0.5s; background: #020617; }
         .hidden { display: none !important; }
-        .hp-empty { background: #450a0a; border: 2px solid white; }
+        .hp-bg { background: #450a0a; border: 2px solid white; }
         .hp-fill { background: #ef4444; transition: width 1.5s ease-in-out; }
 
         /* 精靈球抖動 */
         .ball-shake { animation: ball-vibrate 0.5s infinite; }
         @keyframes ball-vibrate { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(15deg); } 75% { transform: rotate(-15deg); } }
+        
+        /* 背包滾動 */
+        #bag-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; padding-bottom: 50px; }
     </style>
 </head>
 <body>
@@ -65,63 +73,67 @@
     <div id="scene-start" class="scene flex flex-col items-center justify-center z-[1000]">
         <div class="burst-stage" id="burst-box"></div>
         <div class="z-50 text-center -mt-20">
-            <h1 class="text-7xl font-black italic text-blue-500 mb-4 drop-shadow-2xl">MEZASTAR MATH</h1>
+            <h1 class="text-7xl font-black italic text-blue-500 mb-12 drop-shadow-2xl">MEZASTAR MATH</h1>
             <button onclick="changeScene('main')" class="bg-red-600 px-24 py-8 rounded-full text-4xl font-black border-4 border-white shadow-[0_0_50px_#ef4444] active:scale-95 transition">一起抓夢吧！</button>
         </div>
     </div>
 
-    <div id="scene-main" class="scene hidden flex flex-col p-6">
-        <div class="flex justify-center mb-10">
-            <div id="formula-box" class="inline-flex items-center border-[10px] border-yellow-400 p-8 bg-black/60 rounded-[3rem] text-[120px] font-black italic shadow-[0_0_30px_#facc15]">
+    <div id="scene-main" class="scene hidden flex flex-col p-4">
+        <div class="h-[18vh] flex items-center justify-center">
+            <div id="formula-box" class="inline-flex items-center border-[8px] border-yellow-400 p-6 bg-black/60 rounded-[3rem] text-[90px] font-black italic shadow-xl">
                 <span id="q-a">?</span> <span class="mx-6 text-blue-500">×</span> <span id="q-b">?</span> 
                 <span class="mx-6 text-blue-500">=</span> <span id="q-ans" class="text-slate-800 transition-all">?</span>
             </div>
         </div>
 
-        <div class="flex-grow flex items-center justify-around gap-4">
+        <div class="flex-grow flex items-center justify-between px-10 relative">
             <div id="enemy-box" class="flex flex-col items-center w-1/4">
                 <div id="enemy-sprite" class="poke-large bg-contain bg-no-repeat bg-center aura-glow text-red-500"></div>
-                <div class="mt-6 text-center bg-black/60 p-6 rounded-[2.5rem] w-full border-2 border-white/20">
-                    <p id="e-name-zh" class="text-3xl font-black mb-1">---</p>
-                    <p id="e-name-other" class="text-sm text-slate-400 font-bold uppercase tracking-widest">--- / ---</p>
-                    <div class="hp-empty w-full h-6 rounded-full mt-4 overflow-hidden">
+                <div class="mt-4 text-center bg-black/70 p-4 rounded-[2rem] w-full border-2 border-white/20">
+                    <p id="e-name-zh" class="text-2xl font-black mb-1">---</p>
+                    <p id="e-name-lang" class="text-[10px] text-slate-400 uppercase leading-tight">--- / ---</p>
+                    <p id="e-type" class="text-xs text-yellow-500 font-bold mt-1">---</p>
+                    <div class="hp-bg w-full h-5 rounded-full mt-3 overflow-hidden">
                         <div id="e-hp" class="hp-fill h-full w-full"></div>
                     </div>
-                    <button onclick="refreshEnemy()" class="mt-6 bg-slate-800 px-6 py-2 rounded-full text-xs border border-slate-600 hover:bg-slate-700">挑戰其他寶可夢</button>
-                    <div id="hit-text" class="hidden text-yellow-400 font-black animate-bounce mt-4 text-3xl italic">攻擊效果絕佳!!</div>
+                    <button onclick="refreshEnemy()" class="mt-4 bg-slate-800 px-4 py-1 rounded-full text-[10px] border border-slate-600">挑戰其他寶可夢</button>
+                    <div id="hit-text" class="hidden text-yellow-400 font-black animate-bounce mt-2 text-2xl italic">攻擊效果絕佳!!</div>
                 </div>
             </div>
 
-            <div class="matrix-scale flex flex-col items-center">
-                <div class="bg-slate-900 border-4 border-blue-500 w-[300px] h-[300px] p-2 relative rounded-3xl shadow-2xl">
+            <div class="flex flex-col items-center justify-center">
+                <div class="matrix-scale bg-slate-900 border-4 border-blue-500 w-[280px] h-[280px] p-2 relative rounded-2xl shadow-2xl">
                     <div id="grid" class="grid grid-cols-10 grid-rows-10 gap-1 h-full w-full"></div>
                     <div id="block-layer" class="absolute inset-0 p-2 grid grid-cols-10 grid-rows-10 gap-1 pointer-events-none"></div>
                 </div>
-                <button id="btn-go" onclick="startCombat()" class="bg-blue-600 mt-28 px-16 py-6 rounded-3xl font-black italic text-3xl border-b-[10px] border-blue-900 shadow-2xl active:translate-y-2">上吧！<span class="p-name-zh">皮卡丘</span></button>
+                <button id="btn-go" onclick="startCombat()" class="bg-blue-600 mt-24 px-12 py-4 rounded-2xl font-black italic text-2xl border-b-[8px] border-blue-900 shadow-2xl active:translate-y-2 transition-all">
+                    上吧！<span class="p-name-zh">皮卡丘</span>
+                </button>
             </div>
 
             <div id="player-box" class="flex flex-col items-center w-1/4">
                 <div id="player-sprite" class="poke-large bg-contain bg-no-repeat bg-center aura-glow text-blue-500" style="transform: scaleX(-1);"></div>
-                <div class="mt-6 text-center bg-black/60 p-6 rounded-[2.5rem] w-full border-2 border-blue-500/30">
-                    <p class="p-name-zh text-3xl font-black text-blue-400 mb-1">皮卡丘</p>
-                    <p id="p-name-other" class="text-sm text-slate-400 font-bold uppercase tracking-widest">Pikachu / ピカチュウ</p>
-                    <p class="text-blue-500 font-bold mt-1 text-xs" id="p-type">⚡ 電系</p>
-                    <button onclick="openBag()" class="mt-6 bg-slate-800 px-10 py-3 rounded-2xl border-2 border-slate-500 flex items-center gap-3 mx-auto">🎒 背包</button>
+                <div class="mt-4 text-center bg-black/70 p-4 rounded-[2rem] w-full border-2 border-blue-500/40">
+                    <p class="p-name-zh text-2xl font-black text-blue-400 mb-1">皮卡丘</p>
+                    <p id="p-name-lang" class="text-[10px] text-slate-400 uppercase leading-tight">Pikachu / ピカチュウ</p>
+                    <p id="p-type" class="text-xs text-blue-500 font-bold mt-1">⚡ 電系</p>
+                    <div class="h-5"></div>
+                    <button onclick="openBag()" class="mt-4 bg-slate-800 px-8 py-2 rounded-xl border-2 border-slate-500 flex items-center gap-2 mx-auto active:scale-90 transition">🎒 背包</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="scene-capture" class="scene hidden flex flex-col items-center justify-center z-[2000]">
-        <div id="cap-sprite" class="w-[500px] h-[500px] bg-contain bg-no-repeat bg-center mb-10 animate-bounce"></div>
-        <div class="bg-slate-900 p-12 rounded-[4rem] border-8 border-yellow-500 text-center shadow-2xl">
+    <div id="scene-capture" class="scene hidden flex flex-col items-center justify-center z-[2000] p-10">
+        <div id="cap-sprite" class="w-[450px] h-[450px] bg-contain bg-no-repeat bg-center mb-8 animate-bounce"></div>
+        <div class="bg-slate-900/90 p-12 rounded-[4rem] border-8 border-yellow-500 text-center shadow-2xl">
             <h2 id="cap-name-zh" class="text-6xl font-black text-yellow-400 italic mb-4">---</h2>
-            <p id="cap-name-other" class="text-slate-400 text-xl font-bold uppercase tracking-[0.3em]">--- / ---</p>
-            <p class="text-white text-4xl font-black mt-8">成功收服了！！</p>
+            <p id="cap-name-lang" class="text-slate-400 text-xl font-bold uppercase tracking-[0.2em]">--- / ---</p>
+            <p class="text-white text-4xl font-black mt-10 tracking-widest">成功收服了！！</p>
         </div>
         <div class="flex gap-10 mt-16">
-            <button onclick="changeScene('main')" class="bg-slate-700 px-16 py-8 rounded-3xl font-black text-2xl">繼續冒險</button>
-            <button onclick="captureAndStore()" class="bg-red-600 px-16 py-8 rounded-3xl font-black text-2xl flex items-center gap-4 ball-shake">
+            <button onclick="resetToNextRound()" class="bg-slate-700 px-16 py-8 rounded-3xl font-black text-2xl">繼續冒險</button>
+            <button onclick="captureToBag()" class="bg-red-600 px-16 py-8 rounded-3xl font-black text-2xl flex items-center gap-4 ball-shake">
                 <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="w-12 h-12">
                 收服寶可夢
             </button>
@@ -133,14 +145,15 @@
             <h2 class="text-6xl font-black italic text-blue-400">POKEMON BAG</h2>
             <button onclick="closeBag()" class="bg-slate-800 w-20 h-20 rounded-full text-5xl font-bold border-4 border-slate-600">✕</button>
         </div>
-        <div id="bag-grid" class="grid grid-cols-2 md:grid-cols-5 gap-12"></div>
+        <div id="bag-grid"></div>
     </div>
 
     <script>
-        const db = new Dexie("MezastarAdventureDB_v27");
+        const db = new Dexie("MezastarAdventureDB_v28");
         db.version(1).stores({ bag: 'id, name, en, jp, type, count' });
 
-        const POKEDEX = [
+        // 預設 30 隻常見寶可夢
+        const PRESET_DATA = [
             {id: 25, name: "皮卡丘", en: "Pikachu", jp: "ピカチュウ", type: "⚡ 電系"},
             {id: 6, name: "噴火龍", en: "Charizard", jp: "リザードン", type: "🔥 火系"},
             {id: 906, name: "新葉喵", en: "Sprigatito", jp: "ニャオハ", type: "🍃 草系"},
@@ -149,17 +162,34 @@
             {id: 150, name: "超夢", en: "Mewtwo", jp: "ミュウツー", type: "🔮 超能力"},
             {id: 448, name: "路卡利歐", en: "Lucario", jp: "ルカリオ", type: "👊 格鬥"},
             {id: 133, name: "伊布", en: "Eevee", jp: "イーブイ", type: "⚪ 一般"},
-            {id: 384, name: "烈空坐", en: "Rayquaza", jp: "龍系"},
             {id: 94, name: "耿鬼", en: "Gengar", jp: "ゲンガー", type: "👻 幽靈"},
             {id: 149, name: "快龍", en: "Dragonite", jp: "カイリュー", type: "🐲 龍系"},
+            {id: 384, name: "烈空坐", en: "Rayquaza", jp: "レックウザ", type: "🐲 龍系"},
+            {id: 815, name: "閃焰騰王", en: "Cinderace", jp: "エースバーン", type: "🔥 火系"},
+            {id: 658, name: "甲賀忍蛙", en: "Greninja", jp: "ゲッコウガ", type: "💧 水系"},
+            {id: 1, name: "妙蛙種子", en: "Bulbasaur", jp: "フシギダネ", type: "🍃 草系"},
+            {id: 4, name: "小火龍", en: "Charmander", jp: "ヒトカゲ", type: "🔥 火系"},
+            {id: 7, name: "傑尼龜", en: "Squirtle", jp: "ゼニガメ", type: "💧 水系"},
+            {id: 810, name: "敲音猴", en: "Grookey", jp: "サルノリ", type: "🍃 草系"},
+            {id: 813, name: "騰蹴小將", en: "Raboot", jp: "ラビフット", type: "🔥 火系"},
+            {id: 816, name: "淚眼蜥", en: "Sobble", jp: "メッソン", type: "💧 水系"},
             {id: 744, name: "岩狗狗", en: "Rockruff", jp: "イワンコ", type: "🪨 岩石"},
-            {id: 1000, name: "賽富豪", en: "Gholdengo", jp: "サーフゴー", type: "💰 鋼系"}
+            {id: 778, name: "謎擬Q", en: "Mimikyu", jp: "ミミッキュ", type: "👻 幽靈"},
+            {id: 258, name: "水躍魚", en: "Mudkip", jp: "ミズゴロウ", type: "💧 水系"},
+            {id: 255, name: "火稚雞", en: "Torchic", jp: "アチャモ", type: "🔥 火系"},
+            {id: 252, name: "木守宮", en: "Treecko", jp: "キモリ", type: "🍃 草系"},
+            {id: 393, name: "波加曼", en: "Piplup", jp: "ポッチャマ", type: "💧 水系"},
+            {id: 390, name: "小火焰猴", en: "Chimchar", jp: "ヒコザル", type: "🔥 火系"},
+            {id: 387, name: "草苗龜", en: "Turtwig", jp: "ナエトル", type: "🍃 草系"},
+            {id: 1000, name: "賽富豪", en: "Gholdengo", jp: "サーフゴー", type: "🪙 鋼系"},
+            {id: 980, name: "土震獸", en: "Clodsire", jp: "ドオー", type: "☠️ 毒系"},
+            {id: 979, name: "原野水母", en: "Toedscool", jp: "ノノクラゲ", type: "🍃 草系"}
         ];
 
-        let valA, valB, ans, playerPoke = POKEDEX[0], enemyPoke = {}, currentStep = 'wait';
+        let valA, valB, ans, playerPoke = PRESET_DATA[0], enemyPoke = {}, step = 'wait';
 
         async function init() {
-            if (await db.bag.count() === 0) await db.bag.add({...playerPoke, count: 1});
+            if (await db.bag.count() === 0) await db.bag.bulkAdd(PRESET_DATA.map(p => ({...p, count: 1})));
             initStartScene();
             buildGrid();
             refreshEnemy();
@@ -167,40 +197,44 @@
 
         function initStartScene() {
             const box = document.getElementById('burst-box');
-            const IDs = [25, 6, 906, 909, 912, 150, 448, 133, 384, 1000];
-            IDs.forEach((id, i) => {
+            [25, 6, 906, 909, 912, 150, 448, 133, 384, 94].forEach((id, i) => {
                 const img = document.createElement('img');
                 img.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
                 img.className = 'poke-burst-unit';
-                img.style.animation = `burst-fly 2s ease-in infinite`;
                 img.style.animationDelay = `${i * 0.3}s`;
                 box.appendChild(img);
             });
         }
 
+        function changeScene(s) {
+            document.querySelectorAll('.scene').forEach(sc => sc.classList.add('hidden'));
+            document.getElementById(`scene-${s}`).classList.remove('hidden');
+            if(s === 'main') resetBattleUI();
+        }
+
         async function refreshEnemy() {
             const randomID = Math.floor(Math.random() * 1025) + 1;
-            const matched = POKEDEX.find(p => p.id === randomID);
+            const matched = PRESET_DATA.find(p => p.id === randomID);
             enemyPoke = matched ? {...matched} : {
                 id: randomID, name: "寶可夢 #" + randomID, en: "Unknown", jp: "アンノウン", type: "❔ 未知"
             };
             document.getElementById('enemy-sprite').style.backgroundImage = `url(https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${randomID}.png)`;
             document.getElementById('e-name-zh').innerText = enemyPoke.name;
-            document.getElementById('e-name-other').innerText = `${enemyPoke.en} / ${enemyPoke.jp}`;
+            document.getElementById('e-name-lang').innerText = `${enemyPoke.en} / ${enemyPoke.jp}`;
+            document.getElementById('e-type').innerText = enemyPoke.type;
             resetBattleUI();
         }
 
         function resetBattleUI() {
             valA = Math.floor(Math.random() * 8) + 2; valB = Math.floor(Math.random() * 8) + 2; ans = valA * valB;
-            currentStep = 'wait';
+            step = 'wait';
             document.getElementById('q-a').innerText = valA; document.getElementById('q-b').innerText = valB;
             document.getElementById('q-ans').innerText = "?";
             document.getElementById('q-ans').className = "text-slate-800 transition-all";
-            document.getElementById('q-ans').onclick = null;
             document.getElementById('e-hp').style.width = "100%";
             document.getElementById('player-sprite').style.backgroundImage = `url(https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${playerPoke.id}.png)`;
             document.querySelectorAll('.p-name-zh').forEach(el => el.innerText = playerPoke.name);
-            document.getElementById('p-name-other').innerText = `${playerPoke.en} / ${playerPoke.jp}`;
+            document.getElementById('p-name-lang').innerText = `${playerPoke.en} / ${playerPoke.jp}`;
             document.getElementById('p-type').innerText = playerPoke.type;
             document.getElementById('block-layer').innerHTML = "";
             document.getElementById('guide-line-svg').classList.add('hidden');
@@ -212,7 +246,7 @@
         }
 
         function startCombat() {
-            currentStep = 'selectA';
+            step = 'selectA';
             document.getElementById('btn-go').classList.add('hidden');
             document.getElementById('enemy-box').classList.add('battling');
             document.getElementById('player-box').classList.add('battling');
@@ -223,15 +257,15 @@
             clearFlashes();
             const svg = document.getElementById('guide-line-svg');
             svg.classList.add('hidden');
-            if(currentStep === 'selectA') {
+            if(step === 'selectA') {
                 const aEl = document.getElementById('q-a'); const rEl = document.getElementById(`row-${valA}`);
                 aEl.classList.add('guide-flash'); rEl.classList.add('guide-flash');
                 drawGuide(aEl, rEl);
-            } else if(currentStep === 'selectB') {
+            } else if(step === 'selectB') {
                 const bEl = document.getElementById('q-b'); const cEl = document.getElementById(`col-${valB}`);
                 bEl.classList.add('guide-flash'); cEl.classList.add('guide-flash');
                 drawGuide(bEl, cEl);
-            } else if(currentStep === 'finish') {
+            } else if(step === 'finish') {
                 document.getElementById('q-ans').classList.add('guide-flash');
             }
         }
@@ -246,16 +280,16 @@
         }
 
         function handleRow(r) {
-            if(currentStep === 'selectA' && r === valA) {
-                currentStep = 'selectB';
+            if(step === 'selectA' && r === valA) {
+                step = 'selectB';
                 for(let i=1; i<=valA; i++) createBlock(i, 1);
                 updateGuide();
             }
         }
 
         function handleCol(c) {
-            if(currentStep === 'selectB' && c === valB) {
-                currentStep = 'animating';
+            if(step === 'selectB' && c === valB) {
+                step = 'animating';
                 document.getElementById('guide-line-svg').classList.add('hidden');
                 for(let j=2; j<=valB; j++) {
                     setTimeout(() => {
@@ -267,6 +301,7 @@
         }
 
         function showReadyAns() {
+            step = 'finish';
             const qa = document.getElementById('q-ans');
             qa.innerText = ans;
             qa.className = "text-slate-400 guide-flash cursor-pointer px-4";
@@ -284,17 +319,14 @@
                 changeScene('capture');
                 document.getElementById('cap-sprite').style.backgroundImage = document.getElementById('enemy-sprite').style.backgroundImage;
                 document.getElementById('cap-name-zh').innerText = enemyPoke.name;
-                document.getElementById('cap-name-other').innerText = `${enemyPoke.en} / ${enemyPoke.jp}`;
+                document.getElementById('cap-name-lang').innerText = `${enemyPoke.en} / ${enemyPoke.jp}`;
             }, 2000);
         }
 
-        async function captureAndStore() {
+        async function captureToBag() {
             const existing = await db.bag.get(enemyPoke.id);
-            if(existing) {
-                await db.bag.update(enemyPoke.id, { count: (existing.count || 1) + 1 });
-            } else {
-                await db.bag.add({...enemyPoke, count: 1});
-            }
+            if(existing) await db.bag.update(enemyPoke.id, { count: (existing.count || 1) + 1 });
+            else await db.bag.add({...enemyPoke, count: 1});
             openBag();
         }
 
@@ -303,26 +335,30 @@
             const items = await db.bag.toArray();
             const grid = document.getElementById('bag-grid');
             grid.innerHTML = items.map(i => `
-                <div onclick="selectFromBag(${i.id})" class="bg-slate-800 p-8 rounded-[3rem] text-center border-4 border-slate-700 hover:border-blue-500 cursor-pointer relative shadow-xl">
+                <div onclick="selectPoke(${i.id})" class="bg-slate-800 p-8 rounded-[3rem] text-center border-4 border-slate-700 hover:border-blue-500 cursor-pointer relative shadow-xl">
                     <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${i.id}.png" class="w-full h-auto scale-125 mb-6">
                     <p class="text-3xl font-black text-white">${i.name}</p>
-                    <p class="text-xs opacity-50">${i.en} / ${i.jp}</p>
+                    <p class="text-[10px] opacity-50">${i.en} / ${i.jp}</p>
                     <p class="text-blue-400 font-bold mt-2">${i.type}</p>
                     ${i.count > 1 ? `<div class="absolute bottom-6 right-6 bg-red-600 text-white px-4 py-1 rounded-full text-2xl font-black">x${i.count}</div>` : ''}
                 </div>
             `).join('');
         }
 
-        function selectFromBag(id) {
-            db.bag.get(id).then(p => { playerPoke = p; closeBag(); resetBattleUI(); });
+        function selectPoke(id) {
+            db.bag.get(id).then(p => { playerPoke = p; closeBag(); });
         }
+
+        function closeBag() { document.getElementById('scene-bag').classList.add('hidden'); resetBattleUI(); }
+        function resetToNextRound() { changeScene('main'); }
+        function clearFlashes() { document.querySelectorAll('.guide-flash').forEach(el => el.classList.remove('guide-flash')); }
 
         function buildGrid() {
             const grid = document.getElementById('grid'); grid.innerHTML = "";
             for (let r = 0; r <= 9; r++) {
                 for (let c = 0; c <= 9; c++) {
                     const d = document.createElement('div');
-                    d.className = "flex items-center justify-center border border-slate-800 font-bold text-xs";
+                    d.className = "flex items-center justify-center border border-slate-800 font-bold text-xs cursor-pointer";
                     if (c === 0 && r > 0) { d.innerText = r; d.id = `row-${r}`; d.onclick = () => handleRow(r); }
                     else if (r === 0 && c > 0) { d.innerText = c; d.id = `col-${c}`; d.onclick = () => handleCol(c); }
                     grid.appendChild(d);
@@ -336,13 +372,6 @@
             wrap.appendChild(b); document.getElementById('block-layer').appendChild(wrap);
             setTimeout(() => b.classList.add('block-show'), 50);
         }
-
-        function changeScene(s) {
-            document.querySelectorAll('.scene').forEach(sc => sc.classList.add('hidden'));
-            document.getElementById(`scene-${s}`).classList.remove('hidden');
-        }
-        function closeBag() { document.getElementById('scene-bag').classList.add('hidden'); }
-        function clearFlashes() { document.querySelectorAll('.guide-flash').forEach(el => el.classList.remove('guide-flash')); }
 
         init();
     </script>

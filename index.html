@@ -2,135 +2,177 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>櫻木博士的珠算教室 v9.4</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>寶可夢珠算修行 v8.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background: #020617; margin: 0; overflow: hidden; }
-
-        /* 強制左右固定比例：左 45% 右 55% */
-        .game-container { display: flex; width: 100vw; height: 100vh; flex-direction: row !important; }
-
-        /* 左側：櫻木博士區 */
-        .left-side { flex: 0 0 45%; background: #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 20px; border-right: 8px solid #fbbf24; }
-        .prof-img { width: 95%; max-height: 75vh; object-fit: contain; }
-        
-        /* RPG 對話框 */
-        .dialog { width: 90%; background: white; color: #1e293b; border: 6px solid #3b82f6; border-radius: 20px; padding: 20px; font-size: 1.2rem; font-weight: 900; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-
-        /* 右側：算盤區 */
-        .right-side { flex: 0 0 55%; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-
-        /* 算盤實體 */
-        .abacus { background: #451a03; border: 12px solid #78350f; border-radius: 40px; width: 340px; height: 460px; position: relative; }
-        .beam { position: absolute; top: 120px; width: 100%; height: 16px; background: #270e02; z-index: 50; }
-        .rod { position: absolute; width: 8px; height: 100%; background: #1e293b; left: 50%; transform: translateX(-50%); }
-
-        /* 珠子樣式 */
-        .bead { width: 70px; height: 38px; border-radius: 40%; border: 1px solid rgba(0,0,0,0.5); transition: transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); z-index: 60; cursor: pointer; }
-        .top { background: #fb923c; box-shadow: 0 4px #9a3412; }
-        .btm { background: #fde047; box-shadow: 0 4px #ca8a04; }
-
-        /* ✨ 虛線閃爍提示特效 */
-        @keyframes flash-guide {
-            0%, 100% { outline: 0px solid white; transform: scale(1); filter: brightness(1); }
-            50% { outline: 6px dashed #ffffff; transform: scale(1.15); filter: brightness(1.5); outline-offset: 4px; }
-        }
-        .guide { animation: flash-guide 0.8s infinite !important; z-index: 100 !important; border: 2px solid white !important; }
+        body { touch-action: manipulation; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .bead { transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .active-glow { box-shadow: 0 0 15px rgba(255, 255, 255, 0.8); border: 2px solid white; }
+        @keyframes poke-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .poke-animate { animation: poke-bounce 1s infinite; }
     </style>
 </head>
-<body>
+<body class="bg-slate-900 overflow-hidden">
 
-    <div class="game-container">
-        <div class="left-side">
-            <img src="https://tw.portal-pokemon.com/play/resources/pokedex/img/pm/00880092c4e207b1277a06d09bc177656608992e.png" class="prof-img">
-            <div class="dialog">
-                <p id="msg">哈囉！我是櫻木博士。珠算能鍛鍊你的大腦，我們來試試 7 + 8 的進位教學吧！</p>
-                <button onclick="Tuto.next()" class="mt-4 float-right bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-black">下一步 ❯</button>
-            </div>
+<div id="app" class="flex flex-col h-screen max-w-md mx-auto relative">
+    
+    <div id="battle-scene" class="h-1/3 m-4 rounded-3xl border-4 border-white shadow-2xl relative flex items-center justify-around transition-colors duration-700 bg-green-400">
+        <div class="bg-white/90 p-4 rounded-2xl shadow-inner text-center min-w-[80px]">
+            <div class="text-xs font-bold text-slate-500 uppercase">目標數</div>
+            <div id="target-number" class="text-5xl font-black text-slate-800">1</div>
         </div>
 
-        <div class="right-side">
-            <div class="abacus flex justify-around px-6">
-                <div class="beam"></div>
-                <div class="relative w-20 h-full flex flex-col pt-4">
-                    <div class="rod"></div>
-                    <div id="t-up" class="bead top mx-auto"></div>
-                    <div class="mt-[135px] flex flex-col gap-2">
-                        <div id="t-d1" class="bead btm mx-auto"></div>
-                        <div id="t-d2" class="bead btm mx-auto"></div>
-                        <div id="t-d3" class="bead btm mx-auto"></div>
-                        <div id="t-d4" class="bead btm mx-auto"></div>
-                    </div>
-                </div>
-                <div class="relative w-20 h-full flex flex-col pt-4">
-                    <div class="rod"></div>
-                    <div id="o-up" class="bead top mx-auto"></div>
-                    <div class="mt-[135px] flex flex-col gap-2">
-                        <div id="o-d1" class="bead btm mx-auto"></div>
-                        <div id="o-d2" class="bead btm mx-auto"></div>
-                        <div id="o-d3" class="bead btm mx-auto"></div>
-                        <div id="o-d4" class="bead btm mx-auto"></div>
-                    </div>
-                </div>
-            </div>
+        <div class="text-center">
+            <div id="target-pokemon" class="text-8xl poke-animate drop-shadow-lg">🌱</div>
+            <div id="pokemon-name" class="mt-2 bg-black/30 px-3 py-1 rounded-full text-white text-sm font-bold">妙蛙種子</div>
+        </div>
+    </div>
+
+    <div class="px-6 text-center">
+        <div id="instruction-msg" class="text-yellow-400 font-bold text-lg drop-shadow-md">👆 撥動 1 顆精靈球來攻擊！</div>
+    </div>
+
+    <div class="flex-1 flex items-center justify-center p-4">
+        <div id="abacus-frame" class="w-full bg-orange-100 p-8 rounded-[40px] border-[10px] border-amber-900 shadow-2xl relative">
+            <div class="absolute w-full h-4 bg-amber-900 left-0 top-[85px] z-20 shadow-md border-y border-amber-800"></div>
             
-            <div class="mt-8 flex gap-20">
-                <div class="text-center"><p class="text-slate-500 text-xs">十位</p><p id="val-t" class="text-5xl font-black text-white">0</p></div>
-                <div class="text-center"><p class="text-yellow-500 text-xs">個位</p><p id="val-o" class="text-5xl font-black text-yellow-400">0</p></div>
+            <div class="flex justify-center relative h-72">
+                <div class="rod w-20 h-full flex flex-col items-center relative">
+                    <div class="absolute w-2 h-full bg-slate-400 rounded-full shadow-inner"></div>
+                    
+                    <div id="bead-5" class="bead upper w-16 h-12 bg-red-500 rounded-full shadow-lg z-30 cursor-pointer border-b-8 border-red-700" 
+                         style="transform: translateY(0px);" onclick="toggleUpperBead()"></div>
+                    
+                    <div class="h-16"></div> <div class="bead lower w-16 h-12 bg-blue-500 rounded-full shadow-lg z-30 cursor-pointer border-b-8 border-blue-700 my-1" 
+                         style="transform: translateY(60px);" onclick="handleLowerClick(0)"></div>
+                    <div class="bead lower w-16 h-12 bg-blue-500 rounded-full shadow-lg z-30 cursor-pointer border-b-8 border-blue-700 my-1" 
+                         style="transform: translateY(60px);" onclick="handleLowerClick(1)"></div>
+                    <div class="bead lower w-16 h-12 bg-blue-500 rounded-full shadow-lg z-30 cursor-pointer border-b-8 border-blue-700 my-1" 
+                         style="transform: translateY(60px);" onclick="handleLowerClick(2)"></div>
+                    <div class="bead lower w-16 h-12 bg-blue-500 rounded-full shadow-lg z-30 cursor-pointer border-b-8 border-blue-700 my-1" 
+                         style="transform: translateY(60px);" onclick="handleLowerClick(3)"></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        const Tuto = {
-            step: 0,
-            pos: { t:{u:0, d:0}, o:{u:0, d:0} },
-            steps: [
-                { txt: "第一步：在個位撥出 7。也就是一顆上珠(5)和兩顆下珠(2)！", run: () => { 
-                    this.hint('o-up', 'o-d1', 'o-d2');
-                    this.move('o', 5, 2); 
-                }},
-                { txt: "現在要加 8，個位不夠了！口訣是：『加 8 等於進 10 減 2』。", run: () => this.hint() },
-                { txt: "注意看左邊！我們先在十位撥上一顆下珠，這就是『進 10』！", run: () => { 
-                    this.hint('t-d1');
-                    this.move('t', 0, 1); 
-                }},
-                { txt: "最後，把個位剛才的兩顆珠子『撥開』，這就是『減 2』。", run: () => { 
-                    this.hint('o-d1', 'o-d2');
-                    this.move('o', 5, 0); 
-                }},
-                { txt: "太棒了！算盤顯示 15。你已經學會最難的進位了！", run: () => this.hint() }
-            ],
-            move(c, u, d) { this.pos[c] = {u, d}; this.sync(); },
-            sync() {
-                ['t', 'o'].forEach(c => {
-                    document.getElementById(`${c}-up`).style.transform = this.pos[c].u === 5 ? "translateY(65px)" : "translateY(0)";
-                    for(let i=1; i<=4; i++) {
-                        document.getElementById(`${c}-d${i}`).style.transform = i <= this.pos[c].d ? "translateY(-65px)" : "translateY(0)";
-                    }
-                });
-                document.getElementById('val-t').innerText = (this.pos.t.u + this.pos.t.d) * 10;
-                document.getElementById('val-o').innerText = this.pos.o.u + this.pos.o.dn || (this.pos.o.u + this.pos.o.d);
-            },
-            hint(...ids) {
-                document.querySelectorAll('.guide').forEach(el => el.classList.remove('guide'));
-                ids.forEach(id => document.getElementById(id).classList.add('guide'));
-            },
-            next() {
-                if(this.step < this.steps.length) {
-                    const s = this.steps[this.step];
-                    document.getElementById('msg').innerText = s.txt;
-                    s.run();
-                    this.step++;
-                } else {
-                    alert("講座結束！你真有天分！");
-                    location.reload();
-                }
+    <div class="p-4 text-center text-slate-500 text-xs">
+        寶可夢珠算修行程式 v8.1 | 初學者模式
+    </div>
+</div>
+
+<script>
+    // --- 1. 課程資料庫 ---
+    const CURRICULUM = [
+        { id: "L1", target: 1, pokemon: "🌱", name: "妙蛙種子", color: "bg-green-400" },
+        { id: "L2", target: 2, pokemon: "💧", name: "傑尼龜", color: "bg-blue-400" },
+        { id: "L3", target: 3, pokemon: "🔥", name: "小火龍", color: "bg-red-400" }
+    ];
+
+    let currentLevelIndex = 0;
+    let lowerBeadsState = [0, 0, 0, 0]; // 0: 遠離, 1: 靠樑
+    let upperBeadState = 0; // 0: 遠離, 1: 靠樑
+
+    // --- 2. 算盤核心邏輯 ---
+
+    function handleLowerClick(index) {
+        // 判斷是要向上還是向下
+        const isMovingUp = lowerBeadsState[index] === 0;
+        
+        // 更新狀態：連動邏輯
+        lowerBeadsState = lowerBeadsState.map((state, i) => {
+            if (isMovingUp) {
+                return (i <= index) ? 1 : state; // 點擊點以上的全部帶上去
+            } else {
+                return (i >= index) ? 0 : state; // 點擊點以下的全部帶下來
             }
-        };
-        window.onload = () => Tuto.sync();
-    </script>
+        });
+        
+        renderAbacus();
+        checkResult();
+    }
+
+    function toggleUpperBead() {
+        upperBeadState = (upperBeadState === 0) ? 1 : 0;
+        renderAbacus();
+        checkResult();
+    }
+
+    function renderAbacus() {
+        // 渲染地珠
+        const lowerBeads = document.querySelectorAll('.lower');
+        lowerBeads.forEach((bead, i) => {
+            // 靠樑位置 Y=0, 遠離位置 Y=60
+            bead.style.transform = lowerBeadsState[i] === 1 ? 'translateY(0px)' : 'translateY(60px)';
+            if(lowerBeadsState[i] === 1) bead.classList.add('active-glow');
+            else bead.classList.remove('active-glow');
+        });
+
+        // 渲染天珠
+        const upperBead = document.getElementById('bead-5');
+        // 天珠向下靠近樑才是 5
+        upperBead.style.transform = upperBeadState === 1 ? 'translateY(25px)' : 'translateY(0px)';
+        if(upperBeadState === 1) upperBead.classList.add('active-glow');
+        else upperBead.classList.remove('active-glow');
+    }
+
+    // --- 3. 遊戲流程控制 ---
+
+    function checkResult() {
+        const currentSum = (upperBeadState * 5) + lowerBeadsState.reduce((a, b) => a + b, 0);
+        const target = CURRICULUM[currentLevelIndex].target;
+
+        if (currentSum === target) {
+            triggerCapture();
+        }
+    }
+
+    function triggerCapture() {
+        const pokemonEl = document.getElementById('target-pokemon');
+        const msgEl = document.getElementById('instruction-msg');
+
+        // 視覺特效
+        pokemonEl.style.transform = "scale(0.2) rotate(360deg)";
+        pokemonEl.style.transition = "all 0.8s ease-in";
+        msgEl.innerText = "✨ Gotcha! 成功捕獲！ ✨";
+        msgEl.style.color = "#4ade80";
+
+        // 下一關
+        setTimeout(() => {
+            currentLevelIndex++;
+            if (currentLevelIndex < CURRICULUM.length) {
+                initLevel();
+            } else {
+                msgEl.innerText = "🏆 恭喜完成初步修行！(L1-L3)";
+                alert("你太棒了！所有的修行都完成囉！");
+            }
+        }, 1500);
+    }
+
+    function initLevel() {
+        const level = CURRICULUM[currentLevelIndex];
+        
+        // 更新 UI
+        document.getElementById('target-number').innerText = level.target;
+        document.getElementById('target-pokemon').innerText = level.pokemon;
+        document.getElementById('target-pokemon').style.transform = "scale(1) rotate(0deg)";
+        document.getElementById('pokemon-name').innerText = level.name;
+        document.getElementById('battle-scene').className = `h-1/3 m-4 rounded-3xl border-4 border-white shadow-2xl relative flex items-center justify-around transition-colors duration-700 ${level.color}`;
+        
+        const msgEl = document.getElementById('instruction-msg');
+        msgEl.innerText = `👆 撥動 ${level.target} 顆精靈球來攻擊！`;
+        msgEl.style.color = "#facc15";
+
+        // 歸零
+        lowerBeadsState = [0, 0, 0, 0];
+        upperBeadState = 0;
+        renderAbacus();
+    }
+
+    // 初始化第一關
+    window.onload = initLevel;
+
+</script>
 </body>
 </html>

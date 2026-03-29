@@ -3,251 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>寶可夢數學對戰 v8.2 - 十進位算盤版</title>
+    <title>寶可夢珠算對戰 v8.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; overflow: hidden; background: #0f172a; color: white; }
+        body { font-family: 'Noto Sans TC', sans-serif; overflow: hidden; background: #1e293b; color: white; }
         .scene { position: absolute; inset: 0; transition: opacity 0.4s; }
         .hidden { display: none !important; }
-        
-        /* 算盤珠子動畫 */
-        .bead { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-        .bead-active { transform: scale(0.95); filter: brightness(1.2); }
-        
-        /* 進位閃爍特效 */
-        @keyframes levelUp {
-            0% { background-color: white; transform: scale(1.1); }
-            100% { transform: scale(1); }
+
+        /* 算盤結構 */
+        .abacus-frame {
+            background: #78350f; /* 木頭色 */
+            border: 8px solid #451a03;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
         }
-        .advance-flash { animation: levelUp 0.5s ease-out; }
+        .abacus-bar {
+            background: #451a03;
+            height: 12px;
+            width: 100%;
+            position: absolute;
+            top: 30%;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .rod {
+            width: 6px;
+            height: 100%;
+            background: #334155;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* 算盤珠子 */
+        .bead {
+            width: 60px;
+            height: 30px;
+            border-radius: 50% / 100%;
+            transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            cursor: pointer;
+            position: relative;
+            z-index: 20;
+            border: 1px solid rgba(0,0,0,0.2);
+        }
+        .bead-top { background: #f97316; box-shadow: 0 4px #c2410c; }
+        .bead-bottom { background: #fbbf24; box-shadow: 0 4px #d97706; }
+        .bead-active { filter: brightness(1.2); }
+
+        /* 動態提示閃爍 */
+        @keyframes hint-glow {
+            0%, 100% { box-shadow: 0 0 5px #60a5fa; }
+            50% { box-shadow: 0 0 20px #60a5fa, inset 0 0 10px white; }
+        }
+        .hint-active { animation: hint-glow 1s infinite; border: 2px solid white; }
     </style>
 </head>
 <body>
 
-    <div id="start-scene" class="scene flex flex-col items-center justify-center bg-gradient-to-b from-indigo-900 to-black">
-        <h1 class="text-5xl font-black italic mb-12 text-yellow-400 tracking-tighter shadow-blue-500">POKÉMON MATH</h1>
-        <button onclick="SceneManager.to('main-hub')" class="bg-yellow-400 text-blue-900 px-16 py-5 rounded-full text-2xl font-black shadow-xl active:scale-95 transition-all">
-            一起抓夢吧！
-        </button>
-    </div>
-
-    <div id="main-hub" class="scene hidden flex flex-col p-6 bg-slate-100 text-slate-900">
-        <div class="flex justify-between items-center mb-8">
-            <h2 class="text-2xl font-black italic text-indigo-700">準備對戰</h2>
-            <div id="mode-label" class="bg-indigo-600 text-white px-4 py-1 rounded-full text-sm font-bold shadow-md">加法練習</div>
+    <div id="battle-scene" class="scene flex flex-col items-center p-4">
+        
+        <div class="w-full flex justify-between items-center mb-4">
+            <div class="flex flex-col">
+                <span class="text-xs text-slate-400">MATH BATTLE</span>
+                <span id="mode-display" class="text-lg font-black text-blue-400 italic">加法模式</span>
+            </div>
+            <button id="hint-btn" onclick="JellyAbacus.toggleHint()" class="bg-green-600 px-4 py-2 rounded-full text-xs font-bold shadow-lg transition-colors">
+                提示：ON
+            </button>
         </div>
 
-        <div class="flex flex-1 items-center justify-around mb-10">
-            <div class="text-center">
-                <div class="relative">
-                    <img id="enemy-img" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/906.png" class="w-44 h-44 object-contain">
-                    <div class="absolute -bottom-2 left-0 w-full h-3 bg-gray-300 rounded-full overflow-hidden border-2 border-white">
-                        <div class="h-full bg-red-500 w-full"></div>
-                    </div>
-                </div>
-                <p id="enemy-name" class="font-bold mt-4 text-lg text-slate-600">新葉喵</p>
+        <div id="math-question" class="text-6xl font-black text-yellow-400 mb-2 italic drop-shadow-lg">
+            7 + 8 = ?
+        </div>
+
+        <div id="instruction-box" class="w-full max-w-sm min-h-[60px] mb-6">
+            <div id="instruction-text" class="bg-blue-900/40 border border-blue-500/50 rounded-2xl p-3 text-center text-blue-200 font-bold text-sm">
+                💡 準備好了嗎？讓我們開始撥珠！
             </div>
+        </div>
+
+        <div class="abacus-frame relative w-full max-w-[340px] h-[420px] rounded-3xl overflow-hidden flex justify-around px-4">
+            <div class="abacus-bar"></div>
             
-            <div class="text-5xl font-black italic text-red-500 drop-shadow-md">VS</div>
-
-            <div class="text-center">
-                <div class="relative">
-                    <img id="player-img" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" class="w-44 h-44 object-contain">
-                    <button onclick="SceneManager.to('bag-scene')" class="absolute -top-4 -right-4 bg-white p-2 rounded-full shadow-lg border border-slate-200 active:scale-90">🎒</button>
-                    <div class="absolute -bottom-2 left-0 w-full h-3 bg-gray-300 rounded-full overflow-hidden border-2 border-white">
-                        <div class="h-full bg-green-500 w-full"></div>
-                    </div>
+            <div class="relative w-20 h-full flex flex-col justify-between py-4">
+                <div class="rod"></div>
+                <div id="tens-top" onclick="JellyAbacus.handleTop('tens')" class="bead bead-top mx-auto translate-y-0"></div>
+                <div class="flex flex-col-reverse gap-1 mb-2">
+                    <div id="tens-b4" onclick="JellyAbacus.handleBottom('tens', 4)" class="bead bead-bottom mx-auto"></div>
+                    <div id="tens-b3" onclick="JellyAbacus.handleBottom('tens', 3)" class="bead bead-bottom mx-auto"></div>
+                    <div id="tens-b2" onclick="JellyAbacus.handleBottom('tens', 2)" class="bead bead-bottom mx-auto"></div>
+                    <div id="tens-b1" onclick="JellyAbacus.handleBottom('tens', 1)" class="bead bead-bottom mx-auto"></div>
                 </div>
-                <p id="player-name" class="font-bold mt-4 text-lg text-slate-600 italic">皮卡丘</p>
+            </div>
+
+            <div class="relative w-20 h-full flex flex-col justify-between py-4">
+                <div class="rod"></div>
+                <div id="ones-top" onclick="JellyAbacus.handleTop('ones')" class="bead bead-top mx-auto translate-y-0"></div>
+                <div class="flex flex-col-reverse gap-1 mb-2">
+                    <div id="ones-b4" onclick="JellyAbacus.handleBottom('ones', 4)" class="bead bead-bottom mx-auto"></div>
+                    <div id="ones-b3" onclick="JellyAbacus.handleBottom('ones', 3)" class="bead bead-bottom mx-auto"></div>
+                    <div id="ones-b2" onclick="JellyAbacus.handleBottom('ones', 2)" class="bead bead-bottom mx-auto"></div>
+                    <div id="ones-b1" onclick="JellyAbacus.handleBottom('ones', 1)" class="bead bead-bottom mx-auto"></div>
+                </div>
             </div>
         </div>
 
-        <button onclick="SceneManager.to('battle-scene')" class="w-full bg-indigo-600 text-white py-5 rounded-3xl text-2xl font-black shadow-xl mb-4 active:scale-95 transition-all">
-            上吧！ <span id="btn-player-name">皮卡丘</span>
-        </button>
-    </div>
-
-    <div id="bag-scene" class="scene hidden bg-white p-6 text-slate-900">
-        <div class="flex justify-between mb-6">
-            <h2 class="text-3xl font-black">夥伴背包</h2>
-            <button onclick="SceneManager.to('main-hub')" class="text-3xl font-bold">✕</button>
-        </div>
-        <div id="bag-grid" class="grid grid-cols-4 gap-4 overflow-y-auto h-[70vh]"></div>
-    </div>
-
-    <div id="battle-scene" class="scene hidden flex flex-col items-center p-4 bg-slate-900">
-        <div class="flex bg-slate-800 rounded-full p-1 border-2 border-white/10 mb-6 mt-4">
-            <button id="mode-add" onclick="JellyBattle.setMode('addition')" class="px-8 py-2 rounded-full text-sm font-bold transition-all bg-indigo-500 shadow-lg">加法</button>
-            <button id="mode-sub" onclick="JellyBattle.setMode('subtraction')" class="px-8 py-2 rounded-full text-sm font-bold transition-all text-slate-400">減法</button>
-        </div>
-
-        <div id="math-question" class="text-6xl font-black text-yellow-400 mb-8 italic drop-shadow-[0_0_15px_rgba(250,204,21,0.4)]">7 + 8 = ?</div>
-
-        <div id="abacus-container" class="grid grid-cols-10 gap-3 p-6 bg-slate-800 rounded-[2rem] border-4 border-slate-700 shadow-2xl" style="width: 360px; height: 480px;">
-            <div id="tens-column" class="col-span-3 grid grid-rows-10 gap-2 border-r-4 border-white/20 pr-3">
-                </div>
-            <div id="ones-column" class="col-span-7 grid grid-cols-5 grid-rows-10 gap-2 pl-1">
-                </div>
-        </div>
-
-        <div class="mt-6 text-indigo-300 font-bold tracking-widest text-lg">
-            目前數值：<span id="current-value-display" class="text-3xl text-white">0</span>
-        </div>
-
-        <div class="flex gap-4 mt-8 w-full px-4">
-            <button onclick="JellyBattle.resetGame()" class="flex-1 bg-slate-700 py-4 rounded-2xl font-black text-lg">重新開始</button>
-            <button onclick="JellyBattle.validate()" class="flex-[2] bg-red-600 py-4 rounded-2xl font-black text-2xl shadow-lg shadow-red-900/40 active:scale-95 transition-all">精靈球 OK!</button>
+        <div class="mt-6 flex flex-col items-center w-full">
+            <div class="text-slate-400 font-bold mb-2 uppercase tracking-widest text-xs">目前算盤數值</div>
+            <div id="current-val" class="text-5xl font-black text-white mb-6">0</div>
+            
+            <div class="flex gap-4 w-full max-w-sm">
+                <button onclick="JellyAbacus.init()" class="bg-slate-700 p-4 rounded-2xl font-bold flex-1 active:scale-95 transition-transform">重新出題</button>
+                <button onclick="JellyAbacus.validate()" class="bg-red-600 p-4 rounded-2xl font-black text-xl flex-[2] shadow-lg shadow-red-900/40 active:scale-95 transition-transform">精靈球 OK!</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // --- Core State ---
-        const POKEMONS = [
-            { id: 25, name: "皮卡丘", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" },
-            { id: 1, name: "妙蛙種子", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png" },
-            { id: 4, name: "小火龍", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png" },
-            { id: 7, name: "傑尼龜", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png" },
-            { id: 906, name: "新葉喵", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/906.png" },
-            { id: 909, name: "呆火鱷", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/909.png" },
-            { id: 912, name: "潤水鴨", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/912.png" }
-        ];
-
-        let state = {
-            player: POKEMONS[0],
-            enemy: POKEMONS[4],
-            mode: 'addition'
-        };
-
-        // --- Scene Manager ---
-        const SceneManager = {
-            to(id) {
-                document.querySelectorAll('.scene').forEach(s => s.classList.add('hidden'));
-                document.getElementById(id).classList.remove('hidden');
-                if (id === 'main-hub') this.updateHub();
-                if (id === 'battle-scene') JellyBattle.resetGame();
-                if (id === 'bag-scene') this.renderBag();
+        const JellyAbacus = {
+            state: {
+                tens: { top: 0, bottom: 0 },
+                ones: { top: 0, bottom: 0 }
             },
-            updateHub() {
-                document.getElementById('player-img').src = state.player.sprite;
-                document.getElementById('player-name').innerText = state.player.name;
-                document.getElementById('btn-player-name').innerText = state.player.name;
-                document.getElementById('mode-label').innerText = state.mode === 'addition' ? '加法練習' : '減法練習';
-                
-                state.enemy = POKEMONS[Math.floor(Math.random() * POKEMONS.length)];
-                document.getElementById('enemy-img').src = state.enemy.sprite;
-                document.getElementById('enemy-name').innerText = state.enemy.name;
-            },
-            renderBag() {
-                const grid = document.getElementById('bag-grid');
-                grid.innerHTML = '';
-                POKEMONS.forEach(p => {
-                    const div = document.createElement('div');
-                    div.className = "text-center p-2 bg-slate-100 rounded-2xl active:bg-indigo-100 transition-colors";
-                    div.innerHTML = `<img src="${p.sprite}" class="w-full"> <p class="text-sm font-bold">${p.name}</p>`;
-                    div.onclick = () => { state.player = p; this.to('main-hub'); };
-                    grid.appendChild(div);
-                });
-            }
-        };
-
-        // --- M4: Abacus Battle Logic ---
-        const JellyBattle = {
-            tens: 0,
-            ones: 0,
             target: 0,
+            showHint: true,
 
-            setMode(m) {
-                state.mode = m;
-                document.getElementById('mode-add').className = m === 'addition' ? 'px-8 py-2 rounded-full text-sm font-bold bg-indigo-500 shadow-lg' : 'px-8 py-2 rounded-full text-sm font-bold text-slate-400';
-                document.getElementById('mode-sub').className = m === 'subtraction' ? 'px-8 py-2 rounded-full text-sm font-bold bg-red-600 shadow-lg text-white' : 'px-8 py-2 rounded-full text-sm font-bold text-slate-400';
-                this.resetGame();
+            init() {
+                this.state = {
+                    tens: { top: 0, bottom: 0 },
+                    ones: { top: 0, bottom: 0 }
+                };
+                this.generateQuestion();
+                this.updateUI();
             },
 
-            resetGame() {
-                this.tens = 0;
-                this.ones = 0;
-                this.generate();
-                this.render();
+            generateQuestion() {
+                const a = Math.floor(Math.random() * 18) + 1; // 1-18
+                const b = Math.floor(Math.random() * 9) + 1;  // 1-9
+                this.target = a + b;
+                document.getElementById('math-question').innerText = `${a} + ${b} = ?`;
+                this.updateInstruction(`目標是撥出 ${this.target}。先想辦法湊出十位數！`);
             },
 
-            generate() {
-                const q = document.getElementById('math-question');
-                if (state.mode === 'addition') {
-                    let a = Math.floor(Math.random() * 9) + 1;
-                    let b = Math.floor(Math.random() * 9) + 1;
-                    this.target = a + b;
-                    q.innerText = `${a} + ${b} = ?`;
+            handleTop(col) {
+                this.state[col].top = (this.state[col].top === 0) ? 5 : 0;
+                this.updateUI();
+                this.checkLogic();
+            },
+
+            handleBottom(col, val) {
+                this.state[col].bottom = (this.state[col].bottom === val) ? val - 1 : val;
+                this.updateUI();
+                this.checkLogic();
+            },
+
+            updateUI() {
+                // 更新珠子位置與顏色
+                ['tens', 'ones'].forEach(col => {
+                    // 上珠 (5)
+                    const topEl = document.getElementById(`${col}-top`);
+                    if (this.state[col].top === 5) {
+                        topEl.style.transform = "translateY(55px)"; // 撥向橫樑
+                        topEl.classList.add('bead-active');
+                    } else {
+                        topEl.style.transform = "translateY(0px)";
+                        topEl.classList.remove('bead-active');
+                    }
+
+                    // 下珠 (1-4)
+                    for (let i = 1; i <= 4; i++) {
+                        const bEl = document.getElementById(`${col}-b${i}`);
+                        if (i <= this.state[col].bottom) {
+                            bEl.style.transform = "translateY(-55px)"; // 撥向橫樑
+                            bEl.classList.add('bead-active');
+                        } else {
+                            bEl.style.transform = "translateY(0px)";
+                            bEl.classList.remove('bead-active');
+                        }
+                    }
+                });
+
+                const currentTotal = this.calculate();
+                document.getElementById('current-val').innerText = currentTotal;
+            },
+
+            calculate() {
+                const t = (this.state.tens.top + this.state.tens.bottom) * 10;
+                const o = (this.state.ones.top + this.state.ones.bottom);
+                return t + o;
+            },
+
+            checkLogic() {
+                if (!this.showHint) return;
+                const current = this.calculate();
+                
+                if (current === 0) {
+                    this.updateInstruction("請開始撥珠...");
+                } else if (current < this.target) {
+                    const diff = this.target - current;
+                    if (diff >= 10) {
+                        this.updateInstruction(`還差 ${diff}，試著在左邊「十位檔」撥入珠子。`);
+                    } else {
+                        this.updateInstruction(`還差 ${diff}，在右邊「個位檔」撥入珠子。`);
+                    }
+                } else if (current === this.target) {
+                    this.updateInstruction("🎯 沒錯！就是這個數字，按下 OK 收服！");
                 } else {
-                    let a = Math.floor(Math.random() * 10) + 10;
-                    let b = Math.floor(Math.random() * 9) + 1;
-                    this.target = a - b;
-                    q.innerText = `${a} - ${b} = ?`;
-                    // 減法預填：模擬算盤起始數值
-                    this.tens = Math.floor(a / 10);
-                    this.ones = a % 10;
+                    this.updateInstruction("超過目標了！撥掉一些珠子試試看。");
                 }
             },
 
-            render() {
-                const tensCol = document.getElementById('tens-column');
-                const onesCol = document.getElementById('ones-column');
-                tensCol.innerHTML = '';
-                onesCol.innerHTML = '';
-
-                // Render Tens (10格, 每一格代表10)
-                for (let i = 9; i >= 0; i--) {
-                    const b = document.createElement('div');
-                    const isActive = i < this.tens;
-                    b.className = `bead w-full h-8 rounded-lg border-2 ${isActive ? 'bg-orange-500 border-orange-300 bead-active shadow-[0_0_10px_#f97316]' : 'bg-slate-700 border-slate-600'}`;
-                    b.onclick = () => { this.tens = isActive ? i : i + 1; this.updateUI(); };
-                    tensCol.appendChild(b);
-                }
-
-                // Render Ones (50格, 每一格代表1)
-                for (let i = 0; i < 50; i++) {
-                    const b = document.createElement('div');
-                    const isActive = i < this.ones;
-                    b.className = `bead aspect-square rounded-md border-2 ${isActive ? 'bg-yellow-400 border-yellow-200 bead-active shadow-[0_0_8px_#fbbf24]' : 'bg-slate-700 border-slate-600'}`;
-                    b.onclick = () => { 
-                        this.ones = isActive ? i : i + 1;
-                        this.checkCarry();
-                        this.updateUI(); 
-                    };
-                    onesCol.appendChild(b);
-                }
-                this.updateUI(false);
-            },
-
-            checkCarry() {
-                // 自動進位：滿十進一
-                if (this.ones >= 10) {
-                    this.tens += Math.floor(this.ones / 10);
-                    this.ones = this.ones % 10;
-                    // 進位震動與閃爍
-                    navigator.vibrate?.(100);
-                    document.getElementById('tens-column').classList.add('advance-flash');
-                    setTimeout(() => document.getElementById('tens-column').classList.remove('advance-flash'), 500);
+            updateInstruction(text) {
+                const el = document.getElementById('instruction-text');
+                if (this.showHint) {
+                    el.innerText = `💡 ${text}`;
+                    el.parentElement.classList.remove('opacity-0');
+                } else {
+                    el.parentElement.classList.add('opacity-0');
                 }
             },
 
-            updateUI(shouldRender = true) {
-                if(shouldRender) this.render();
-                document.getElementById('current-value-display').innerText = (this.tens * 10) + this.ones;
+            toggleHint() {
+                this.showHint = !this.showHint;
+                const btn = document.getElementById('hint-btn');
+                btn.innerText = this.showHint ? "提示：ON" : "提示：OFF";
+                btn.className = this.showHint ? "bg-green-600 px-4 py-2 rounded-full text-xs font-bold shadow-lg" : "bg-slate-600 px-4 py-2 rounded-full text-xs font-bold shadow-lg";
+                this.updateUI();
+                this.checkLogic();
             },
 
             validate() {
-                const result = (this.tens * 10) + this.ones;
-                if (result === this.target) {
-                    alert("✨ 太強了！收服成功！");
-                    SceneManager.to('main-hub');
+                if (this.calculate() === this.target) {
+                    alert("✨ 完美操作！你掌握了珠算的奧秘！");
+                    this.init(); // 下一題
                 } else {
-                    alert(`❌ 數量不對喔！目前是 ${result}，再試試看！`);
+                    alert("數量不對喔，再觀察一下算盤珠子！");
                 }
             }
         };
 
-        window.onload = () => SceneManager.updateHub();
+        // 啟動
+        window.onload = () => JellyAbacus.init();
     </script>
 </body>
 </html>

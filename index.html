@@ -3,225 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>寶可夢珠算對戰 v8.6</title>
+    <title>大木博士的珠算教室 v8.7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background: #0f172a; color: white; margin: 0; overflow: hidden; }
-        .scene { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding: 1rem; }
-        .hidden { display: none !important; }
-
-        /* 算盤框體加固 */
-        .abacus-container {
-            background: #451a03;
-            border: 6px solid #78350f;
-            border-radius: 1.5rem;
-            position: relative;
-            width: 320px;
-            height: 400px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-        .abacus-bar {
-            position: absolute;
-            top: 110px;
-            left: 0;
-            width: 100%;
-            height: 12px;
-            background: #270e02;
-            z-index: 10;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-        }
-        .rod {
-            position: absolute;
-            width: 6px;
-            height: 100%;
-            background: #1e293b;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        /* 珠子動畫與樣式 */
-        .bead {
-            width: 65px;
-            height: 32px;
-            border-radius: 50% / 100%;
-            cursor: pointer;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            z-index: 20;
-            border: 1px solid rgba(0,0,0,0.3);
-        }
-        .bead-top { background: linear-gradient(to bottom, #fb923c, #ea580c); box-shadow: 0 3px #9a3412; }
-        .bead-bottom { background: linear-gradient(to bottom, #fde047, #ca8a04); box-shadow: 0 3px #854d0e; }
-        .bead-active { filter: brightness(1.2) saturate(1.2); }
-
-        /* 教學 Overlay */
-        #tuto-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(4px);
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-        }
-        #tuto-overlay.active { opacity: 1; pointer-events: auto; }
+        body { font-family: 'Noto Sans TC', sans-serif; background: #1e293b; color: white; margin: 0; overflow: hidden; }
         
-        /* 寶可夢對話框 */
-        .poke-dialog {
-            background: white;
-            color: #1e293b;
-            padding: 1.5rem;
-            border-radius: 1rem;
-            border: 4px solid #3b82f6;
-            position: relative;
-            width: 90%;
-            font-weight: bold;
-        }
+        /* 分割佈局 */
+        .tutorial-header { height: 40vh; background: linear-gradient(to bottom, #3b82f6, #1d4ed8); display: flex; padding: 1rem; border-bottom: 4px solid #fbbf24; position: relative; }
+        .abacus-area { height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0f172a; }
+
+        /* 大木博士對話框 */
+        .oak-dialog { background: white; color: #1e293b; border-radius: 1rem; padding: 1rem; border: 4px solid #1e3a8a; position: relative; flex: 1; margin-left: 1rem; font-size: 0.9rem; line-height: 1.5; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .oak-dialog::after { content: ''; position: absolute; left: -15px; top: 20px; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 15px solid #1e3a8a; }
+
+        /* 算盤核心樣式 */
+        .abacus-frame { background: #451a03; border: 8px solid #78350f; border-radius: 1.5rem; position: relative; width: 300px; height: 320px; }
+        .abacus-bar { position: absolute; top: 90px; width: 100%; height: 10px; background: #270e02; z-index: 10; }
+        .rod { position: absolute; width: 4px; height: 100%; background: #334155; left: 50%; transform: translateX(-50%); }
+
+        /* 珠子樣式 */
+        .bead { width: 55px; height: 28px; border-radius: 50% / 100%; cursor: pointer; transition: transform 0.3s; position: relative; z-index: 20; border: 1px solid rgba(0,0,0,0.3); }
+        .bead-top { background: #f97316; box-shadow: 0 3px #9a3412; }
+        .bead-bottom { background: #fbbf24; box-shadow: 0 3px #d97706; }
+        .bead-active { filter: brightness(1.2); outline: 2px solid white; }
+
+        /* 強調閃爍動畫 */
+        @keyframes pulse-hint { 0%, 100% { transform: scale(1); box-shadow: 0 0 0px yellow; } 50% { transform: scale(1.1); box-shadow: 0 0 20px yellow; } }
+        .hint-focus { animation: pulse-hint 1s infinite; z-index: 100 !important; }
     </style>
 </head>
 <body>
 
-    <div id="battle-scene" class="scene">
-        <div class="w-full flex justify-between items-center px-2 mb-4">
-            <button onclick="alert('回主畫面')" class="text-2xl">❮</button>
-            <button onclick="AbacusTutorial.start()" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-full text-xs font-black shadow-lg shadow-blue-900/50 transition-all">
-                🎓 珠算講座
-            </button>
+    <div class="tutorial-header">
+        <div class="flex flex-col items-center">
+            <img id="oak-img" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/10186.png" class="w-24 h-24 object-contain drop-shadow-lg">
+            <div class="bg-yellow-400 text-blue-900 text-[10px] font-bold px-2 py-1 rounded-full mt-2">大木博士</div>
         </div>
+        <div class="oak-dialog">
+            <p id="oak-text">正在加載教學內容...</p>
+            <button onclick="AbacusTutorial.next()" class="mt-4 bg-blue-600 text-white px-4 py-1 rounded-full text-xs font-bold float-right">點擊繼續 ❯</button>
+        </div>
+    </div>
 
-        <div id="math-question" class="text-5xl font-black text-yellow-400 mb-6 italic italic">7 + 8 = ?</div>
-
-        <div class="abacus-container flex justify-around px-4">
+    <div class="abacus-area">
+        <div class="abacus-frame flex justify-around px-4">
             <div class="abacus-bar"></div>
-            
-            <div class="relative w-20 h-full flex flex-col pt-4">
+            <div class="relative w-16 h-full flex flex-col pt-2">
                 <div class="rod"></div>
-                <div id="tens-top" onclick="JellyAbacus.handleTop('tens')" class="bead bead-top mx-auto"></div>
-                <div class="mt-[130px] flex flex-col gap-1">
-                    <div id="tens-b1" onclick="JellyAbacus.handleBottom('tens', 1)" class="bead bead-bottom mx-auto"></div>
-                    <div id="tens-b2" onclick="JellyAbacus.handleBottom('tens', 2)" class="bead bead-bottom mx-auto"></div>
-                    <div id="tens-b3" onclick="JellyAbacus.handleBottom('tens', 3)" class="bead bead-bottom mx-auto"></div>
-                    <div id="tens-b4" onclick="JellyAbacus.handleBottom('tens', 4)" class="bead bead-bottom mx-auto"></div>
+                <div id="tens-top" class="bead bead-top mx-auto"></div>
+                <div class="mt-[90px] flex flex-col gap-1">
+                    <div id="tens-b1" class="bead bead-bottom mx-auto"></div>
+                    <div id="tens-b2" class="bead bead-bottom mx-auto"></div>
+                    <div id="tens-b3" class="bead bead-bottom mx-auto"></div>
+                    <div id="tens-b4" class="bead bead-bottom mx-auto"></div>
                 </div>
             </div>
-
-            <div class="relative w-20 h-full flex flex-col pt-4">
+            <div class="relative w-16 h-full flex flex-col pt-2">
                 <div class="rod"></div>
-                <div id="ones-top" onclick="JellyAbacus.handleTop('ones')" class="bead bead-top mx-auto"></div>
-                <div class="mt-[130px] flex flex-col gap-1">
-                    <div id="ones-b1" onclick="JellyAbacus.handleBottom('ones', 1)" class="bead bead-bottom mx-auto"></div>
-                    <div id="ones-b2" onclick="JellyAbacus.handleBottom('ones', 2)" class="bead bead-bottom mx-auto"></div>
-                    <div id="ones-b3" onclick="JellyAbacus.handleBottom('ones', 3)" class="bead bead-bottom mx-auto"></div>
-                    <div id="ones-b4" onclick="JellyAbacus.handleBottom('ones', 4)" class="bead bead-bottom mx-auto"></div>
+                <div id="ones-top" class="bead bead-top mx-auto"></div>
+                <div class="mt-[90px] flex flex-col gap-1">
+                    <div id="ones-b1" class="bead bead-bottom mx-auto"></div>
+                    <div id="ones-b2" class="bead bead-bottom mx-auto"></div>
+                    <div id="ones-b3" class="bead bead-bottom mx-auto"></div>
+                    <div id="ones-b4" class="bead bead-bottom mx-auto"></div>
                 </div>
-            </div>
-
-            <div id="tuto-overlay">
-                <div class="poke-dialog mb-6">
-                    <p id="tuto-text">哈囉！我是大木博士。準備好學習珠算了吧！</p>
-                </div>
-                <button onclick="AbacusTutorial.nextStep()" class="bg-yellow-400 text-blue-900 px-10 py-3 rounded-full font-black text-xl shadow-xl active:scale-95">
-                    繼續
-                </button>
             </div>
         </div>
-
-        <div class="mt-6 text-center">
-            <div class="text-[10px] text-slate-500 tracking-widest mb-1">CURRENT VALUE</div>
-            <div id="current-val" class="text-5xl font-black">0</div>
-        </div>
-
-        <div class="flex gap-4 mt-8 w-full max-w-xs">
-            <button onclick="JellyAbacus.reset()" class="bg-slate-700 py-4 rounded-2xl font-bold flex-1">重置</button>
-            <button onclick="JellyAbacus.validate()" class="bg-red-600 py-4 rounded-2xl font-black text-xl flex-[2] shadow-lg shadow-red-900/40 active:scale-95">精靈球 OK!</button>
+        
+        <div class="mt-4 flex gap-10 text-center">
+            <div><p class="text-[10px] text-slate-500">十位</p><p id="val-tens" class="text-2xl font-black">0</p></div>
+            <div><p class="text-[10px] text-slate-500">個位</p><p id="val-ones" class="text-2xl font-black text-yellow-400">0</p></div>
         </div>
     </div>
 
     <script>
-        const JellyAbacus = {
-            state: {
-                tens: { top: 0, bottom: 0 },
-                ones: { top: 0, bottom: 0 }
-            },
-            target: 15,
-
-            reset() {
-                this.state = { tens: { top: 0, bottom: 0 }, ones: { top: 0, bottom: 0 } };
-                this.updateUI();
-            },
-
-            handleTop(col) {
-                this.state[col].top = (this.state[col].top === 5) ? 0 : 5;
-                this.updateUI();
-            },
-
-            handleBottom(col, val) {
-                // 如果點擊已啟動的，則設為點擊的前一格；否則設為點擊的那格
-                this.state[col].bottom = (this.state[col].bottom === val) ? val - 1 : val;
-                this.updateUI();
-            },
-
-            updateUI() {
-                ['tens', 'ones'].forEach(col => {
-                    // 上珠
-                    const t = document.getElementById(`${col}-top`);
-                    t.style.transform = this.state[col].top === 5 ? "translateY(45px)" : "translateY(0)";
-                    t.classList.toggle('bead-active', this.state[col].top === 5);
-
-                    // 下珠
-                    for (let i = 1; i <= 4; i++) {
-                        const b = document.getElementById(`${col}-b${i}`);
-                        const active = i <= this.state[col].bottom;
-                        b.style.transform = active ? "translateY(-45px)" : "translateY(0)";
-                        b.classList.toggle('bead-active', active);
-                    }
-                });
-                document.getElementById('current-val').innerText = this.calculate();
-            },
-
-            calculate() {
-                return (this.state.tens.top + this.state.tens.bottom) * 10 + (this.state.ones.top + this.state.ones.bottom);
-            },
-
-            validate() {
-                if (this.calculate() === this.target) alert("🎯 收服成功！");
-                else alert("數量不對喔！再試試看。");
-            }
-        };
-
         const AbacusTutorial = {
             step: 0,
-            steps: [
-                { text: "我是大木博士。算盤中間這條叫『樑』，珠子靠近它才算分！", action: () => JellyAbacus.reset() },
-                { text: "上面的橘色珠子代表 5，看我把它撥下來！", action: () => { JellyAbacus.state.ones.top = 5; JellyAbacus.updateUI(); } },
-                { text: "下面的黃色珠子代表 1。我撥上去三顆，現在個位就是 8 了！", action: () => { JellyAbacus.state.ones.bottom = 3; JellyAbacus.updateUI(); } },
-                { text: "現在換你試試看，挑戰題目吧！", action: () => {} }
+            state: { tens: {t:0, b:0}, ones: {t:0, b:0} },
+            scripts: [
+                { text: "你好！我是大木博士。今天我們來練習算盤加法！題目是 7 + 8，讓我們先撥出 7。", action: () => { this.reset(); } },
+                { text: "撥出 7 的秘訣：先撥下一顆上珠(5)，再加上兩顆下珠(2)。", action: () => { this.move('ones', 'top', 5); this.move('ones', 'bottom', 2); } },
+                { text: "現在個位是 7 了。接著要加 8... 但是個位只剩下兩顆下珠，不夠加 8 怎麼辦？", action: () => {} },
+                { text: "這時候要用進位法！『加 8 等於進 10 減 2』。我們先在左邊十位撥上一顆下珠。", action: () => { this.move('tens', 'bottom', 1); } },
+                { text: "最後，記得把個位減掉 2。我們把個位的兩顆下珠撥下來。", action: () => { this.move('ones', 'bottom', 0); } },
+                { text: "看！算盤現在顯示 1 個十和 5 個一，答案就是 15！學會了嗎？", action: () => {} }
             ],
-            start() {
-                this.step = 0;
-                document.getElementById('tuto-overlay').classList.add('active');
-                this.show();
+            move(col, type, val) {
+                this.state[col][type === 'top' ? 't' : 'b'] = val;
+                this.updateUI();
             },
-            show() {
-                const s = this.steps[this.step];
-                document.getElementById('tuto-text').innerText = s.text;
-                s.action();
+            reset() { this.state = { tens: {t:0, b:0}, ones: {t:0, b:0} }; this.updateUI(); },
+            updateUI() {
+                ['tens', 'ones'].forEach(col => {
+                    const t = document.getElementById(`${col}-top`);
+                    t.style.transform = this.state[col].t === 5 ? "translateY(40px)" : "translateY(0)";
+                    for(let i=1; i<=4; i++) {
+                        const b = document.getElementById(`${col}-b${i}`);
+                        b.style.transform = i <= this.state[col].b ? "translateY(-40px)" : "translateY(0)";
+                    }
+                });
+                document.getElementById('val-tens').innerText = this.state.tens.t + this.state.tens.b;
+                document.getElementById('val-ones').innerText = this.state.ones.t + this.state.ones.b;
             },
-            nextStep() {
-                this.step++;
-                if (this.step < this.steps.length) this.show();
-                else document.getElementById('tuto-overlay').classList.remove('active');
+            next() {
+                if (this.step < this.scripts.length - 1) {
+                    this.step++;
+                    document.getElementById('oak-text').innerText = this.scripts[this.step].text;
+                    this.scripts[this.step].action();
+                } else {
+                    alert("恭喜完成教學！準備好進入實戰了嗎？");
+                    // 這裡可以跳轉回 M4 戰鬥畫面
+                }
             }
         };
 
-        window.onload = () => JellyAbacus.updateUI();
+        window.onload = () => { AbacusTutorial.scripts[0].action(); document.getElementById('oak-text').innerText = AbacusTutorial.scripts[0].text; };
     </script>
 </body>
 </html>

@@ -3,120 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>寶可夢數學對戰 v8.1</title>
+    <title>寶可夢數學對戰 v8.2 - 十進位算盤版</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; overflow: hidden; background: #000; }
-        .scene { position: absolute; inset: 0; transition: opacity 0.5s; }
+        body { font-family: 'Noto Sans TC', sans-serif; overflow: hidden; background: #0f172a; color: white; }
+        .scene { position: absolute; inset: 0; transition: opacity 0.4s; }
         .hidden { display: none !important; }
         
-        /* M1: Mezastar Animation */
-        .poke-zoom {
-            animation: pokeZoom 2s ease-in forwards;
-            opacity: 0;
-            position: absolute;
-            left: 50%; top: 50%;
-            transform: translate(-50%, -50%) scale(0.1);
-        }
-        @keyframes pokeZoom {
-            0% { transform: translate(-50%, -50%) scale(0.1); opacity: 0; }
-            20% { opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(4); opacity: 0; }
-        }
-
-        /* Jelly Block Effects */
-        .jelly-block { transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .jelly-block.is-active { transform: scale(0.9); }
+        /* 算盤珠子動畫 */
+        .bead { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .bead-active { transform: scale(0.95); filter: brightness(1.2); }
         
-        /* HP Bar Animation */
-        .hp-transition { transition: width 0.5s ease-out; }
+        /* 進位閃爍特效 */
+        @keyframes levelUp {
+            0% { background-color: white; transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .advance-flash { animation: levelUp 0.5s ease-out; }
     </style>
 </head>
 <body>
 
-    <div id="start-scene" class="scene flex flex-col items-center justify-center bg-gradient-to-b from-blue-900 to-black text-white">
-        <div id="animation-container" class="relative w-full h-64 overflow-hidden"></div>
-        <h1 class="text-4xl font-black italic mb-10 tracking-tighter text-yellow-400">POKÉMON MATH</h1>
-        <button onclick="SceneManager.to('main-hub')" class="bg-yellow-400 text-blue-900 px-12 py-4 rounded-full text-2xl font-black shadow-[0_0_20px_rgba(250,204,21,0.5)] active:scale-95 transition-transform">
+    <div id="start-scene" class="scene flex flex-col items-center justify-center bg-gradient-to-b from-indigo-900 to-black">
+        <h1 class="text-5xl font-black italic mb-12 text-yellow-400 tracking-tighter shadow-blue-500">POKÉMON MATH</h1>
+        <button onclick="SceneManager.to('main-hub')" class="bg-yellow-400 text-blue-900 px-16 py-5 rounded-full text-2xl font-black shadow-xl active:scale-95 transition-all">
             一起抓夢吧！
         </button>
     </div>
 
-    <div id="main-hub" class="scene hidden flex flex-col p-4 bg-slate-100">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold text-slate-800">準備戰鬥</h2>
-            <div id="math-mode-status" class="bg-blue-600 text-white px-3 py-1 rounded-full text-sm">加法模式</div>
+    <div id="main-hub" class="scene hidden flex flex-col p-6 bg-slate-100 text-slate-900">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-2xl font-black italic text-indigo-700">準備對戰</h2>
+            <div id="mode-label" class="bg-indigo-600 text-white px-4 py-1 rounded-full text-sm font-bold shadow-md">加法練習</div>
         </div>
 
-        <div class="flex flex-1 items-center justify-around gap-2">
-            <div class="flex-1 text-center">
-                <img id="enemy-img" src="" class="w-40 h-40 mx-auto object-contain drop-shadow-xl">
-                <p id="enemy-names" class="text-xs font-bold text-gray-600 mt-2"></p>
+        <div class="flex flex-1 items-center justify-around mb-10">
+            <div class="text-center">
+                <div class="relative">
+                    <img id="enemy-img" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/906.png" class="w-44 h-44 object-contain">
+                    <div class="absolute -bottom-2 left-0 w-full h-3 bg-gray-300 rounded-full overflow-hidden border-2 border-white">
+                        <div class="h-full bg-red-500 w-full"></div>
+                    </div>
+                </div>
+                <p id="enemy-name" class="font-bold mt-4 text-lg text-slate-600">新葉喵</p>
             </div>
             
-            <div class="text-4xl font-black italic text-red-600">VS</div>
+            <div class="text-5xl font-black italic text-red-500 drop-shadow-md">VS</div>
 
-            <div class="flex-1 text-center">
-                <img id="player-img" src="" class="w-40 h-40 mx-auto object-contain drop-shadow-xl">
-                <p id="player-names" class="text-xs font-bold text-gray-600 mt-2"></p>
-                <button onclick="SceneManager.to('bag-scene')" class="mt-2 bg-white border-2 border-slate-300 rounded-lg p-1 shadow-sm active:scale-90">
-                    <span class="text-lg">🎒 背包</span>
-                </button>
+            <div class="text-center">
+                <div class="relative">
+                    <img id="player-img" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" class="w-44 h-44 object-contain">
+                    <button onclick="SceneManager.to('bag-scene')" class="absolute -top-4 -right-4 bg-white p-2 rounded-full shadow-lg border border-slate-200 active:scale-90">🎒</button>
+                    <div class="absolute -bottom-2 left-0 w-full h-3 bg-gray-300 rounded-full overflow-hidden border-2 border-white">
+                        <div class="h-full bg-green-500 w-full"></div>
+                    </div>
+                </div>
+                <p id="player-name" class="font-bold mt-4 text-lg text-slate-600 italic">皮卡丘</p>
             </div>
         </div>
 
-        <div class="p-6 bg-white rounded-3xl shadow-xl mb-8 text-center">
-            <button id="go-battle-btn" onclick="SceneManager.to('battle-scene')" class="w-full bg-gradient-to-r from-red-500 to-orange-500 text-white py-4 rounded-2xl text-xl font-black shadow-lg">
-                上吧！皮卡丘
-            </button>
-        </div>
+        <button onclick="SceneManager.to('battle-scene')" class="w-full bg-indigo-600 text-white py-5 rounded-3xl text-2xl font-black shadow-xl mb-4 active:scale-95 transition-all">
+            上吧！ <span id="btn-player-name">皮卡丘</span>
+        </button>
     </div>
 
-    <div id="bag-scene" class="scene hidden flex flex-col bg-white p-4">
-        <div class="flex justify-between items-center mb-4 border-b pb-2">
-            <h2 class="text-2xl font-black">我的寶可夢</h2>
-            <button onclick="SceneManager.to('main-hub')" class="text-2xl font-bold p-2">✕</button>
+    <div id="bag-scene" class="scene hidden bg-white p-6 text-slate-900">
+        <div class="flex justify-between mb-6">
+            <h2 class="text-3xl font-black">夥伴背包</h2>
+            <button onclick="SceneManager.to('main-hub')" class="text-3xl font-bold">✕</button>
         </div>
-        <div id="bag-grid" class="grid grid-cols-5 gap-2 overflow-y-auto pb-20">
-            </div>
+        <div id="bag-grid" class="grid grid-cols-4 gap-4 overflow-y-auto h-[70vh]"></div>
     </div>
 
-    <div id="battle-scene" class="scene hidden flex flex-col items-center justify-between p-4 bg-slate-900 text-white">
-        <div class="flex bg-slate-800 rounded-full p-1 border border-white/20 mt-2">
-            <button onclick="JellyBattle.setMode('addition')" id="btn-add" class="px-6 py-1 rounded-full text-sm font-bold bg-blue-500">加法</button>
-            <button onclick="JellyBattle.setMode('subtraction')" id="btn-sub" class="px-6 py-1 rounded-full text-sm font-bold">減法</button>
+    <div id="battle-scene" class="scene hidden flex flex-col items-center p-4 bg-slate-900">
+        <div class="flex bg-slate-800 rounded-full p-1 border-2 border-white/10 mb-6 mt-4">
+            <button id="mode-add" onclick="JellyBattle.setMode('addition')" class="px-8 py-2 rounded-full text-sm font-bold transition-all bg-indigo-500 shadow-lg">加法</button>
+            <button id="mode-sub" onclick="JellyBattle.setMode('subtraction')" class="px-8 py-2 rounded-full text-sm font-bold transition-all text-slate-400">減法</button>
         </div>
 
-        <div id="math-question" class="text-5xl font-black text-yellow-400 my-4 italic">7 + 8 = ?</div>
+        <div id="math-question" class="text-6xl font-black text-yellow-400 mb-8 italic drop-shadow-[0_0_15px_rgba(250,204,21,0.4)]">7 + 8 = ?</div>
 
-        <div id="jelly-grid" class="grid grid-cols-10 gap-1 p-2 bg-white/5 rounded-xl border border-white/20 shadow-2xl" style="width: 340px; height: 340px;"></div>
+        <div id="abacus-container" class="grid grid-cols-10 gap-3 p-6 bg-slate-800 rounded-[2rem] border-4 border-slate-700 shadow-2xl" style="width: 360px; height: 480px;">
+            <div id="tens-column" class="col-span-3 grid grid-rows-10 gap-2 border-r-4 border-white/20 pr-3">
+                </div>
+            <div id="ones-column" class="col-span-7 grid grid-cols-5 grid-rows-10 gap-2 pl-1">
+                </div>
+        </div>
 
-        <div class="w-full flex justify-center gap-4 mb-8">
-            <button onclick="JellyBattle.resetGame()" class="bg-gray-600 px-6 py-3 rounded-2xl font-bold">重置</button>
-            <button onclick="JellyBattle.validate()" class="bg-red-600 px-10 py-3 rounded-2xl font-bold text-xl shadow-lg shadow-red-500/50">精靈球 OK!</button>
+        <div class="mt-6 text-indigo-300 font-bold tracking-widest text-lg">
+            目前數值：<span id="current-value-display" class="text-3xl text-white">0</span>
+        </div>
+
+        <div class="flex gap-4 mt-8 w-full px-4">
+            <button onclick="JellyBattle.resetGame()" class="flex-1 bg-slate-700 py-4 rounded-2xl font-black text-lg">重新開始</button>
+            <button onclick="JellyBattle.validate()" class="flex-[2] bg-red-600 py-4 rounded-2xl font-black text-2xl shadow-lg shadow-red-900/40 active:scale-95 transition-all">精靈球 OK!</button>
         </div>
     </div>
 
     <script>
-        // --- Data & Initialization ---
-        const db = new Dexie("PokeMathDB");
-        db.version(1).stores({ pokemon: 'id, name, name_en, name_jp, sprite, count' });
-
-        const DEFAULT_POKES = [
-            {id: 25, name: "皮卡丘", name_en: "Pikachu", name_jp: "ピカチュウ", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png"},
-            {id: 1, name: "妙蛙種子", name_en: "Bulbasaur", name_jp: "フシギダネ", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png"},
-            {id: 4, name: "小火龍", name_en: "Charmander", name_jp: "ヒトカゲ", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png"},
-            {id: 7, name: "傑尼龜", name_en: "Squirtle", name_jp: "ゼニガメ", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png"},
-            {id: 906, name: "新葉喵", name_en: "Sprigatito", name_jp: "ニャオハ", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/906.png"},
-            {id: 909, name: "呆火鱷", name_en: "Fuecoco", name_jp: "ホゲータ", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/909.png"},
-            {id: 912, name: "潤水鴨", name_en: "Quaxly", name_jp: "クワッス", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/912.png"}
+        // --- Core State ---
+        const POKEMONS = [
+            { id: 25, name: "皮卡丘", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" },
+            { id: 1, name: "妙蛙種子", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png" },
+            { id: 4, name: "小火龍", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png" },
+            { id: 7, name: "傑尼龜", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png" },
+            { id: 906, name: "新葉喵", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/906.png" },
+            { id: 909, name: "呆火鱷", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/909.png" },
+            { id: 912, name: "潤水鴨", sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/912.png" }
         ];
 
         let state = {
-            player: DEFAULT_POKES[0],
-            enemy: DEFAULT_POKES[4],
+            player: POKEMONS[0],
+            enemy: POKEMONS[4],
             mode: 'addition'
         };
 
@@ -125,133 +124,130 @@
             to(id) {
                 document.querySelectorAll('.scene').forEach(s => s.classList.add('hidden'));
                 document.getElementById(id).classList.remove('hidden');
-                if(id === 'main-hub') this.updateHub();
-                if(id === 'battle-scene') JellyBattle.resetGame();
-                if(id === 'bag-scene') this.renderBag();
+                if (id === 'main-hub') this.updateHub();
+                if (id === 'battle-scene') JellyBattle.resetGame();
+                if (id === 'bag-scene') this.renderBag();
             },
             updateHub() {
                 document.getElementById('player-img').src = state.player.sprite;
-                document.getElementById('player-names').innerText = `${state.player.name}\n${state.player.name_en}`;
-                document.getElementById('go-battle-btn').innerText = `上吧！ ${state.player.name}`;
+                document.getElementById('player-name').innerText = state.player.name;
+                document.getElementById('btn-player-name').innerText = state.player.name;
+                document.getElementById('mode-label').innerText = state.mode === 'addition' ? '加法練習' : '減法練習';
                 
-                // Random Enemy
-                state.enemy = DEFAULT_POKES[Math.floor(Math.random()*DEFAULT_POKES.length)];
+                state.enemy = POKEMONS[Math.floor(Math.random() * POKEMONS.length)];
                 document.getElementById('enemy-img').src = state.enemy.sprite;
-                document.getElementById('enemy-names').innerText = `${state.enemy.name}\n${state.enemy.name_en}`;
+                document.getElementById('enemy-name').innerText = state.enemy.name;
             },
-            async renderBag() {
-                const bagGrid = document.getElementById('bag-grid');
-                bagGrid.innerHTML = '';
-                DEFAULT_POKES.forEach(p => {
+            renderBag() {
+                const grid = document.getElementById('bag-grid');
+                grid.innerHTML = '';
+                POKEMONS.forEach(p => {
                     const div = document.createElement('div');
-                    div.className = "text-center p-2 border rounded-xl active:bg-blue-100";
-                    div.innerHTML = `<img src="${p.sprite}" class="w-full"> <p class="text-[10px] font-bold">${p.name}</p>`;
+                    div.className = "text-center p-2 bg-slate-100 rounded-2xl active:bg-indigo-100 transition-colors";
+                    div.innerHTML = `<img src="${p.sprite}" class="w-full"> <p class="text-sm font-bold">${p.name}</p>`;
                     div.onclick = () => { state.player = p; this.to('main-hub'); };
-                    bagGrid.appendChild(div);
+                    grid.appendChild(div);
                 });
             }
         };
 
-        // --- M4: Battle Logic ---
+        // --- M4: Abacus Battle Logic ---
         const JellyBattle = {
-            selectedCount: 0,
-            targetAnswer: 0,
-            
+            tens: 0,
+            ones: 0,
+            target: 0,
+
             setMode(m) {
                 state.mode = m;
-                document.getElementById('btn-add').className = m === 'addition' ? 'px-6 py-1 rounded-full text-sm font-bold bg-blue-500' : 'px-6 py-1 rounded-full text-sm font-bold';
-                document.getElementById('btn-sub').className = m === 'subtraction' ? 'px-6 py-1 rounded-full text-sm font-bold bg-red-500' : 'px-6 py-1 rounded-full text-sm font-bold';
+                document.getElementById('mode-add').className = m === 'addition' ? 'px-8 py-2 rounded-full text-sm font-bold bg-indigo-500 shadow-lg' : 'px-8 py-2 rounded-full text-sm font-bold text-slate-400';
+                document.getElementById('mode-sub').className = m === 'subtraction' ? 'px-8 py-2 rounded-full text-sm font-bold bg-red-600 shadow-lg text-white' : 'px-8 py-2 rounded-full text-sm font-bold text-slate-400';
                 this.resetGame();
             },
 
             resetGame() {
-                this.selectedCount = 0;
-                const grid = document.getElementById('jelly-grid');
-                grid.innerHTML = '';
-                for(let i=0; i<100; i++) {
-                    const b = document.createElement('div');
-                    b.className = "jelly-block w-full h-full bg-white/10 rounded-sm border border-white/5";
-                    b.onclick = () => this.toggle(b);
-                    grid.appendChild(b);
-                }
+                this.tens = 0;
+                this.ones = 0;
                 this.generate();
+                this.render();
             },
 
             generate() {
                 const q = document.getElementById('math-question');
-                if(state.mode === 'addition') {
-                    let a = Math.floor(Math.random()*9)+1;
-                    let b = Math.floor(Math.random()*9)+1;
-                    this.targetAnswer = a + b;
+                if (state.mode === 'addition') {
+                    let a = Math.floor(Math.random() * 9) + 1;
+                    let b = Math.floor(Math.random() * 9) + 1;
+                    this.target = a + b;
                     q.innerText = `${a} + ${b} = ?`;
                 } else {
-                    let a = Math.floor(Math.random()*10)+10;
-                    let b = Math.floor(Math.random()*9)+1;
-                    this.targetAnswer = a - b;
+                    let a = Math.floor(Math.random() * 10) + 10;
+                    let b = Math.floor(Math.random() * 9) + 1;
+                    this.target = a - b;
                     q.innerText = `${a} - ${b} = ?`;
-                    this.prefill(a);
+                    // 減法預填：模擬算盤起始數值
+                    this.tens = Math.floor(a / 10);
+                    this.ones = a % 10;
                 }
             },
 
-            prefill(n) {
-                const blocks = document.querySelectorAll('.jelly-block');
-                for(let i=0; i<n; i++) {
-                    blocks[i].classList.add('is-active');
-                    this.selectedCount++;
+            render() {
+                const tensCol = document.getElementById('tens-column');
+                const onesCol = document.getElementById('ones-column');
+                tensCol.innerHTML = '';
+                onesCol.innerHTML = '';
+
+                // Render Tens (10格, 每一格代表10)
+                for (let i = 9; i >= 0; i--) {
+                    const b = document.createElement('div');
+                    const isActive = i < this.tens;
+                    b.className = `bead w-full h-8 rounded-lg border-2 ${isActive ? 'bg-orange-500 border-orange-300 bead-active shadow-[0_0_10px_#f97316]' : 'bg-slate-700 border-slate-600'}`;
+                    b.onclick = () => { this.tens = isActive ? i : i + 1; this.updateUI(); };
+                    tensCol.appendChild(b);
                 }
-                this.updateColors();
+
+                // Render Ones (50格, 每一格代表1)
+                for (let i = 0; i < 50; i++) {
+                    const b = document.createElement('div');
+                    const isActive = i < this.ones;
+                    b.className = `bead aspect-square rounded-md border-2 ${isActive ? 'bg-yellow-400 border-yellow-200 bead-active shadow-[0_0_8px_#fbbf24]' : 'bg-slate-700 border-slate-600'}`;
+                    b.onclick = () => { 
+                        this.ones = isActive ? i : i + 1;
+                        this.checkCarry();
+                        this.updateUI(); 
+                    };
+                    onesCol.appendChild(b);
+                }
+                this.updateUI(false);
             },
 
-            toggle(el) {
-                if(el.classList.contains('is-active')) {
-                    el.classList.remove('is-active');
-                    this.selectedCount--;
-                } else {
-                    el.classList.add('is-active');
-                    this.selectedCount++;
+            checkCarry() {
+                // 自動進位：滿十進一
+                if (this.ones >= 10) {
+                    this.tens += Math.floor(this.ones / 10);
+                    this.ones = this.ones % 10;
+                    // 進位震動與閃爍
+                    navigator.vibrate?.(100);
+                    document.getElementById('tens-column').classList.add('advance-flash');
+                    setTimeout(() => document.getElementById('tens-column').classList.remove('advance-flash'), 500);
                 }
-                this.updateColors();
             },
 
-            updateColors() {
-                const actives = document.querySelectorAll('.jelly-block.is-active');
-                const all = document.querySelectorAll('.jelly-block');
-                all.forEach(b => b.style.backgroundColor = "");
-                actives.forEach((b, i) => {
-                    const group = Math.floor(i / 10);
-                    b.style.backgroundColor = group % 2 === 0 ? "#fbbf24" : "#f97316";
-                });
+            updateUI(shouldRender = true) {
+                if(shouldRender) this.render();
+                document.getElementById('current-value-display').innerText = (this.tens * 10) + this.ones;
             },
 
             validate() {
-                if(this.selectedCount === this.targetAnswer) {
-                    alert("✨ 攻擊效果絕佳！收服成功！");
+                const result = (this.tens * 10) + this.ones;
+                if (result === this.target) {
+                    alert("✨ 太強了！收服成功！");
                     SceneManager.to('main-hub');
                 } else {
-                    alert("❌ 數量不對喔，再試試看！");
+                    alert(`❌ 數量不對喔！目前是 ${result}，再試試看！`);
                 }
             }
         };
 
-        // --- M1: Start Animation ---
-        function startIntro() {
-            const container = document.getElementById('animation-container');
-            let count = 0;
-            const interval = setInterval(() => {
-                const p = DEFAULT_POKES[count % DEFAULT_POKES.length];
-                const img = document.createElement('img');
-                img.src = p.sprite;
-                img.className = 'poke-zoom';
-                container.appendChild(img);
-                count++;
-                if(count > 10) clearInterval(interval);
-            }, 400);
-        }
-
-        window.onload = () => {
-            startIntro();
-            SceneManager.updateHub();
-        };
+        window.onload = () => SceneManager.updateHub();
     </script>
 </body>
 </html>

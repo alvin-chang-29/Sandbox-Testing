@@ -1,115 +1,102 @@
-<div id="tutorial-scene" class="scene hidden flex flex-col items-center p-6 bg-slate-900 text-white overflow-y-auto">
-    <div class="w-full flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-black text-yellow-400 italic">算盤大師教室</h2>
-        <button onclick="SceneManager.to('battle-scene')" class="text-xl">✕</button>
+<div id="battle-scene" class="scene hidden flex flex-col items-center p-4 bg-slate-900 overflow-hidden">
+    
+    <div class="w-full flex justify-between items-center mb-2">
+        <button onclick="SceneManager.to('main-hub')" class="text-white text-2xl">❮</button>
+        <button id="start-tuto-btn" onclick="AbacusTutorial.start()" class="bg-indigo-600 px-4 py-2 rounded-full text-xs font-black shadow-[0_0_10px_#4f46e5] animate-pulse">
+            🎓 珠算講座
+        </button>
     </div>
 
-    <div id="tutorial-card" class="w-full bg-slate-800 rounded-3xl p-6 border-2 border-indigo-500 shadow-2xl mb-6 min-h-[300px] flex flex-col justify-center items-center text-center">
-        <div id="tutorial-icon" class="text-6xl mb-4">🧮</div>
-        <h3 id="tutorial-title" class="text-xl font-bold mb-2 text-indigo-300">歡迎來到算盤世界</h3>
-        <p id="tutorial-desc" class="text-slate-300 leading-relaxed">算盤是古代的超級電腦！讓我們一起學習怎麼使用它吧。</p>
-    </div>
+    <div id="math-question" class="text-5xl font-black text-yellow-400 mb-2 italic">7 + 8 = ?</div>
 
-    <div id="tuto-abacus" class="abacus-frame relative w-64 h-80 rounded-2xl overflow-hidden flex justify-center px-4 mb-6 pointer-events-none opacity-50">
+    <div id="abacus-wrapper" class="relative abacus-frame w-full max-w-[340px] h-[400px] rounded-3xl flex justify-around px-4 transition-all duration-500">
         <div class="abacus-bar"></div>
-        <div class="relative w-20 h-full flex flex-col justify-between py-4">
+        <div id="col-tens" class="relative w-20 h-full flex flex-col justify-between py-6">
             <div class="rod"></div>
-            <div id="tuto-top" class="bead bead-top mx-auto"></div>
-            <div class="flex flex-col-reverse gap-1 mb-2">
-                <div id="tuto-b4" class="bead bead-bottom mx-auto"></div>
-                <div id="tuto-b3" class="bead bead-bottom mx-auto"></div>
-                <div id="tuto-b2" class="bead bead-bottom mx-auto"></div>
-                <div id="tuto-b1" class="bead bead-bottom mx-auto"></div>
+            <div id="tens-top" onclick="JellyAbacus.handleTop('tens')" class="bead bead-top mx-auto"></div>
+            <div class="flex flex-col-reverse gap-1 mb-4">
+                <div id="tens-b4" onclick="JellyAbacus.handleBottom('tens', 4)" class="bead bead-bottom mx-auto"></div>
+                <div id="tens-b3" onclick="JellyAbacus.handleBottom('tens', 3)" class="bead bead-bottom mx-auto"></div>
+                <div id="tens-b2" onclick="JellyAbacus.handleBottom('tens', 2)" class="bead bead-bottom mx-auto"></div>
+                <div id="tens-b1" onclick="JellyAbacus.handleBottom('tens', 1)" class="bead bead-bottom mx-auto"></div>
             </div>
+        </div>
+        <div id="col-ones" class="relative w-20 h-full flex flex-col justify-between py-6">
+            <div class="rod"></div>
+            <div id="ones-top" onclick="JellyAbacus.handleTop('ones')" class="bead bead-top mx-auto"></div>
+            <div class="flex flex-col-reverse gap-1 mb-4">
+                <div id="ones-b4" onclick="JellyAbacus.handleBottom('ones', 4)" class="bead bead-bottom mx-auto"></div>
+                <div id="ones-b3" onclick="JellyAbacus.handleBottom('ones', 3)" class="bead bead-bottom mx-auto"></div>
+                <div id="ones-b2" onclick="JellyAbacus.handleBottom('ones', 2)" class="bead bead-bottom mx-auto"></div>
+                <div id="ones-b1" onclick="JellyAbacus.handleBottom('ones', 1)" class="bead bead-bottom mx-auto"></div>
+            </div>
+        </div>
+
+        <div id="tuto-overlay" class="absolute inset-0 bg-blue-900/80 backdrop-blur-sm rounded-3xl z-50 flex flex-col items-center justify-center p-6 transition-opacity duration-300 opacity-0 pointer-events-none">
+            <div class="bg-white text-slate-900 p-4 rounded-2xl relative mb-4 shadow-xl">
+                <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45"></div>
+                <p id="tuto-text" class="text-sm font-bold leading-relaxed"></p>
+            </div>
+            <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="w-12 h-12 animate-bounce mb-4">
+            <button id="tuto-next-btn" onclick="AbacusTutorial.nextStep()" class="bg-yellow-400 text-blue-900 px-8 py-2 rounded-full font-black">點擊繼續</button>
         </div>
     </div>
 
-    <div class="flex gap-4 w-full">
-        <button id="tuto-prev" onclick="AbacusTutorial.prev()" class="flex-1 bg-slate-700 py-4 rounded-2xl font-bold opacity-50">上一步</button>
-        <button id="tuto-next" onclick="AbacusTutorial.next()" class="flex-2 bg-indigo-600 py-4 rounded-2xl font-black text-xl px-8 shadow-lg shadow-indigo-900/40">下一步</button>
+    <div class="mt-4 flex flex-col items-center">
+        <span class="text-[10px] text-slate-500 tracking-[0.2em]">CURRENT VALUE</span>
+        <div id="current-val" class="text-4xl font-black text-white">0</div>
+    </div>
+
+    <div class="flex gap-4 mt-6 w-full max-w-sm px-4">
+        <button onclick="JellyAbacus.init()" class="bg-slate-800 p-4 rounded-2xl font-bold flex-1">重置</button>
+        <button onclick="JellyAbacus.validate()" class="bg-red-600 p-4 rounded-2xl font-black text-xl flex-[2] shadow-lg shadow-red-900/40">精靈球 OK!</button>
     </div>
 </div>
 
 <script>
-// --- Abacus Tutorial Logic ---
+// --- 動態教學腳本 ---
 const AbacusTutorial = {
-    step: 0,
+    currentStep: 0,
+    isActive: false,
     steps: [
-        {
-            title: "認識算盤結構",
-            desc: "中間橫的那條叫「樑」。靠近樑的珠子才算分數喔！",
-            icon: "🏗️",
-            action: () => { document.getElementById('tuto-abacus').style.opacity = "1"; }
-        },
-        {
-            title: "下珠：每一顆是 1",
-            desc: "下面的珠子，撥上去一顆就是 1，兩顆就是 2。",
-            icon: "➊",
-            action: () => { 
-                this.resetBeads();
-                document.getElementById('tuto-b1').style.transform = "translateY(-55px)";
-                document.getElementById('tuto-b1').classList.add('bead-active');
-            }
-        },
-        {
-            title: "上珠：這一顆是 5",
-            desc: "上面的珠子比較特別，撥下來一顆就代表 5 喔！",
-            icon: "➎",
-            action: () => { 
-                this.resetBeads();
-                document.getElementById('tuto-top').style.transform = "translateY(55px)";
-                document.getElementById('tuto-top').classList.add('bead-active');
-            }
-        },
-        {
-            title: "個位與十位",
-            desc: "右邊這排是「個位」，左邊那排是「十位」。就像數字 15 是由 10 和 5 組成的。",
-            icon: "🔢",
-            action: () => { this.resetBeads(); }
-        },
-        {
-            title: "挑戰開始！",
-            desc: "現在你已經知道基本規則了，去打敗對手並收服寶可夢吧！",
-            icon: "🚀",
-            action: () => { }
-        }
+        { text: "哈囉！我是大木博士。歡迎來到珠算講座！", action: () => JellyAbacus.reset() },
+        { text: "算盤中間這條叫『樑』。靠近樑的珠子才算分數喔！", action: () => {} },
+        { text: "上面的橘色珠子代表 5。看好了，我把它撥下來！", action: () => { JellyAbacus.state.ones.top = 5; JellyAbacus.updateUI(); } },
+        { text: "下面的黃色珠子，一顆代表 1。撥上去三顆就是 3！", action: () => { JellyAbacus.state.ones.bottom = 3; JellyAbacus.updateUI(); } },
+        { text: "現在個位是 5 + 3 = 8。很簡單吧！", action: () => {} },
+        { text: "左邊這排是十位，撥上一顆就代表 10 喔！", action: () => { JellyAbacus.state.tens.bottom = 1; JellyAbacus.updateUI(); } },
+        { text: "現在是 10 + 8 = 18。你已經學會基礎了，去戰鬥吧！", action: () => {} }
     ],
 
-    render() {
-        const s = this.steps[this.step];
-        document.getElementById('tutorial-title').innerText = s.title;
-        document.getElementById('tutorial-desc').innerText = s.desc;
-        document.getElementById('tutorial-icon').innerText = s.icon;
-        s.action();
-
-        document.getElementById('tuto-prev').style.opacity = this.step === 0 ? "0.5" : "1";
-        document.getElementById('tuto-next').innerText = this.step === this.steps.length - 1 ? "完成教學" : "下一步";
+    start() {
+        this.isActive = true;
+        this.currentStep = 0;
+        const overlay = document.getElementById('tuto-overlay');
+        overlay.classList.remove('hidden', 'pointer-events-none');
+        overlay.classList.add('opacity-100');
+        this.nextStep();
     },
 
-    next() {
-        if (this.step < this.steps.length - 1) {
-            this.step++;
-            this.render();
+    nextStep() {
+        if (this.currentStep < this.steps.length) {
+            const step = this.steps[this.currentStep];
+            document.getElementById('tuto-text').innerText = step.text;
+            step.action();
+            this.currentStep++;
         } else {
-            SceneManager.to('battle-scene');
+            this.end();
         }
     },
 
-    prev() {
-        if (this.step > 0) {
-            this.step--;
-            this.render();
-        }
-    },
-
-    resetBeads() {
-        document.getElementById('tuto-top').style.transform = "translateY(0)";
-        document.getElementById('tuto-top').classList.remove('bead-active');
-        [1,2,3,4].forEach(i => {
-            const b = document.getElementById(`tuto-b${i}`);
-            b.style.transform = "translateY(0)";
-            b.classList.remove('bead-active');
-        });
+    end() {
+        const overlay = document.getElementById('tuto-overlay');
+        overlay.classList.add('opacity-0', 'pointer-events-none');
+        this.isActive = false;
+        JellyAbacus.init(); // 回到初始狀態讓玩家開始玩
     }
 };
+
+// --- 修改原本的 JellyAbacus 加入教學支援 ---
+// (保留原本 handleTop, handleBottom, updateUI 邏輯)
+// ... 原本 JellyAbacus 邏輯 ...
 </script>

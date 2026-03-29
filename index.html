@@ -2,159 +2,135 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>大木博士的珠算教室 v9.2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>櫻木博士的珠算教室 v9.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background: #020617; color: white; margin: 0; overflow: hidden; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background: #020617; margin: 0; overflow: hidden; }
+
+        /* 強制左右固定比例：左 45% 右 55% */
+        .game-container { display: flex; width: 100vw; height: 100vh; flex-direction: row !important; }
+
+        /* 左側：櫻木博士區 */
+        .left-side { flex: 0 0 45%; background: #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 20px; border-right: 8px solid #fbbf24; }
+        .prof-img { width: 95%; max-height: 75vh; object-fit: contain; }
         
-        /* 強制左右固定佈局 */
-        .main-wrapper { display: flex; flex-direction: row; width: 100vw; height: 100vh; }
+        /* RPG 對話框 */
+        .dialog { width: 90%; background: white; color: #1e293b; border: 6px solid #3b82f6; border-radius: 20px; padding: 20px; font-size: 1.2rem; font-weight: 900; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 
-        /* 左側：博士教學區 (佔 40%) */
-        .left-pane { 
-            flex: 0 0 40%; background: linear-gradient(135deg, #1e40af 0%, #0f172a 100%);
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
-            padding-bottom: 2rem; border-right: 8px solid #fbbf24; position: relative;
-        }
-        /* 替換為大木博士立繪連結 */
-        .instructor-img { width: 85%; max-height: 70vh; object-fit: contain; filter: drop-shadow(0 0 30px rgba(59, 130, 246, 0.6)); }
+        /* 右側：算盤區 */
+        .right-side { flex: 0 0 55%; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
-        /* 右側：算盤區 (佔 60%) */
-        .right-pane { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0c1222; }
+        /* 算盤實體 */
+        .abacus { background: #451a03; border: 12px solid #78350f; border-radius: 40px; width: 340px; height: 460px; position: relative; }
+        .beam { position: absolute; top: 120px; width: 100%; height: 16px; background: #270e02; z-index: 50; }
+        .rod { position: absolute; width: 8px; height: 100%; background: #1e293b; left: 50%; transform: translateX(-50%); }
 
-        /* 算盤實體結構 */
-        .abacus-body { 
-            background: #451a03; border: 12px solid #78350f; border-radius: 3rem; 
-            width: 360px; height: 480px; position: relative; box-shadow: 0 30px 60px rgba(0,0,0,0.8);
-        }
-        .abacus-beam { position: absolute; top: 130px; width: 100%; height: 18px; background: #270e02; z-index: 50; border-top: 2px solid #5d2a0a; }
-        .rod-path { position: absolute; width: 8px; height: 100%; background: #1e293b; left: 50%; transform: translateX(-50%); z-index: 10; }
+        /* 珠子樣式 */
+        .bead { width: 70px; height: 38px; border-radius: 40%; border: 1px solid rgba(0,0,0,0.5); transition: transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); z-index: 60; cursor: pointer; }
+        .top { background: #fb923c; box-shadow: 0 4px #9a3412; }
+        .btm { background: #fde047; box-shadow: 0 4px #ca8a04; }
 
-        /* 珠子核心樣式 */
-        .bead { 
-            width: 75px; height: 40px; border-radius: 50% / 100%; 
-            transition: all 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); 
-            position: relative; z-index: 60; border: 1px solid rgba(0,0,0,0.4);
-        }
-        .bead-top { background: linear-gradient(to bottom, #fb923c, #ea580c); }
-        .bead-bottom { background: linear-gradient(to bottom, #fde047, #ca8a04); }
-
-        /* ✨ 終極提示：虛線 + 強力閃爍 */
-        @keyframes strong-hint {
+        /* ✨ 虛線閃爍提示特效 */
+        @keyframes flash-guide {
             0%, 100% { outline: 0px solid white; transform: scale(1); filter: brightness(1); }
-            50% { outline: 6px dashed #fff; transform: scale(1.15); filter: brightness(1.6); outline-offset: 4px; }
+            50% { outline: 6px dashed #ffffff; transform: scale(1.15); filter: brightness(1.5); outline-offset: 4px; }
         }
-        .guide-active { animation: strong-hint 0.8s infinite !important; z-index: 100 !important; }
-
-        /* 對話框 */
-        .oak-dialog { width: 90%; background: white; color: #1e293b; border-radius: 1.5rem; padding: 1.5rem; border: 6px solid #3b82f6; position: relative; font-weight: 900; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .guide { animation: flash-guide 0.8s infinite !important; z-index: 100 !important; border: 2px solid white !important; }
     </style>
 </head>
 <body>
 
-    <div class="main-wrapper">
-        <div class="left-pane">
-            <img id="dr-oak" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/10186.png" class="instructor-img">
-            <div class="oak-dialog">
-                <p id="dialog-txt" class="text-xl">載入珠算講座...</p>
-                <div class="flex justify-end mt-4">
-                    <button onclick="TutoEngine.next()" class="bg-blue-600 text-white px-8 py-2 rounded-full font-black text-sm active:scale-90 transition-all">繼續 ❯</button>
-                </div>
+    <div class="game-container">
+        <div class="left-side">
+            <img src="https://tw.portal-pokemon.com/play/resources/pokedex/img/pm/00880092c4e207b1277a06d09bc177656608992e.png" class="prof-img">
+            <div class="dialog">
+                <p id="msg">哈囉！我是櫻木博士。珠算能鍛鍊你的大腦，我們來試試 7 + 8 的進位教學吧！</p>
+                <button onclick="Tuto.next()" class="mt-4 float-right bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-black">下一步 ❯</button>
             </div>
         </div>
 
-        <div class="right-pane">
-            <div class="abacus-body flex justify-around px-8">
-                <div class="abacus-beam"></div>
-                
-                <div class="relative w-24 h-full flex flex-col pt-6">
-                    <div class="rod-path"></div>
-                    <div id="t-top" class="bead bead-top mx-auto"></div>
-                    <div class="mt-[150px] flex flex-col gap-2">
-                        <div id="t-b1" class="bead bead-bottom mx-auto"></div>
-                        <div id="t-b2" class="bead bead-bottom mx-auto"></div>
-                        <div id="t-b3" class="bead bead-bottom mx-auto"></div>
-                        <div id="t-b4" class="bead bead-bottom mx-auto"></div>
+        <div class="right-side">
+            <div class="abacus flex justify-around px-6">
+                <div class="beam"></div>
+                <div class="relative w-20 h-full flex flex-col pt-4">
+                    <div class="rod"></div>
+                    <div id="t-up" class="bead top mx-auto"></div>
+                    <div class="mt-[135px] flex flex-col gap-2">
+                        <div id="t-d1" class="bead btm mx-auto"></div>
+                        <div id="t-d2" class="bead btm mx-auto"></div>
+                        <div id="t-d3" class="bead btm mx-auto"></div>
+                        <div id="t-d4" class="bead btm mx-auto"></div>
                     </div>
                 </div>
-
-                <div class="relative w-24 h-full flex flex-col pt-6">
-                    <div class="rod-path"></div>
-                    <div id="o-top" class="bead bead-top mx-auto"></div>
-                    <div class="mt-[150px] flex flex-col gap-2">
-                        <div id="o-b1" class="bead bead-bottom mx-auto"></div>
-                        <div id="o-b2" class="bead bead-bottom mx-auto"></div>
-                        <div id="o-b3" class="bead bead-bottom mx-auto"></div>
-                        <div id="o-b4" class="bead bead-bottom mx-auto"></div>
+                <div class="relative w-20 h-full flex flex-col pt-4">
+                    <div class="rod"></div>
+                    <div id="o-up" class="bead top mx-auto"></div>
+                    <div class="mt-[135px] flex flex-col gap-2">
+                        <div id="o-d1" class="bead btm mx-auto"></div>
+                        <div id="o-d2" class="bead btm mx-auto"></div>
+                        <div id="o-d3" class="bead btm mx-auto"></div>
+                        <div id="o-d4" class="bead btm mx-auto"></div>
                     </div>
                 </div>
             </div>
-
-            <div class="mt-10 flex gap-20">
-                <div class="text-center"><p class="text-slate-500 font-bold mb-1">十位</p><p id="disp-t" class="text-5xl font-black">0</p></div>
-                <div class="text-center"><p class="text-yellow-500 font-bold mb-1">個位</p><p id="disp-o" class="text-5xl font-black text-yellow-400">0</p></div>
+            
+            <div class="mt-8 flex gap-20">
+                <div class="text-center"><p class="text-slate-500 text-xs">十位</p><p id="val-t" class="text-5xl font-black text-white">0</p></div>
+                <div class="text-center"><p class="text-yellow-500 text-xs">個位</p><p id="val-o" class="text-5xl font-black text-yellow-400">0</p></div>
             </div>
         </div>
     </div>
 
     <script>
-        const TutoEngine = {
+        const Tuto = {
             step: 0,
-            pos: { t: {up:0, dn:0}, o: {up:0, dn:0} },
-            data: [
-                { msg: "你好！我是博士。我們來學習 7 + 8 的進位魔法！", run: () => this.clear() },
-                { msg: "第一步：在個位撥出 7 (一顆上珠，兩顆下珠)。注意看閃爍的地方！", run: () => { 
-                    this.hint('o-top', 'o-b1', 'o-b2'); 
+            pos: { t:{u:0, d:0}, o:{u:0, d:0} },
+            steps: [
+                { txt: "第一步：在個位撥出 7。也就是一顆上珠(5)和兩顆下珠(2)！", run: () => { 
+                    this.hint('o-up', 'o-d1', 'o-d2');
                     this.move('o', 5, 2); 
                 }},
-                { msg: "個位現在是 7。要加 8，珠子不夠了！這時候要『進 10 減 2』。", run: () => this.hint() },
-                { msg: "先在左邊十位撥上一顆下珠，這就是『進 10』！", run: () => { 
-                    this.hint('t-b1'); 
+                { txt: "現在要加 8，個位不夠了！口訣是：『加 8 等於進 10 減 2』。", run: () => this.hint() },
+                { txt: "注意看左邊！我們先在十位撥上一顆下珠，這就是『進 10』！", run: () => { 
+                    this.hint('t-d1');
                     this.move('t', 0, 1); 
                 }},
-                { msg: "最後，把個位剛才的兩顆珠子撥開，這就是『減 2』。", run: () => { 
-                    this.hint('o-b1', 'o-b2'); 
+                { txt: "最後，把個位剛才的兩顆珠子『撥開』，這就是『減 2』。", run: () => { 
+                    this.hint('o-d1', 'o-d2');
                     this.move('o', 5, 0); 
                 }},
-                { msg: "大功告成！答案就是 15。你已經掌握珠算的奧祕了！", run: () => this.hint() }
+                { txt: "太棒了！算盤顯示 15。你已經學會最難的進位了！", run: () => this.hint() }
             ],
-            move(col, up, dn) {
-                this.pos[col] = {up, dn};
-                this.sync();
-            },
+            move(c, u, d) { this.pos[c] = {u, d}; this.sync(); },
             sync() {
                 ['t', 'o'].forEach(c => {
-                    const top = document.getElementById(`${c}-top`);
-                    top.style.transform = this.pos[c].up === 5 ? "translateY(70px)" : "translateY(0)";
-                    for(let i=1; i<=4; i++){
-                        const b = document.getElementById(`${c}-b${i}`);
-                        b.style.transform = i <= this.pos[c].dn ? "translateY(-70px)" : "translateY(0)";
+                    document.getElementById(`${c}-up`).style.transform = this.pos[c].u === 5 ? "translateY(65px)" : "translateY(0)";
+                    for(let i=1; i<=4; i++) {
+                        document.getElementById(`${c}-d${i}`).style.transform = i <= this.pos[c].d ? "translateY(-65px)" : "translateY(0)";
                     }
                 });
-                document.getElementById('disp-t').innerText = (this.pos.t.up + this.pos.t.dn) * 10;
-                document.getElementById('disp-o').innerText = this.pos.o.up + this.pos.o.dn;
+                document.getElementById('val-t').innerText = (this.pos.t.u + this.pos.t.d) * 10;
+                document.getElementById('val-o').innerText = this.pos.o.u + this.pos.o.dn || (this.pos.o.u + this.pos.o.d);
             },
             hint(...ids) {
-                document.querySelectorAll('.guide-active').forEach(el => el.classList.remove('guide-active'));
-                ids.forEach(id => document.getElementById(id)?.classList.add('guide-active'));
+                document.querySelectorAll('.guide').forEach(el => el.classList.remove('guide'));
+                ids.forEach(id => document.getElementById(id).classList.add('guide'));
             },
-            clear() { this.pos = { t: {up:0, dn:0}, o: {up:0, dn:0} }; this.sync(); this.hint(); },
             next() {
-                if (this.step < this.data.length - 1) {
+                if(this.step < this.steps.length) {
+                    const s = this.steps[this.step];
+                    document.getElementById('msg').innerText = s.txt;
+                    s.run();
                     this.step++;
-                    document.getElementById('dialog-txt').innerText = this.data[this.step].msg;
-                    this.data[this.step].run();
                 } else {
-                    alert("恭喜完成講座！");
+                    alert("講座結束！你真有天分！");
+                    location.reload();
                 }
             }
         };
-        window.onload = () => { 
-            document.getElementById('dialog-txt').innerText = TutoEngine.data[0].msg; 
-            TutoEngine.sync();
-        };
+        window.onload = () => Tuto.sync();
     </script>
 </body>
 </html>

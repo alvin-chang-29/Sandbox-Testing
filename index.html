@@ -3,176 +3,724 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>寶可夢珠算修行 v8.1</title>
+    <title>寶可夢數學：關東地區全圖鑑大師版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { touch-action: manipulation; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        .bead { transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-        .active-glow { box-shadow: 0 0 15px rgba(255, 255, 255, 0.8); border: 2px solid white; }
-        @keyframes poke-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        .poke-animate { animation: poke-bounce 1s infinite; }
+        body { font-family: 'Microsoft JhengHei', sans-serif; background: #f1f5f9; user-select: none; touch-action: manipulation; transition: background 0.5s, color 0.5s; }
+        .pixel-border { border: 4px solid #0f172a; box-shadow: 4px 4px 0 #94a3b8; }
+        .page { display: none; }
+        .page-active { display: block; }
+        #ox-overlay { pointer-events: none; z-index: 10000; display: none; position: fixed; inset: 0; align-items: center; justify-content: center; font-size: 15rem; font-weight: 900; }
+        .animate-pop { animation: pop-in 0.3s ease-out forwards; }
+        @keyframes pop-in { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .celebrate-bg { animation: rainbow-bg 2s linear infinite; }
+        @keyframes rainbow-bg { 0% { background-color: #fef08a; } 33% { background-color: #bbf7d0; } 66% { background-color: #bfdbfe; } 100% { background-color: #fef08a; } }
+        .animate-flash { animation: flash 0.15s ease-in-out infinite; }
+        @keyframes flash { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(0) invert(1); } }
+        .flex-center { display: flex; align-items: center; justify-content: center; }
+        .mon-silhouette { filter: brightness(0) opacity(0.3); }
+        .hall-of-fame-bg { background: linear-gradient(135deg, #1e293b 0%, #4338ca 100%); color: white; }
+        .count-badge { position: absolute; bottom: -5px; right: -5px; background: #ef4444; color: white; border-radius: 999px; padding: 2px 8px; font-size: 12px; font-weight: 900; border: 2px solid white; }
+        
+        /* 異色星空背景 */
+        body.starry-bg {
+            background-color: #0f172a !important;
+            background-image: radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
+                              radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px),
+                              radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 40px);
+            background-size: 550px 550px, 350px 350px, 250px 250px;
+            background-position: 0 0, 40px 60px, 130px 270px;
+        }
+        body.starry-bg #page-list h2, body.starry-bg #page-stages h2, body.starry-bg #stage-menu h3 { color: #fde047 !important; }
+        body.starry-bg .bg-slate-100, body.starry-bg .bg-slate-50 { background-color: transparent !important; }
     </style>
 </head>
-<body class="bg-slate-900 overflow-hidden">
+<body class="min-h-screen">
 
-<div id="app" class="flex flex-col h-screen max-w-md mx-auto relative">
-    
-    <div id="battle-scene" class="h-1/3 m-4 rounded-3xl border-4 border-white shadow-2xl relative flex items-center justify-around transition-colors duration-700 bg-green-400">
-        <div class="bg-white/90 p-4 rounded-2xl shadow-inner text-center min-w-[80px]">
-            <div class="text-xs font-bold text-slate-500 uppercase">目標數</div>
-            <div id="target-number" class="text-5xl font-black text-slate-800">1</div>
-        </div>
+    <div id="ox-overlay"></div>
 
-        <div class="text-center">
-            <div id="target-pokemon" class="text-8xl poke-animate drop-shadow-lg">🌱</div>
-            <div id="pokemon-name" class="mt-2 bg-black/30 px-3 py-1 rounded-full text-white text-sm font-bold">妙蛙種子</div>
-        </div>
+    <div id="shiny-toggle-container" class="fixed top-4 right-4 z-[9900] hidden">
+        <button onclick="toggleShiny()" id="btn-shiny" class="w-14 h-14 rounded-full shadow-2xl text-3xl flex-center bg-white border-4 border-slate-200 transition-transform active:scale-95">
+            🔴
+        </button>
     </div>
 
-    <div class="px-6 text-center">
-        <div id="instruction-msg" class="text-yellow-400 font-bold text-lg drop-shadow-md">👆 撥動 1 顆精靈球來攻擊！</div>
-    </div>
-
-    <div class="flex-1 flex items-center justify-center p-4">
-        <div id="abacus-frame" class="w-full bg-orange-100 p-8 rounded-[40px] border-[10px] border-amber-900 shadow-2xl relative">
-            <div class="absolute w-full h-4 bg-amber-900 left-0 top-[85px] z-20 shadow-md border-y border-amber-800"></div>
-            
-            <div class="flex justify-center relative h-72">
-                <div class="rod w-20 h-full flex flex-col items-center relative">
-                    <div class="absolute w-2 h-full bg-slate-400 rounded-full shadow-inner"></div>
-                    
-                    <div id="bead-5" class="bead upper w-16 h-12 bg-red-500 rounded-full shadow-lg z-30 cursor-pointer border-b-8 border-red-700" 
-                         style="transform: translateY(0px);" onclick="toggleUpperBead()"></div>
-                    
-                    <div class="h-16"></div> <div class="bead lower w-16 h-12 bg-blue-500 rounded-full shadow-lg z-30 cursor-pointer border-b-8 border-blue-700 my-1" 
-                         style="transform: translateY(60px);" onclick="handleLowerClick(0)"></div>
-                    <div class="bead lower w-16 h-12 bg-blue-500 rounded-full shadow-lg z-30 cursor-pointer border-b-8 border-blue-700 my-1" 
-                         style="transform: translateY(60px);" onclick="handleLowerClick(1)"></div>
-                    <div class="bead lower w-16 h-12 bg-blue-500 rounded-full shadow-lg z-30 cursor-pointer border-b-8 border-blue-700 my-1" 
-                         style="transform: translateY(60px);" onclick="handleLowerClick(2)"></div>
-                    <div class="bead lower w-16 h-12 bg-blue-500 rounded-full shadow-lg z-30 cursor-pointer border-b-8 border-blue-700 my-1" 
-                         style="transform: translateY(60px);" onclick="handleLowerClick(3)"></div>
+    <div id="master-modal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[10005] p-6 backdrop-blur-md">
+        <div class="bg-gradient-to-br from-yellow-300 to-yellow-600 p-1 rounded-[3rem] shadow-2xl w-full max-w-sm animate-pop">
+            <div class="bg-white rounded-[2.8rem] p-8 text-center relative overflow-hidden">
+                <div class="absolute inset-0 celebrate-bg opacity-30"></div>
+                <h2 class="text-4xl font-black mb-2 text-yellow-500 italic relative z-10">大師誕生！</h2>
+                <p class="text-slate-600 font-bold mb-6 relative z-10">恭喜完成區域圖鑑！</p>
+                <div class="border-4 border-yellow-400 p-4 rounded-2xl bg-yellow-50 relative z-10 mb-6">
+                    <div class="text-xs text-yellow-600 font-black mb-1">最強訓練家</div>
+                    <div id="master-name" class="text-3xl font-black text-slate-800"></div>
                 </div>
+                <button onclick="closeMasterModal()" class="bg-yellow-500 text-white w-full py-4 rounded-2xl text-xl font-black shadow-lg relative z-10">領取榮耀 ➔</button>
             </div>
         </div>
     </div>
 
-    <div class="p-4 text-center text-slate-500 text-xs">
-        寶可夢珠算修行程式 v8.1 | 初學者模式
+    <div id="success-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-[9999] p-6 backdrop-blur-md">
+        <div class="bg-white p-8 rounded-[3rem] pixel-border text-center shadow-2xl w-full max-w-sm animate-pop">
+            <div id="success-title" class="text-3xl font-black mb-2 text-blue-600 italic">收服成功！</div>
+            <div id="success-msg" class="text-slate-500 font-bold mb-4 text-sm"></div>
+            <div class="flex-center w-full h-48 mb-6 relative">
+                <img id="success-mon-img" src="" class="max-w-full max-h-full object-contain drop-shadow-2xl">
+            </div>
+            <div id="success-actions" class="flex flex-col gap-3">
+                <button id="btn-continue-train" class="hidden bg-indigo-600 text-white w-full py-4 rounded-2xl text-xl font-black shadow-lg">繼續特訓進化 ➔</button>
+                <button id="btn-close-success" class="bg-yellow-400 text-yellow-900 w-full py-4 rounded-2xl text-xl font-black shadow-lg">繼續 ➔</button>
+            </div>
+        </div>
     </div>
-</div>
 
-<script>
-    // --- 1. 課程資料庫 ---
-    const CURRICULUM = [
-        { id: "L1", target: 1, pokemon: "🌱", name: "妙蛙種子", color: "bg-green-400" },
-        { id: "L2", target: 2, pokemon: "💧", name: "傑尼龜", color: "bg-blue-400" },
-        { id: "L3", target: 3, pokemon: "🔥", name: "小火龍", color: "bg-red-400" }
-    ];
+    <div id="nav-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-[10002] p-6 backdrop-blur-md">
+        <div class="bg-white p-8 rounded-[2.5rem] pixel-border text-center shadow-2xl w-full max-w-sm animate-pop">
+            <div class="text-2xl font-black mb-4 text-slate-800 italic">尋找蹤跡...</div>
+            <div class="flex-center w-full h-32 mb-4 bg-slate-50 rounded-3xl">
+                <img id="nav-mon-img" src="" class="max-w-full max-h-full object-contain">
+            </div>
+            <p id="nav-msg" class="text-slate-600 font-bold mb-6 text-sm leading-relaxed"></p>
+            <div class="flex flex-col gap-3">
+                <button id="btn-go-nav" class="bg-blue-500 text-white w-full py-4 rounded-2xl text-lg font-black shadow-lg">立即前往！</button>
+                <button onclick="document.getElementById('nav-modal').classList.add('hidden')" class="text-slate-400 font-bold text-sm">先不用</button>
+            </div>
+        </div>
+    </div>
 
-    let currentLevelIndex = 0;
-    let lowerBeadsState = [0, 0, 0, 0]; // 0: 遠離, 1: 靠樑
-    let upperBeadState = 0; // 0: 遠離, 1: 靠樑
+    <div id="dex-modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-[10001] p-6 backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-[2.5rem] pixel-border text-center w-full max-w-xs relative animate-pop">
+            <button onclick="document.getElementById('dex-modal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-300 text-2xl font-black">✕</button>
+            <div class="flex-center w-full h-32 mb-4"><img id="dex-img" src="" class="max-w-full max-h-full object-contain"></div>
+            <h3 id="dex-name" class="text-2xl font-black text-slate-800 mb-1 italic"></h3>
+            <div id="dex-info" class="h-40 overflow-y-auto px-2 pt-2 text-left"></div>
+            <button id="btn-go-catch-again" class="bg-blue-500 text-white w-full mt-4 py-3 rounded-2xl text-lg font-black shadow-lg active:scale-95 transition-transform">前往尋找蹤跡 ➔</button>
+        </div>
+    </div>
 
-    // --- 2. 算盤核心邏輯 ---
+    <div id="page-welcome" class="page page-active flex-center min-h-screen p-6">
+        <div class="bg-white p-8 rounded-[2.5rem] pixel-border w-full max-w-sm text-center">
+            <h1 class="text-3xl font-black mb-2 text-slate-800 italic">寶可夢數學</h1>
+            <p class="text-xs font-bold text-blue-500 mb-8 uppercase tracking-widest italic tracking-tighter">Kanto Master Edition</p>
+            <p class="text-sm font-bold text-slate-500 mb-2">你好，新的訓練家！</p>
+            <input type="text" id="input-name" class="w-full border-4 border-slate-100 p-4 rounded-2xl text-center font-bold mb-6 outline-none focus:border-yellow-400" placeholder="請輸入你的名字">
+            <button onclick="checkAdminAndStart()" class="bg-yellow-400 w-full py-5 rounded-2xl text-xl font-black shadow-lg active:scale-95 mb-6">開始冒險</button>
+            <button id="btn-reset-save" onclick="clearSave()" class="hidden text-slate-300 text-xs font-bold underline">清除存檔重新開始</button>
+        </div>
+    </div>
 
-    function handleLowerClick(index) {
-        // 判斷是要向上還是向下
-        const isMovingUp = lowerBeadsState[index] === 0;
-        
-        // 更新狀態：連動邏輯
-        lowerBeadsState = lowerBeadsState.map((state, i) => {
-            if (isMovingUp) {
-                return (i <= index) ? 1 : state; // 點擊點以上的全部帶上去
-            } else {
-                return (i >= index) ? 0 : state; // 點擊點以下的全部帶下來
+    <div id="page-starter" class="page p-6 min-h-screen bg-white text-center">
+        <h2 class="text-2xl font-black mb-8 italic">選擇首發夥伴</h2>
+        <div class="grid grid-cols-2 gap-4 max-w-md mx-auto" id="starter-list"></div>
+    </div>
+
+    <div id="page-stages" class="page p-6 min-h-screen bg-slate-100 text-center pt-20">
+        <h2 class="text-xl font-black mb-6 italic">訓練家 <span id="display-name" class="text-blue-600"></span> 的地圖</h2>
+        <div class="grid gap-3 text-left max-w-md mx-auto" id="stage-menu"></div>
+    </div>
+
+    <div id="page-list" class="page p-6 min-h-screen bg-slate-50 pt-20">
+        <h2 id="list-title" class="text-2xl font-black text-center mb-8 italic text-slate-700 underline decoration-yellow-400"></h2>
+        <div id="list-container" class="grid grid-cols-3 gap-4 max-w-md mx-auto mb-24"></div>
+        <div class="fixed bottom-6 left-0 w-full text-center z-10">
+            <button onclick="switchPage('page-stages')" class="bg-slate-800 text-white px-10 py-4 rounded-full font-bold shadow-xl">回到地圖</button>
+        </div>
+    </div>
+
+    <div id="page-game" class="page pb-20 min-h-screen bg-white transition-colors duration-500">
+        <div class="p-3 shadow flex justify-between items-center bg-white/90 backdrop-blur sticky top-0 z-10 border-b-2">
+            <button onclick="confirmExit()" class="bg-slate-100 px-5 py-2 rounded-full text-sm font-bold text-slate-500">◀ 離開</button>
+            <div id="progress-box" class="bg-blue-50 px-5 py-2 rounded-full text-sm font-black text-blue-600">
+                連對次數: <span id="combo">0</span> / <span id="total-needed">1</span>
+            </div>
+        </div>
+        <div class="max-w-md mx-auto p-4 text-center mt-6">
+            <div id="game-container" class="bg-white rounded-[3rem] pixel-border mt-2 overflow-hidden shadow-2xl">
+                <div id="battle-field" class="p-6 relative transition-colors duration-500">
+                    <div class="flex-center w-full min-h-[180px] gap-4 mb-4">
+                        <div id="my-side" class="w-1/2 flex-center flex-col hidden z-10">
+                            <img id="my-mon-img" src="" class="w-24">
+                        </div>
+                        <div id="enemy-side" class="w-full flex-center flex-col relative">
+                            <div id="shiny-sparkles" class="absolute inset-0 hidden pointer-events-none flex-center text-5xl animate-spin-slow z-0">✨</div>
+                            <img id="enemy-mon-img" src="" class="w-32 drop-shadow-lg z-10">
+                            <p id="enemy-name" class="text-xs font-black text-red-500 mt-2 bg-red-50 px-2 rounded-full z-10"></p>
+                        </div>
+                    </div>
+                    <div id="question-area" class="py-4 z-10 relative">
+                        <div id="question" class="text-4xl font-black text-slate-800 mb-6 italic tracking-tighter">?</div>
+                    </div>
+                </div>
+                <div id="options" class="grid grid-cols-2 gap-4 p-6 bg-slate-50 border-t-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 完整寶可夢資料庫 (包含所有神獸與說明) ---
+        const POKEDEX_DATA = {
+            1:["妙蛙種子","種子寶可夢","在出生後的一段時間內，它會吸收背上種子裡儲存的營養來成長。"],2:["妙蛙草","種子寶可夢","背上的花苞長大後，它似乎就無法再用兩條後腿站立了。"],3:["妙蛙花","種子寶可夢","據說充足的營養與陽光會讓花的顏色變得更加鮮豔，其花香能安撫人心。"],4:["小火龍","蜥蜴寶可夢","尾巴上的火焰代表它的生命力。如果身體強健，火焰就會燒得十分猛烈。"],5:["火恐龍","火焰寶可夢","會用鋒利的爪子無情地打倒對手。如果遇到強敵，它就會噴出青白色的火焰。"],6:["噴火龍","火焰寶可夢","據說在經歷過艱苦的戰鬥後，它的火焰溫度會升高。能飛到1400公尺高。"],7:["傑尼龜","小龜寶可夢","殼的作用不僅是用來保護身體，圓潤的形狀能減少水的阻力，讓它游得飛快。"],8:["卡咪龜","龜寶可夢","據說它長滿毛的尾巴是長壽的象徵，在老人家中非常受歡迎。"],9:["水箭龜","甲殼寶可夢","背上的甲殼上長著兩座水砲。噴射出的水流威力巨大，能輕易貫通厚重的鐵板。"],10:["綠毛蟲","蟲寶可夢","腳上的吸盤可以抓牢任何地方。不管是在牆壁還是樹上，它都能輕鬆爬上去。"],11:["鐵甲蛹","蛹寶可夢","雖然外殼像鋼鐵一樣堅硬，但內部的身體卻很柔軟。在進化前會一直忍耐不動。"],12:["巴大蝶","蝴蝶寶可夢","非常喜歡花蜜。據說只要哪裡有花開，它就算飛到10公里外也能聞到花香。"],13:["獨角蟲","毛毛蟲寶可夢","頭頂長著銳利的毒刺。會躲在森林的草叢裡，大量進食樹葉。"],14:["鐵殼蛹","蛹寶可夢","雖然幾乎無法動彈，但遇到危險時外殼會變得很硬。會掛在樹枝上等待進化。"],15:["大針蜂","毒蜂寶可夢","會用手腳上的三根毒刺發動攻擊。有強烈的領地意識，會成群結隊襲擊入侵者。"],16:["波波","小鳥寶可夢","個性非常溫和。與其戰鬥，它更傾向於拍動翅膀捲起沙塵，以此來保護自己。"],17:["比比鳥","鳥寶可夢","會在地盤裡盤旋，尋找獵物。發達的爪子能讓它抓著沉重的獵物飛上天空。"],18:["比雕","鳥寶可夢","胸口的肌肉非常發達。只要用力拍動翅膀，就能捲起足以壓倒大樹的強風。"],19:["小拉達","鼠寶可夢","生命力非常頑強。不管是多麼骯髒的地方，它都能在那裡定居並不斷繁殖。"],20:["拉達","鼠寶可夢","牙齒會不斷生長。為了磨牙，它會去啃咬岩石或木頭，有時連房子的牆壁都會被咬壞。"],21:["烈雀","小鳥寶可夢","雖然飛得不高，但飛行的速度非常快。為了保護地盤，會發出尖銳的叫聲。"],22:["大嘴雀","鳥寶可夢","擁有巨大的翅膀。即便不拍動翅膀，只要順著上升氣流，就能一直飛在空中。"],23:["阿柏蛇","蛇寶可夢","會毫無聲響地爬過地面，從背後襲擊毫無防備的獵物，並將其一口吞下。"],24:["阿柏怪","眼鏡蛇寶可夢","腹部的花紋能讓對手感到恐懼。趁對方退縮時，它會用身體將其緊緊纏住。"],25:["皮卡丘","鼠寶可夢","兩頰有電囊。如果感覺到危險，就會從那裡放出強大的電力。"],26:["雷丘","鼠寶可夢","如果電囊裡儲存了過多電力，它會把尾巴插在地面上放電。這會讓它變得神清氣爽。"],27:["穿山鼠","鼠寶可夢","喜歡乾燥的地面。遇到危險時會縮成球狀，防禦對手的攻擊。"],28:["穿山王","鼠寶可夢","背上的刺是由皮膚變化而來的。如果刺掉了，一天之內就會長出新的刺。"],29:["尼多蘭","毒針寶可夢","體型很小但有劇毒的針。遇到危險時，會用毒針保護自己。"],30:["尼多娜","毒針寶可夢","與夥伴在一起時會收起毒針以免受傷。個性溫和，不喜歡爭鬥。"],31:["尼多后","鑽錐寶可夢","身體覆蓋著堅硬的鱗片。為了守護孩子，它會展現出極強的韌性與力量。"],32:["尼多朗","毒針寶可夢","能靈活地轉動大耳朵來察覺四周的氣息。如果感到危險就會釋放強烈的毒素。"],33:["尼多力諾","毒針寶可夢","角非常堅硬。一旦發現對手，就會立刻衝過去用角刺向對方。"],34:["尼多王","鑽錐寶可夢","尾巴的力量非常驚人。只要被它纏住，獵物的骨頭就會被輕易折斷。"],35:["皮皮","妖精寶可夢","擁有可愛的姿態。據說在滿月之夜，它們會聚集在一起跳舞，是非常神祕的寶可夢。"],36:["皮可西","妖精寶可夢","聽覺非常靈敏。據說它能聽到一公里外掉在地上的一根針的聲音。"],37:["六尾","狐狸寶可夢","出生時只有一條白色的尾巴。隨著年齡增長，尾巴會變色並分裂成六條美麗的尾巴。"],38:["九尾","狐狸寶可夢","據說它每一條尾巴都具備神祕的魔力。活上千年也不足為奇。"],39:["胖丁","氣球寶可夢","會轉動圓滾滾的大眼睛唱出優美的歌曲。聽過歌聲的人都會陷入沉睡。"],40:["胖可丁","氣球寶可夢","身體非常有彈性。只要深深地吸一口氣，它就能不斷膨脹，變得非常巨大。"],41:["超音蝠","蝙蝠寶可夢","沒有眼睛。會從口中發出超音波，以此探測前方的障礙物並靈活飛行。"],42:["大嘴蝠","蝙蝠寶可夢","非常喜歡吸食血液。一旦咬住獵物，就會在吸飽血之前絕對不會放開。"],43:["走路草","雜草寶可夢","白天會把自己埋在土裡。到了晚上會利用月光的力量在森林裡四處走動。"],44:["臭臭花","雜草寶可夢","從花蕊排出的氣味非常難聞。據說只要進攻過一次，記憶力就會暫時消失。"],45:["霸王花","花寶可夢","擁有世界上最大的花瓣。每走一步都會散播帶劇毒的鱗粉，讓周圍變得很危險。"],46:["派拉斯","蘑窩寶可夢","背上長著叫作冬蟲夏草的蘑菇。蘑菇會吸收派拉斯攝取的營養來長大。"],47:["派拉斯特","蘑菇寶可夢","派拉斯的意志已經消失，完全由背上的巨大蘑菇控制。喜歡潮濕陰暗的地方。"],48:["毛球","昆蟲寶可夢","全身覆蓋著細毛。大眼睛實際上是由許多小眼睛組成的集合體，能看清黑暗。"],49:["末入蛾","毒蛾寶可夢","翅膀上佈滿了鱗粉。根據顏色不同，毒性也不同，淺色代表麻痺，深色代表劇毒。"],50:["地鼠","鼴鼠寶可夢","生活在地下。皮膚非常薄，如果曬到太陽，體溫就會升高而變得虛弱。"],51:["三地鼠","鼴鼠寶可夢","由三隻地鼠合體而成。挖掘速度驚人，能挖到地下60公里的深度。"],52:["喵喵","妖怪貓寶可夢","喜歡閃亮的東西。只要發現硬幣，就會把它撿起來放在額頭上炫耀。"],53:["貓老大","暹羅貓寶可夢","性格非常傲慢。如果有人觸摸它的鬍鬚，它就會無情地抓傷對方。"],54:["可達鴨","鴨寶可夢","一直被頭痛困擾著。如果頭痛變得劇烈，它就會展現出強大的念力。"],55:["哥達鴨","鴨寶可夢","游泳能手。它手腳上的蹼讓它在水中游動的速度比奧運選手還要快。"],56:["猴怪","豬猴寶可夢","非常容易發怒。如果它開始顫抖並急促呼吸，那就是它要發火的徵兆。"],57:["火爆猴","豬猴寶可夢","一旦被惹毛，它就會追逐對手直到天涯海角。在它睡著時，憤怒也不會平息。"],58:["卡蒂狗","小狗寶可夢","對主人非常忠誠。會用吠叫聲來嚇退入侵自己領地的敵人。"],59:["風速狗","傳說寶可夢","充滿威嚴的寶可夢。據說它奔跑時的姿態像是在飛翔，極具美感。"],60:["蚊香蝌蚪","蝌蚪寶可夢","腹部的螺旋是透過皮膚看到的內臟。它的皮很薄，但非常有彈性。"],61:["蚊香蛙","蝌蚪寶可夢","皮膚濕潤，擅長在陸地上生活。雖然會游泳，但更喜歡在地上蹦跳。"],62:["快泳蛙","蝌蚪寶可夢","全身都是強韌的肌肉。就算是在波濤洶湧的大海裡，它也能游刃有餘。"],63:["凱西","念力寶可夢","一天要睡18個小時。即便在睡夢中，它也能感覺到敵人的氣息並瞬間移動。"],64:["勇吉拉","念力寶可夢","手中拿著一把銀色的勺子。勺子能增強它大腦散發出的精神波。"],65:["胡地","念力寶可夢","大腦會不斷成長，導致它的頭變得越來越重。它的智商高達5000。"],66:["腕力","怪力寶可夢","即便是一隻腕力，也能舉起百人的重量。它會不斷鍛鍊肌肉來變得更強。"],67:["豪力","怪力寶可夢","腰帶是為了限制它過於強大的力量。只要解開腰帶，它就能發揮驚人的威力。"],68:["怪力","怪力寶可夢","四隻手能同時攻擊。它能在一秒鐘內揮出幾百拳，速度快得看不清。"],69:["喇叭芽","花寶可夢","細長的身體能靈活地扭動。會用溶化液來腐蝕獵物。"],70:["口呆花","捕蠅寶可夢","身體末端像勾子一樣。趁獵物不注意時，會噴出粉末讓對手麻痺。"],71:["大食花","捕蠅寶可夢","口中散發著甜蜜的香味。一旦獵物靠近，它就會將其吞入口中徹底溶解。"],72:["瑪瑙水母","水母寶可夢","身體大部分是水。它隱藏在波浪中，用帶毒觸手襲擊游泳的人。"],73:["毒刺水母","水母寶可夢","擁有80根可以自由伸縮的觸手。一旦被纏住，就絕對無法逃脫其毒素。"],74:["小拳石","岩石寶可夢","形狀像是一塊大石頭。如果有人不小心踩到它，它就會生氣地揮舞雙拳。"],75:["隆隆石","岩石寶可夢","喜歡在山坡上滾動。滾動時會撞碎擋在路上的任何石頭。"],76:["隆隆岩","重量級寶可夢","外殼像岩石一樣堅硬。即便用炸藥也無法在它的殼上留下傷痕。"],77:["小火馬","火馬寶可夢","剛出生時腳力很弱，但透過不斷追逐親代，它的腳力會變得非常強健。"],78:["烈焰馬","火馬寶可夢","最喜歡奔跑。只要看到移動的東西，它就會想要與其賽跑，時速可達240公里。"],79:["呆呆獸","憨憨寶可夢","反應非常遲鈍。就算尾巴被咬了，也要等到半天之後才會感覺到痛。"],80:["呆河馬","寄居蟹寶可夢","由於被大舌貝咬住了尾巴，它變得能夠站立行走，但依舊一副發呆的模樣。"],81:["小磁怪","磁鐵寶可夢","左右兩側是磁鐵，能發出強力的磁力。它靠磁力懸浮在空中。"],82:["三合一磁怪","磁鐵寶可夢","三隻小磁怪連結在一起。在下雨天時，它會釋放出強大的電力。"],83:["大蔥鴨","鴨寶可夢","手中拿著一根特殊的植物莖。它是非常珍貴的寶可夢，據說肉質非常鮮美。"],84:["嘟嘟","雙頭鳥寶可夢","擁有兩個腦袋。一個頭睡覺時，另一個頭會醒著警戒四周。"],85:["嘟嘟利","三頭鳥寶可夢","三個腦袋分別代表喜悅、悲傷與憤怒。它在陸地上跑得非常快。"],86:["小海獅","海獅寶可夢","覆蓋著雪白的皮毛。非常耐寒，越是寒冷的地方它就越有活力。"],87:["白海獅","海獅寶可夢","能在冰冷的海水中優雅地游泳。白天在冰塊上睡覺，晚上去捕食。"],88:["臭泥","污泥寶可夢","誕生自被污染的淤泥。身體黏糊糊的，走過的地方都會留下劇毒。"],89:["臭臭泥","污泥寶可夢","身體散發出的惡臭足以讓人昏厥。它會躲在廢棄建築的陰暗處。"],90:["大舌貝","雙殼貝寶可夢","外殼比鑽石還要堅硬。平時緊閉雙殼，只伸出長長的舌頭。"],91:["刺甲貝","雙殼貝寶可夢","外殼上長著銳利的尖刺。只要它緊閉甲殼，即便連魚雷也無法炸開它。"],92:["鬼斯","氣體寶可夢","身體的95%是氣體。它會悄悄靠近獵物，用氣體將對方包圍致其昏迷。"],93:["鬼斯通","氣體寶可夢","喜歡在黑暗中拍打路人的肩膀。一旦回頭，就什麼也沒有，躲在暗處偷笑。"],94:["耿鬼","影子寶可夢","隱藏在城市街道的影子中。如果感覺周圍氣溫突然下降，那就是耿鬼來了。"],95:["大岩蛇","岩蛇寶可夢","在地下挖掘前進時會引起地鳴。它巨大的身體在鑽洞時會讓地表產生震動。"],96:["素利普","催眠寶可夢","會從長長的鼻子裡吸食人類的夢境。據說它特別喜歡吃小孩子的夢。"],97:["素利柏","催眠寶可夢","手裡拿著鐘擺。千萬不要盯著它的鐘擺看，否則會在三秒內進入深度睡眠。"],98:["大鉗蟹","小蟹寶可夢","剪刀手是它強大的武器，但也常用來保持平衡。如果剪刀斷了還會長出來。"],99:["巨鉗蟹","大蟹寶可夢","其中一隻鉗子變得巨大無比，擁有萬分馬力。由於太重，它走起路來歪歪斜斜。"],100:["霹靂電球","球寶可夢","外形非常像精靈球。如果受到衝擊，它會毫不猶豫地引起大爆炸。"],101:["頑皮雷彈","球寶可夢","儲存了大量電力。稍微一點刺激就會引發連鎖反應導致自爆。"],102:["蛋蛋","蛋寶可夢","六個看起來像蛋的東西靠心靈感應連結。如果少了一個，它們就會變得很不安。"],103:["椰蛋樹","椰子寶可夢","每個頭都在思考不同的事情。如果其中一個頭掉下來，就會變成蛋蛋。"],104:["卡拉卡拉","孤獨寶可夢","戴著去世母親的頭骨。寂寞時發出的哭聲會在頭骨裡產生悲傷的回響。"],105:["嘎拉嘎拉","骨頭手寶可夢","將手中的骨頭棒當作迴力鏢使用。個性變得非常堅強且勇敢。"],106:["沙瓦郎","踢技寶可夢","雙腿可以自由收縮。它會從遠處發動連續踢擊，被稱為踢技之鬼。"],107:["艾比郎","拳擊寶可夢","拳頭的動作快到看不清。只要它認真起來，三分鐘內就能結束戰鬥。"],108:["大舌頭","舔舔寶可夢","兩公尺長的舌頭上佈滿了神經。它用舌頭來觸摸東西，以此了解周圍環境。"],109:["瓦斯彈","毒氣寶可夢","體內充滿了腐敗的毒氣。只要靠近它，就會聞到一股像壞掉的雞蛋那樣的臭味。"],110:["雙彈瓦斯","毒氣寶可夢","兩隻瓦斯彈合在一起。它會吸食垃圾中的廢氣來維持生命。"],111:["獨角犀牛","犀牛寶可夢","大腦很小，所以腦袋不大靈光。只要開始衝刺，它就會忘記自己為什麼要跑。"],112:["鑽角犀獸","鑽錐寶可夢","角像鑽頭一樣旋轉。皮膚非常厚，即便在熔岩裡行走也不會覺得熱。"],113:["吉利蛋","蛋寶可夢","胸口的口袋裡帶著營養豐富的蛋。它會把蛋分享給受傷的人或寶可夢。"],114:["蔓藤怪","藤蔓寶可夢","全身覆蓋著藍色的藤蔓。沒人知道藤蔓下面隱藏著什麼樣的真面目。"],115:["袋龍","親子寶可夢","腹部的口袋裡養育著幼獸。為了保護孩子，它會展現出不顧一切的母愛。"],116:["墨海馬","龍寶可夢","在珊瑚的影子裡生活。遇到危險時，會從口中噴出漆黑的墨汁逃走。"],117:["海刺龍","龍寶可夢","全身的尖刺都帶有毒素。它的尾巴捲曲著，能牢牢抓緊珊瑚礁。"],118:["角金魚","金魚寶可夢","擁有優雅的魚鰭，被稱為水中的女王。但如果被它的角刺到，後果很嚴重。"],119:["金魚王","金魚寶可夢","在秋天時，它的身體會變得非常紅艷。會在河床的岩石上鑽洞產卵。"],120:["海星星","星形寶可夢","中心核心在發光。即便身體被切斷，只要核心還在，它就能迅速重生。"],121:["寶石海星","星形寶可夢","中心的核心像紅寶石一樣閃爍。有人認為它是來自宇宙的寶可夢。"],122:["吸盤魔偶","屏障寶可夢","擅長默劇。它能用指尖在空氣中製造出隱形的牆壁，擋住敵人的攻擊。"],123:["飛天螳螂","螳螂寶可夢","雙臂上的鐮刀極其鋒利。動作迅速如風，能在一瞬間將獵物切斷。"],124:["迷唇姐","人形寶可夢","會像跳舞一樣地扭動身體。據說它的叫聲聽起來像是人類的語言。"],125:["電擊獸","電擊寶可夢","喜歡強大的電力。在發電廠附近經常能見到它的蹤影，身體充滿電流。"],126:["鴨嘴火龍","噴火寶可夢","體溫高達1200度。它呼吸時噴出的火焰能將周圍的空氣都燒得扭曲。"],127:["大甲","鍬形甲蟲寶可夢","雙角的力量驚人。一旦被它的角夾住，除非對方斷開，否則它絕對不會放手。"],128:["肯泰羅","水牛寶可夢","個性極其粗暴。會用三根尾巴鞭打自己來增加鬥志，然後全力衝擊。"],129:["鯉魚王","魚寶可夢","被認為是世界上最弱的寶可夢。除了跳躍之外幾乎什麼都不會，但生命力頑強。"],130:["暴鯉龍","兇惡寶可夢","性格極其殘暴。據說在過去發生戰爭時，它會出現並將周圍化為一片焦土。"],131:["乘龍","乘坐寶可夢","擁有能理解人類語言的高智商。非常喜歡馱著人類橫渡大海。"],132:["百變怪","變形寶可夢","能隨意重組全身細胞，變成與對手一模一樣的形態，但體力不變。"],133:["伊布","進化寶可夢","由於基因極不穩定，因此潛藏著各種進化的可能，是適應環境的專家。"],134:["水精靈","吐泡寶可夢","細胞結構與水分非常接近。它在水中能讓身體融化，隱藏身蹤。"],135:["雷精靈","雷寶可夢","全身的毛髮變得像針一樣尖銳。它能吸取大氣中的電力並釋放火花。"],136:["火精靈","火焰寶可夢","體內有火袋，能噴出高溫火焰。它蓬鬆的毛髮具有散熱的功能。"],137:["多邊獸","虛擬寶可夢","由科學家利用程式碼創造的人工寶可夢。它能自由進出電子空間。"],138:["菊石獸","漩渦寶可夢","化石重生的寶可夢。在數億年前的海中，它靠擺動殼上的觸手游泳。"],139:["多刺菊石獸","漩渦寶可夢","甲殼上的尖刺非常發達。據說它是因為甲殼變得太重無法捕捉獵物而滅絕的。"],140:["化石盔","甲殼寶可夢","被稱為活化石。隱藏在海底，透過背上的兩隻眼睛觀察周圍。"],141:["鐮刀盔","甲殼寶可夢","在海中游泳速度極快。雙手鐮刀能輕易切開對手，以此捕食。"],142:["化石翼龍","化石寶可夢","遠古時期的天空霸主。它鋸齒般的牙齒能將獵物連骨頭一起嚼碎。"],143:["卡比獸","睡覺寶可夢","除了吃就是睡。每天要吃下400公斤食物，胃液強大到能消化任何腐爛的東西。"],144:["急凍鳥","冰凍寶可夢","傳說中的鳥寶可夢。據說它透明般的羽毛是由冰構成的，飛行時會降下雪花。"],145:["閃電鳥","電擊寶可夢","傳說中的鳥寶可夢。據說它拍動翅膀時會引發強烈的雷擊，住在積雨雲中。"],146:["火焰鳥","火焰寶可夢","傳說中的鳥寶可夢。據說它受傷後會進入火山口，用熔岩治療自己的身體。"],147:["迷你龍","龍寶可夢","長期以來被視為夢幻的寶可夢。會反覆脫皮，並在水中逐漸成長。"],148:["哈克龍","龍寶可夢","全身散發著神祕的氣息。據說它擁有操控天氣的力量，藏身於湖泊之中。"],149:["快龍","龍寶可夢","在大海中飛翔的寶可夢。據說它的智商與人類相當，會救助溺水的人類。"],150:["超夢","基因寶可夢","利用夢幻的基因經過多年的人工改造而成。戰鬥能力被提升到了極限，性格冷酷。"],151:["夢幻","新種寶可夢","據說擁有所有寶可夢的基因。因為能隨心所欲地隱身，所以很少有人見過它。"],
+            243:["雷公", "雷鳴寶可夢", "體內蘊藏著雷電般的威力。它奔跑時發出的咆哮會產生像雷電落下時一樣的震動。"],244:["炎帝", "火山寶可夢", "據說它是在火山噴發時誕生的。會噴出比熔岩還要高溫的火焰，在大地上奔跑。"],245:["水君", "極光寶可夢", "體內蘊藏著如泉水般的清澈。據說它會隨北風一起現身，擁有瞬間淨化汙水的力量。"],249:["洛奇亞", "潛水寶可夢", "被傳為海神。據說它只要輕輕拍動翅膀，就能引起長達40天的風暴。"],250:["鳳王", "彩虹寶可夢", "神話中記載它會一邊閃耀著七彩光芒一邊飛行。據說看過它的人能獲得永遠的幸福。"],251:["時拉比", "森林守護神", "擁有穿越時空的能力。只在和平的時代才會現身，被視為守護森林的神靈。"],377:["雷吉洛克", "岩石寶可夢", "全身由岩石組成。即使在戰鬥中損壞，也會找新的岩石來修補身體。"],378:["雷吉艾斯", "冰山寶可夢", "據說是用冰河時代的冰製成的身體。即使在熔岩中，身體也不會融化。"],379:["雷吉斯奇魯", "鐵蛇寶可夢", "身體比任何金屬都要堅硬。據說體內的物質並不屬於地球，且身體中空。"],380:["拉帝亞斯", "無限寶可夢", "擁有能折射光線的羽毛，能讓自己的身體透明化。智商非常高。"],381:["拉帝歐斯", "無限寶可夢", "擁有能讓對手看到它腦中所想景象的能力。飛行速度能超越噴射機。"],382:["蓋歐卡", "海底寶可夢", "傳說中它是擴張海洋的大海之神，長年沉睡在海溝裡。"],383:["固拉多", "大陸寶可夢", "傳說中它是擴張陸地的大地之神。擁有能吹散雨雲、以高溫讓水蒸發的力量。"],384:["烈空坐", "天空寶可夢", "在臭氧層生活了數億年。據說每當蓋歐卡與固拉多交戰，它就會降臨地面。"],385:["基拉祈", "祈願寶可夢", "每1000年會醒來一次。據說它能實現寫在它頭上信箋中的任何願望。"],386:["代歐奇希斯", "DNA寶可夢", "附著在隕石上的宇宙病毒DNA發生變異而產生的寶可夢。"],480:["由克希", "知識寶可夢", "據說自從它出生後，人類就擁有了能充實生活的智慧。"],481:["艾姆利多", "情感寶可夢", "據說自從它出生後，人類就擁有了悲傷與快樂等豐富的情感。"],482:["亞克諾姆", "意志寶可夢", "據說自從它出生後，人類就擁有了勇於挑戰困難的意志。"],483:["帝牙盧卡", "時間寶可夢", "據說當它的心臟跳動時，時間就會流逝。神奧地區的神話之神。"],484:["帕路奇亞", "空間寶可夢", "據說它居住在空間裂縫之中。神奧地區的神話之神。"],485:["席多藍恩", "火山口寶可夢", "棲息在火山口的洞穴。四肢呈十字形狀，能像吸盤一樣抓在牆壁上行走。"],486:["雷吉奇卡斯", "巨大寶可夢", "傳說中它曾用繩子拉動大陸。據說它是用黏土、岩石和冰製造出了三神柱。"],487:["騎拉帝納", "反轉寶可夢", "居住在現實世界背面的破格世界中。因性格粗暴而被放逐。"],488:["克雷色利亞", "新月寶可夢", "散發出的光輝像新月一樣美麗。據說拿著它的羽毛入睡就能做好夢。"],489:["霏歐納", "海漂寶可夢", "會在溫暖的海域生活。頭上的浮囊膨脹時能漂浮在海面上。"],490:["瑪納霏", "滄海寶可夢", "出生於冰冷的海底。天生擁有一種能與任何寶可夢心靈相通的神奇力量。"],491:["達克萊伊", "暗黑寶可夢", "據說在無月之夜，它會讓人們陷入無止盡的噩夢之中。"],492:["謝米", "感謝寶可夢", "據說它能分解大氣中的毒素，瞬間將荒原變成花田。"],493:["阿爾宙斯", "創造寶可夢", "神話中描述它是從虛無之處的蛋中誕生，並創造了整個世界。"],638:["勾帕路翁", "鐵心寶可夢", "擁有鋼鐵般的身體與心靈。為了守護寶可夢而與人類戰鬥。"],639:["代拉基翁", "岩窟寶可夢", "擁有能撞碎巨大城牆的衝擊力。神話描述它守護了因戰爭失去家園的寶可夢。"],640:["畢力吉翁", "草原寶可夢", "頭上的角就像銳利的刀刃。會以敏捷的動作戲弄對手後切斷對方。"],641:["龍捲雲", "旋風寶可夢", "尾部噴出的雲狀能量能引起足以吹飛房子的暴風。"],642:["雷電雲", "雷擊寶可夢", "尾部的尖刺噴出的放電能引起雷暴。據說經過的地方都會留下焦痕。"],643:["萊希拉姆", "白陽寶可夢", "傳說它能用火焰將世界燃燒殆盡。會幫助構築真實世界的人。"],644:["捷克羅姆", "黑陰寶可夢", "傳說它能用閃電將世界毀滅。會幫助構築理想世界的人。"],645:["土地雲", "豐饒寶可夢", "因它到訪過的田地會大豐收，所以被譽為「豐饒之神」。"],646:["酋雷姆", "境界寶可夢", "體內能產生極低溫的冷氣。正在等待著能用真實或理想來填補身體的人。"],647:["凱路迪歐", "幼馬寶可夢", "會在水面上奔跑，使用蹄部噴射出的水流戰鬥。"],648:["美洛耶塔", "旋律寶可夢", "能彈奏特殊的旋律，自由操縱聽眾的情感。"],649:["蓋諾賽克特", "古生代寶可夢", "3億年前最強的獵手。經由等離子隊改造，背上裝上了砲台。"],716:["哲爾尼亞斯", "生命寶可夢", "據說能分享永恆的生命。以樹木形態沉睡千年後復活。"],717:["伊裴爾塔爾", "破壞寶可夢", "據說壽命將盡時，會吸取所有生物的生命，回到繭的形態。"],718:["基格爾德", "秩序寶可夢", "監視著生態系統的平衡。當平衡崩潰時就會現身發揮力量。"],719:["蒂安希", "寶石寶可夢", "小碎鑽的突變體。能瞬間製造出大量鑽石，是世界最美麗的身姿。"],720:["胡帕", "撈撈寶可夢", "能用圓環扭曲空間，將任何東西傳送到遠方。"],721:["波爾凱尼恩", "蒸汽寶可夢", "體內產生的蒸汽威力足以震碎高山，隱居在人類無法進入的山脈。"],785:["卡璞・鳴鳴", "土地神寶可夢", "美樂美樂島的守護神。雖然好奇心旺盛，但也是個脾氣暴躁的神靈。"],786:["卡璞・蝶蝶", "土地神寶可夢", "阿卡拉島的守護神。散播出的發光鱗粉能治癒傷痛。"],787:["卡璞・哞哞", "土地神寶可夢", "烏拉烏拉島的守護神。擁有操控植物成長的力量。"],788:["卡璞・鰭鰭", "土地神寶可夢", "波尼島的守護神。能操縱淨化身心的神奇流水。"],789:["科斯莫古", "星雲寶可夢", "非常稀有的寶可夢。據說它是來自異世界的生命，身體輕得像煙。"],790:["科斯莫姆", "原始星寶可夢", "像死了一樣完全不動，但摸起來外殼非常堅硬且沉重。"],791:["索爾迦雷歐", "太陽寶可夢", "自古以來被尊為太陽之使者，身體內蘊藏著莫大的能量。"],792:["露奈雅拉", "月亮寶可夢", "自古以來被尊為月亮之使者，會吸收光線轉換為能量。"],800:["奈克洛茲瑪", "稜鏡寶可夢", "一直沉睡在地底。為了尋求光而狂暴，能吸收其他寶可夢的光。"],807:["捷拉奧拉", "奔雷寶可夢", "手腳的肉墊能發出強力電流，以雷電的速度接近敵人。"],808:["美錄坦", "螺帽寶可夢", "身體由液態金屬組成。能侵蝕金屬物體並吸收入體內。"],809:["美錄梅塔", "螺帽寶可夢", "在3000年前被崇拜。擁有生產鐵的能力，力量非常驚人。"],888:["蒼響", "妖精王寶可夢", "傳說中它曾用手中之劍拯救了伽勒爾地區，能斬斷世間萬物。"],889:["藏瑪然特", "格鬥王寶可夢", "擁有反射任何攻擊的盾牌。深受人們敬畏與崇拜的守護神。"],890:["無極汰那", "核心寶可夢", "2萬年前隨隕石墜落的寶可夢。是極巨化能量的來源。"],891:["熊徒弟", "拳法寶可夢", "個性勤奮好學，會透過不斷地修行來鍛鍊心靈與肉體。"],892:["武道熊師", "拳法寶可夢", "進化後擁有兩種流派，分別以迅捷或強力的打擊擊潰對手。"],893:["薩戮德", "惡猿寶可夢", "成群結隊生活在密林深處。會用後頸伸出的藤蔓進行戰鬥或移動。"],894:["雷吉艾勒奇", "電子寶可夢", "全身由電能組成。據說其電能足以供應全人類的電力。"],895:["雷吉鐸拉戈", "龍玉寶可夢", "全身由龍之能量凝聚而成。據說擁有所有龍系寶可夢的力量。"],896:["雪暴馬", "狂奔馬寶可夢", "擁有極強的腕力。據說只要它面具噴出冷氣，一切都會凍結。"],897:["靈幽馬", "幻影馬寶可夢", "喜歡孤獨與靜謐。據說它踢出的腳擊能讓靈魂脫離肉體。"],898:["蕾冠王", "國王寶可夢", "在遠古時代統治過伽勒爾的國王。據說擁有預見未來的智慧。"],1001:["古簡蛛", "災厄寶可夢", "由寫滿怨恨的簡牘產生的災厄。會吸取周圍草木的生命力。"],1002:["古劍豹", "災厄寶可夢", "由古老鬥爭的仇恨產生的災厄。能操縱積雪引起大雪崩。"],1003:["古鼎鹿", "災厄寶可夢", "由古代祭祀的恐懼產生的災厄。頭上的巨鼎能引起劇烈震動。"],1004:["古玉魚", "災厄寶可夢", "由戰火中人類的妒忌產生的災厄。能操控高溫火焰熔化岩石。"],1007:["故勒頓", "悖論寶可夢", "傳說中曾用拳頭擊裂大地。雖然與摩托蜥相似，但實力完全不同。"],1008:["密勒頓", "悖論寶可夢", "據說是用雷電將一切化為灰燼。雖然與摩托蜥相似，但卻是未知的存在。"],1009:["波盪水", "悖論寶可夢", "外表酷似水君，但性格兇猛，會噴射出高溫水柱。"],1020:["破空焰", "悖論寶可夢", "外表酷似炎帝，性格好戰。能從角中噴出劇烈火焰。"],1021:["猛雷鼓", "悖論寶可夢", "外表酷似雷公。長長的脖子前端能發出極其強大的閃電。"],1024:["太樂巴戈斯", "輝石寶可夢", "體內充滿能量。當陷入危機時會進入結晶狀態保護自己。"],1025:["桃歹郎", "支配寶可夢", "會給予人類或寶可夢有毒的餅乾，藉此操控對方的意志。"]
+        };
+
+        const EVOLUTION_CHAINS = [[1,2,3],[4,5,6],[7,8,9],[10,11,12],[13,14,15],[16,17,18],[19,20],[21,22],[23,24],[25,26],[27,28],[29,30,31],[32,33,34],[35,36],[37,38],[39,40],[41,42],[43,44,45],[46,47],[48,49],[50,51],[52,53],[54,55],[56,57],[58,59],[60,61,62],[63,64,65],[66,67,68],[69,70,71],[72,73],[74,75,76],[77,78],[79,80],[81,82],[84,85],[86,87],[88,89],[90,91],[92,93,94],[96,97],[98,99],[100,101],[102,103],[104,105],[109,110],[111,112],[116,117],[118,119],[120,121],[129,130],[133,134,135,136],[138,139],[140,141],[147,148,149]];
+        const mythIds = [144, 145, 146, 150, 151];
+        const evolvedIds = new Set(); EVOLUTION_CHAINS.forEach(c => c.slice(1).forEach(id => evolvedIds.add(id)));
+
+        // --- 分區陣列設定 ---
+        const areaMons = [[], [], [], []];
+        for(let i=1; i<=151; i++) {
+            if(!evolvedIds.has(i) && !mythIds.includes(i)) {
+                if(i <= 35) areaMons[0].push(i);
+                else if(i <= 70) areaMons[1].push(i);
+                else if(i <= 110) areaMons[2].push(i);
+                else areaMons[3].push(i);
             }
-        });
-        
-        renderAbacus();
-        checkResult();
-    }
-
-    function toggleUpperBead() {
-        upperBeadState = (upperBeadState === 0) ? 1 : 0;
-        renderAbacus();
-        checkResult();
-    }
-
-    function renderAbacus() {
-        // 渲染地珠
-        const lowerBeads = document.querySelectorAll('.lower');
-        lowerBeads.forEach((bead, i) => {
-            // 靠樑位置 Y=0, 遠離位置 Y=60
-            bead.style.transform = lowerBeadsState[i] === 1 ? 'translateY(0px)' : 'translateY(60px)';
-            if(lowerBeadsState[i] === 1) bead.classList.add('active-glow');
-            else bead.classList.remove('active-glow');
-        });
-
-        // 渲染天珠
-        const upperBead = document.getElementById('bead-5');
-        // 天珠向下靠近樑才是 5
-        upperBead.style.transform = upperBeadState === 1 ? 'translateY(25px)' : 'translateY(0px)';
-        if(upperBeadState === 1) upperBead.classList.add('active-glow');
-        else upperBead.classList.remove('active-glow');
-    }
-
-    // --- 3. 遊戲流程控制 ---
-
-    function checkResult() {
-        const currentSum = (upperBeadState * 5) + lowerBeadsState.reduce((a, b) => a + b, 0);
-        const target = CURRICULUM[currentLevelIndex].target;
-
-        if (currentSum === target) {
-            triggerCapture();
         }
-    }
 
-    function triggerCapture() {
-        const pokemonEl = document.getElementById('target-pokemon');
-        const msgEl = document.getElementById('instruction-msg');
+        const parkMons = [
+            [243, 244, 245, 249, 250, 251], [377, 378, 379, 380, 381, 382, 383, 384, 385, 386],
+            [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493], [638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649],
+            [716, 717, 718, 719, 720, 721], [785, 786, 787, 788, 789, 790, 791, 792, 800, 807, 808, 809],
+            [888, 889, 890, 891, 892, 893, 894, 895, 896, 897, 898], [1001, 1002, 1003, 1004, 1007, 1008, 1009, 1020, 1021, 1024, 1025]
+        ];
 
-        // 視覺特效
-        pokemonEl.style.transform = "scale(0.2) rotate(360deg)";
-        pokemonEl.style.transition = "all 0.8s ease-in";
-        msgEl.innerText = "✨ Gotcha! 成功捕獲！ ✨";
-        msgEl.style.color = "#4ade80";
+        // --- 狀態變數 ---
+        let myPokes = []; // [{id: 1, isShiny: false}]
+        let caughtIds = new Set();
+        let shinyCaughtIds = new Set();
+        let completedAreas = [];
+        let isAdmin = false, trainerName = "";
+        
+        let isShinyMode = false;
+        let isWildShiny = false;
+        let currentMode = "", activeMyMon = null, activeEnemy = null, combo = 0, goal = 1, currentArea = 1, targetMonId = null, currentAns = 0;
 
-        // 下一關
-        setTimeout(() => {
-            currentLevelIndex++;
-            if (currentLevelIndex < CURRICULUM.length) {
-                initLevel();
-            } else {
-                msgEl.innerText = "🏆 恭喜完成初步修行！(L1-L3)";
-                alert("你太棒了！所有的修行都完成囉！");
+        function saveGame() {
+            const gameData = { 
+                trainerName, myPokes, completedAreas,
+                caughtIds: Array.from(caughtIds), shinyCaughtIds: Array.from(shinyCaughtIds)
+            };
+            localStorage.setItem('pokemon_math_kanto_save', JSON.stringify(gameData));
+        }
+
+        function loadGame() {
+            const savedData = localStorage.getItem('pokemon_math_kanto_save');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                trainerName = data.trainerName;
+                myPokes = data.myPokes || [];
+                caughtIds = new Set(data.caughtIds || []);
+                shinyCaughtIds = new Set(data.shinyCaughtIds || []);
+                completedAreas = data.completedAreas || [];
+                document.getElementById('display-name').innerText = trainerName;
+                document.getElementById('btn-reset-save').classList.remove('hidden');
+                document.getElementById('shiny-toggle-container').classList.remove('hidden');
+                switchPage('page-stages');
+                return true;
             }
-        }, 1500);
-    }
+            return false;
+        }
 
-    function initLevel() {
-        const level = CURRICULUM[currentLevelIndex];
+        function clearSave() {
+            if (confirm("確定要刪除所有進度，重新開始冒險嗎？")) { localStorage.removeItem('pokemon_math_kanto_save'); location.reload(); }
+        }
+
+        window.onload = () => { loadGame(); };
+
+        function checkAdminAndStart() {
+            const nameInput = document.getElementById('input-name').value.trim();
+            if (!nameInput && !isAdmin) return alert("請輸入訓練家名字！");
+            
+            trainerName = nameInput;
+            if (trainerName.toLowerCase() === "admin") { 
+                isAdmin = true; 
+                for (let i = 1; i <= 150; i++) {
+                    caughtIds.add(i); 
+                    if (!myPokes.find(p => p.id === i && !p.isShiny)) myPokes.push({id: i, isShiny: false});
+                }
+                trainerName = "超級訓練員"; 
+                document.getElementById('display-name').innerText = trainerName;
+                document.getElementById('shiny-toggle-container').classList.remove('hidden');
+                saveGame();
+                switchPage('page-stages'); 
+                return;
+            }
+            document.getElementById('display-name').innerText = trainerName;
+            document.getElementById('shiny-toggle-container').classList.remove('hidden');
+            startToStarter();
+        }
+
+        function startToStarter() {
+            const list = document.getElementById('starter-list'); list.innerHTML = "";
+            [1, 4, 7, 25, 133].forEach(id => {
+                const btn = document.createElement('button'); btn.className = "bg-white p-4 rounded-3xl border-2 shadow flex flex-col items-center active:scale-95";
+                btn.onclick = () => { myPokes = [{id: id, isShiny: false}]; caughtIds.add(id); saveGame(); switchPage('page-stages'); };
+                btn.innerHTML = `<img src="${getImgSrc(id)}" class="w-24"><span class="font-bold text-slate-500 mt-2">${POKEDEX_DATA[id][0]}</span>`;
+                list.appendChild(btn);
+            });
+            switchPage('page-starter');
+        }
+
+        function getImgSrc(id, shiny = false) {
+            return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${shiny ? 'shiny/' : ''}${id}.png`;
+        }
+
+        // --- 區域完成度判定 ---
+        function isKantoComplete() {
+            for(let i=1; i<=151; i++) if(!caughtIds.has(i)) return false;
+            return true;
+        }
+        function isParkComplete(areaId) {
+            const park = parkMons[areaId - 7];
+            return park.every(id => caughtIds.has(id));
+        }
+
+        function toggleShiny() {
+            if (!isKantoComplete()) {
+                alert(`${trainerName}，再多練習題目就可以看到閃閃發光的寶可夢了！`);
+                return;
+            }
+            isShinyMode = !isShinyMode;
+            const btn = document.getElementById('btn-shiny');
+            btn.innerHTML = isShinyMode ? '⭐' : '🔴';
+            btn.className = isShinyMode ? 
+                "w-14 h-14 rounded-full shadow-2xl text-3xl flex-center bg-yellow-300 border-4 border-yellow-500 animate-pulse transition-transform active:scale-95" :
+                "w-14 h-14 rounded-full shadow-2xl text-3xl flex-center bg-white border-4 border-slate-200 transition-transform active:scale-95";
+            
+            if (isShinyMode) {
+                document.body.classList.add('starry-bg');
+                document.getElementById('page-game').classList.replace('bg-white', 'bg-transparent');
+            } else {
+                document.body.classList.remove('starry-bg');
+                document.getElementById('page-game').classList.replace('bg-transparent', 'bg-white');
+            }
+            
+            // 如果在清單頁面，重新渲染
+            if (document.getElementById('page-list').classList.contains('page-active')) {
+                const title = document.getElementById('list-title').innerText;
+                if (title.includes("圖鑑")) enterPokedex();
+                else if (title.includes("背包")) enterMyCollection();
+            }
+        }
+
+        function switchPage(id) { 
+            if(id === 'page-stages') updateStageMenu(); 
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('page-active')); 
+            document.getElementById(id).classList.add('page-active'); 
+        }
+
+        function updateStageMenu() {
+            const menu = document.getElementById('stage-menu');
+            const normalCount = Array.from(caughtIds).filter(id => !mythIds.includes(id)).length;
+            const canEnterHall = (normalCount >= 146) || isAdmin; 
+            
+            let html = `
+                <button onclick="enterStage(1)" class="bg-green-500 text-white p-4 rounded-2xl flex items-center gap-4 shadow-lg border-b-8 border-green-700 active:translate-y-1">🌲 <div><div class="font-black text-lg italic">常青森林</div><div class="text-[10px]">個位數加減 (1-35)</div></div></button>
+                <button onclick="enterStage(2)" class="bg-stone-500 text-white p-4 rounded-2xl flex items-center gap-4 shadow-lg border-b-8 border-stone-700 active:translate-y-1">⛰️ <div><div class="font-black text-lg italic">月見山</div><div class="text-[10px]">3位數連加減 (36-70)</div></div></button>
+                <button onclick="enterStage(3)" class="bg-blue-500 text-white p-4 rounded-2xl flex items-center gap-4 shadow-lg border-b-8 border-blue-700 active:translate-y-1">🌊 <div><div class="font-black text-lg italic">華藍水域</div><div class="text-[10px]">加法交換率 (71-110)</div></div></button>
+                <button onclick="enterStage(4)" class="bg-yellow-600 text-white p-4 rounded-2xl flex items-center gap-4 shadow-lg border-b-8 border-yellow-800 active:translate-y-1">⚡ <div><div class="font-black text-lg italic">無人發電廠</div><div class="text-[10px]">減法邏輯 (111-151)</div></div></button>
+                <button onclick="enterEvolveSelect()" class="bg-indigo-600 text-white p-4 rounded-2xl flex items-center gap-4 shadow-lg border-b-8 border-indigo-800 active:translate-y-1">💎 <div><div class="font-black text-lg text-yellow-300 italic">進化之森</div><div class="text-[10px]">十位數相加減 (結果<=30)</div></div></button>
+                <button onclick="${canEnterHall ? 'enterHallOfFame()' : `alert('${trainerName}，還差 '+(146-normalCount)+' 種寶可夢解鎖名人堂！')`}" class="${canEnterHall ? 'hall-of-fame-bg animate-pulse' : 'bg-slate-400 opacity-50'} text-white p-4 rounded-2xl flex items-center gap-4 shadow-lg border-b-8 border-slate-900 active:translate-y-1">
+                    <span class="text-2xl">${canEnterHall ? '👑' : '🔒'}</span> <div><div class="font-black text-lg italic">關東名人堂</div><div class="text-[10px]">關東神獸挑戰</div></div>
+                </button>
+            `;
+
+            if (caughtIds.has(151)) {
+                html += `
+                <div class="col-span-1 mt-6 mb-2">
+                    <h3 class="text-xl font-black italic text-purple-800 border-b-4 border-purple-300 pb-2">🌌 回憶走廊 (隱藏關卡)</h3>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="enterStage(7)" class="bg-purple-500 text-white p-4 rounded-2xl flex flex-col items-center justify-center shadow-lg border-b-8 border-purple-700 active:translate-y-1"><div class="font-black text-md italic">城都公園</div><div class="text-[10px]">2的乘法</div></button>
+                    <button onclick="enterStage(8)" class="bg-pink-500 text-white p-4 rounded-2xl flex flex-col items-center justify-center shadow-lg border-b-8 border-pink-700 active:translate-y-1"><div class="font-black text-md italic">豐緣公園</div><div class="text-[10px]">3的乘法</div></button>
+                    <button onclick="enterStage(9)" class="bg-red-500 text-white p-4 rounded-2xl flex flex-col items-center justify-center shadow-lg border-b-8 border-red-700 active:translate-y-1"><div class="font-black text-md italic">神奧公園</div><div class="text-[10px]">4的乘法</div></button>
+                    <button onclick="enterStage(10)" class="bg-orange-500 text-white p-4 rounded-2xl flex flex-col items-center justify-center shadow-lg border-b-8 border-orange-700 active:translate-y-1"><div class="font-black text-md italic">合眾公園</div><div class="text-[10px]">5的乘法</div></button>
+                    <button onclick="enterStage(11)" class="bg-teal-500 text-white p-4 rounded-2xl flex flex-col items-center justify-center shadow-lg border-b-8 border-teal-700 active:translate-y-1"><div class="font-black text-md italic">卡洛斯公園</div><div class="text-[10px]">6的乘法</div></button>
+                    <button onclick="enterStage(12)" class="bg-cyan-500 text-white p-4 rounded-2xl flex flex-col items-center justify-center shadow-lg border-b-8 border-cyan-700 active:translate-y-1"><div class="font-black text-md italic">阿羅拉公園</div><div class="text-[10px]">7的乘法</div></button>
+                    <button onclick="enterStage(13)" class="bg-sky-500 text-white p-4 rounded-2xl flex flex-col items-center justify-center shadow-lg border-b-8 border-sky-700 active:translate-y-1"><div class="font-black text-md italic">伽勒爾公園</div><div class="text-[10px]">8的乘法</div></button>
+                    <button onclick="enterStage(14)" class="bg-rose-500 text-white p-4 rounded-2xl flex flex-col items-center justify-center shadow-lg border-b-8 border-rose-700 active:translate-y-1"><div class="font-black text-md italic">帕底亞公園</div><div class="text-[10px]">9的乘法</div></button>
+                </div>
+                `;
+            }
+
+            html += `
+                <div class="grid grid-cols-2 gap-3 mt-4">
+                    <button onclick="enterMyCollection()" class="bg-white text-slate-800 py-4 rounded-2xl shadow-lg border-b-4 border-slate-300 font-black active:translate-y-1 italic text-lg">🎒 背包</button>
+                    <button onclick="enterPokedex()" class="bg-white text-slate-800 py-4 rounded-2xl shadow-lg border-b-4 border-slate-300 font-black active:translate-y-1 italic text-lg">📕 圖鑑</button>
+                </div>`;
+            menu.innerHTML = html;
+        }
+
+        function enterStage(s) { 
+            currentMode = "catch"; currentArea = s; combo = 0; goal = 1; 
+            document.getElementById('progress-box').classList.add('hidden'); 
+            generateWild(); 
+            switchPage('page-game'); 
+            nextRound(); 
+        }
         
-        // 更新 UI
-        document.getElementById('target-number').innerText = level.target;
-        document.getElementById('target-pokemon').innerText = level.pokemon;
-        document.getElementById('target-pokemon').style.transform = "scale(1) rotate(0deg)";
-        document.getElementById('pokemon-name').innerText = level.name;
-        document.getElementById('battle-scene').className = `h-1/3 m-4 rounded-3xl border-4 border-white shadow-2xl relative flex items-center justify-around transition-colors duration-700 ${level.color}`;
-        
-        const msgEl = document.getElementById('instruction-msg');
-        msgEl.innerText = `👆 撥動 ${level.target} 顆精靈球來攻擊！`;
-        msgEl.style.color = "#facc15";
+        function generateWild() {
+            let wid;
+            let pool = [];
+            
+            // 決定是否解鎖異色判定
+            let canBeShiny = false;
+            if (isShinyMode) {
+                if (currentArea <= 6) canBeShiny = isKantoComplete();
+                else if (currentArea >= 7 && currentArea <= 14) canBeShiny = isParkComplete(currentArea);
+            }
+            isWildShiny = canBeShiny && Math.random() < 0.5;
 
-        // 歸零
-        lowerBeadsState = [0, 0, 0, 0];
-        upperBeadState = 0;
-        renderAbacus();
-    }
+            let targetSet = isWildShiny ? shinyCaughtIds : caughtIds;
 
-    // 初始化第一關
-    window.onload = initLevel;
+            if (targetMonId) { 
+                wid = targetMonId; targetMonId = null; 
+            } else if (currentArea === 6) {
+                // 名人堂神獸隨機/依序出現
+                let nextLeg = mythIds.find(id => !targetSet.has(id));
+                if (!nextLeg) nextLeg = mythIds[Math.floor(Math.random() * mythIds.length)]; // 如果全抓過就隨機出
+                wid = nextLeg;
+                if([144, 145, 146].includes(wid)) goal = 3;
+                else if(wid === 150) goal = 4;
+                else if(wid === 151) goal = 5;
+            } else { 
+                if (currentArea <= 4) {
+                    pool = areaMons[currentArea - 1]; 
+                    // 優先尋找未持有的
+                    let uncaught = pool.filter(id => !targetSet.has(id));
+                    wid = (uncaught.length > 0) ? uncaught[Math.floor(Math.random()*uncaught.length)] : pool[Math.floor(Math.random()*pool.length)];
+                } else if (currentArea >= 7 && currentArea <= 14) {
+                    pool = parkMons[currentArea - 7];
+                    // 順序出現未持有的神獸
+                    let uncaught = pool.filter(id => !targetSet.has(id));
+                    if (uncaught.length === 0) {
+                        wid = pool[Math.floor(Math.random()*pool.length)]; // 全抓完隨機出，無限連戰
+                    } else {
+                        wid = uncaught[0]; // 嚴格順序
+                    }
+                    goal = 2; // 回憶走廊神獸需連對2題
+                }
+            }
 
-</script>
+            activeEnemy = { id: wid, name: POKEDEX_DATA[wid][0] };
+            if (currentArea >= 6) { // 包含名人堂與回憶走廊
+                document.getElementById('progress-box').classList.remove('hidden'); 
+                document.getElementById('total-needed').innerText = goal; 
+            }
+            
+            document.getElementById('my-side').classList.add('hidden'); 
+            document.getElementById('enemy-side').classList.remove('hidden');
+            document.getElementById('shiny-sparkles').style.display = isWildShiny ? 'flex' : 'none';
+        }
+
+        function nextRound() {
+            document.getElementById('combo').innerText = combo;
+            let a, b, c, q; const r = (n) => Math.floor(Math.random() * n) + 1;
+            
+            if (currentMode === "catch") {
+                if (currentArea === 1) { // 1. 常青森林
+                    a = r(10); b = r(10); 
+                    if(Math.random()>0.5){ q = `${a} + ${b} = ?`; currentAns = a+b; } 
+                    else { q = `${Math.max(a,b)} - ${Math.min(a,b)} = ?`; currentAns = Math.max(a,b)-Math.min(a,b); }
+                }
+                else if (currentArea === 2) { // 2. 月見山 (必定出現三個個位數相加減)
+                    a = r(9); b = r(9); c = r(9);
+                    let type = Math.floor(Math.random() * 3);
+                    if (type === 0) {
+                        q = `${a} + ${b} + ${c} = ?`; currentAns = a + b + c;
+                    } else if (type === 1) {
+                        if (a + b < c) { let temp = c; c = a; a = temp; } 
+                        q = `${a} + ${b} - ${c} = ?`; currentAns = a + b - c;
+                    } else {
+                        if (a < b) { let temp = b; b = a; a = temp; } 
+                        q = `${a} - ${b} + ${c} = ?`; currentAns = a - b + c;
+                    }
+                }
+                else if (currentArea === 3) { // 3. 華藍水域
+                    a = r(20); b = r(20); 
+                    q = `${a} + ${b} = ${b} + ?`; currentAns = a; 
+                }
+                else if (currentArea === 4) { // 4. 無人發電廠
+                    a = r(20)+10; b = r(a-1); 
+                    q = `${a} - ? = ${a-b}`; currentAns = b;
+                }
+                else if (currentArea >= 7 && currentArea <= 14) { // 回憶走廊 2~9乘法
+                    let baseMult = currentArea - 5;
+                    b = r(9);
+                    q = `${baseMult} × ${b} = ?`; currentAns = baseMult * b;
+                }
+            } else if (currentMode === "evolve") { 
+                // 5. 進化之森 (確保結果不超過30，且皆為十位數)
+                let type = Math.random() > 0.5 ? 'add' : 'sub';
+                if (type === 'add') {
+                    // a, b 為 10~20 之間，且確保 a+b <= 30
+                    a = Math.floor(Math.random() * 11) + 10; // 10~20
+                    b = Math.floor(Math.random() * (30 - a - 9)) + 10; // 10 ~ (21-a)
+                    q = `${a} + ${b} = ?`; currentAns = a + b;
+                } else {
+                    // a, b >= 10, 結果 ans <= 30
+                    b = Math.floor(Math.random() * 30) + 10; // 減數為 10~39 的十位數
+                    currentAns = Math.floor(Math.random() * 30) + 1; // 答案為 1~30
+                    a = b + currentAns; // 被減數必為十位數 (11~69)
+                    q = `${a} - ${b} = ?`; 
+                }
+            } else if (currentMode === "hall") { 
+                // 6. 名人堂 (結果不超過 50)
+                if(Math.random()>0.5){ 
+                    // 加法：a+b <= 50
+                    a = Math.floor(Math.random() * 30) + 1;
+                    b = Math.floor(Math.random() * (50 - a)) + 1;
+                    q = `${a} + ${b} = ?`; currentAns = a + b; 
+                } else { 
+                    // 減法：a-b <= 50 且不為負數
+                    a = Math.floor(Math.random() * 49) + 2; // 2~50
+                    b = Math.floor(Math.random() * (a - 1)) + 1; // 確保 a > b
+                    q = `${a} - ${b} = ?`; currentAns = a - b; 
+                }
+            }
+            
+            document.getElementById('question').innerText = q;
+            document.getElementById('enemy-mon-img').src = getImgSrc(activeEnemy.id, isWildShiny);
+            document.getElementById('enemy-name').innerText = activeEnemy.name;
+            generateOptions(currentAns);
+        }
+
+        function generateOptions(ans) {
+            let opts = [ans]; while(opts.length < 4) { let w = ans + (Math.floor(Math.random()*10)+1) * (Math.random()>0.5?1:-1); if(w >= 0 && !opts.includes(w)) opts.push(w); }
+            const grid = document.getElementById('options'); grid.innerHTML = "";
+            opts.sort(()=>Math.random()-0.5).forEach(n => {
+                const b = document.createElement('button');
+                b.className = "bg-white py-6 rounded-3xl text-3xl font-black border-b-8 border-slate-200 active:translate-y-1 text-slate-800";
+                b.innerText = n; 
+                b.onclick = () => { 
+                    if(parseInt(n) === ans) { 
+                        showOX(true); combo++; handleWin(); 
+                    } else { 
+                        showOX(false); 
+                        if(currentMode !== "evolve") combo = 0;
+                        if(currentMode === "hall" || currentArea >= 7) alert(`${trainerName}，別灰心，連對次數重新計算！`);
+                        setTimeout(nextRound, 500);
+                    } 
+                };
+                grid.appendChild(b);
+            });
+        }
+
+        function handleWin() {
+            if (combo >= goal) {
+                if (currentMode === "catch" || currentMode === "hall") {
+                    myPokes.push({id: activeEnemy.id, isShiny: isWildShiny}); 
+                    if (isWildShiny) shinyCaughtIds.add(activeEnemy.id); else caughtIds.add(activeEnemy.id);
+                    saveGame();
+                    
+                    // 檢查是否觸發大師典禮
+                    let justCompleted = false;
+                    if (!isWildShiny && !completedAreas.includes(currentArea)) {
+                        if ((currentArea <= 6 && isKantoComplete()) || (currentArea >= 7 && isParkComplete(currentArea))) {
+                            completedAreas.push(currentArea);
+                            saveGame();
+                            justCompleted = true;
+                        }
+                    }
+
+                    if (currentMode === "hall" && activeEnemy.id === 151 && !isWildShiny && justCompleted) {
+                        showSuccessModal("恭喜大師！", `收服了 夢幻！關東全圖鑑完成！回憶走廊已開啟！`);
+                    } else {
+                        showSuccessModal("收服成功！", `${trainerName}，收服了 ${isWildShiny ? '✨ 異色 ' : ''}${activeEnemy.name}！`);
+                    }
+                    
+                    const btnClose = document.getElementById('btn-close-success');
+                    btnClose.onclick = () => { 
+                        document.getElementById('success-modal').classList.replace('flex-center', 'hidden'); 
+                        if (justCompleted) showMasterCeremony();
+                        // 移除跳回選單的限制，神獸戰全部改為自動連續下一場
+                        else { combo = 0; generateWild(); nextRound(); }
+                    };
+                } else if (currentMode === "evolve") {
+                    const myMonImg = document.getElementById('my-mon-img'); myMonImg.classList.add('animate-flash');
+                    setTimeout(() => {
+                        const chain = EVOLUTION_CHAINS.find(c => c.includes(activeMyMon.id));
+                        const idx = chain.indexOf(activeMyMon.id);
+                        let nId = (activeMyMon.id === 133) ? [134, 135, 136][Math.floor(Math.random() * 3)] : chain[idx + 1];
+                        
+                        myPokes[activeMyMon.realIdx].id = nId; 
+                        if (activeMyMon.isShiny) shinyCaughtIds.add(nId); else caughtIds.add(nId); 
+                        saveGame();
+                        
+                        myMonImg.src = getImgSrc(nId, activeMyMon.isShiny);
+                        myMonImg.classList.remove('animate-flash');
+                        activeMyMon.id = nId; 
+                        activeEnemy = { id: nId, name: POKEDEX_DATA[nId][0] };
+                        showSuccessModal("進化成功！", `進化成了 ${activeMyMon.isShiny ? '✨ 異色 ' : ''}${activeEnemy.name}！`, true, activeMyMon.isShiny);
+                        const btnClose = document.getElementById('btn-close-success'); btnClose.onclick = closeSuccessModal; combo = 0;
+                    }, 1200);
+                }
+            } else { setTimeout(nextRound, 500); }
+        }
+
+        function showMasterCeremony() {
+            document.getElementById('master-name').innerText = trainerName;
+            document.getElementById('master-modal').classList.replace('hidden', 'flex-center');
+        }
+        function closeMasterModal() {
+            document.getElementById('master-modal').classList.replace('flex-center', 'hidden');
+            switchPage('page-stages');
+        }
+
+        function showSuccessModal(title, msg, isEvolve = false, shinyEvolve = false) {
+            document.getElementById('success-title').innerText = title; document.getElementById('success-msg').innerText = msg;
+            
+            let displayShiny = isEvolve ? shinyEvolve : isWildShiny;
+            document.getElementById('success-mon-img').src = getImgSrc(activeEnemy.id, displayShiny);
+            
+            const btnCont = document.getElementById('btn-continue-train');
+            if (isEvolve) {
+                const chain = EVOLUTION_CHAINS.find(c => c.includes(activeMyMon?.id));
+                const isFinal = !chain || chain.indexOf(activeMyMon.id) === chain.length - 1;
+                if (!isFinal) { btnCont.classList.remove('hidden'); btnCont.onclick = () => { document.getElementById('success-modal').classList.replace('flex-center', 'hidden'); startEvolve(); }; } 
+                else { btnCont.classList.add('hidden'); }
+            } else { btnCont.classList.add('hidden'); }
+            document.getElementById('success-modal').classList.replace('hidden', 'flex-center');
+        }
+
+        function showOX(isO) { const o = document.getElementById('ox-overlay'); o.innerText = isO?"O":"X"; o.style.color = isO?"#22c55e":"#ef4444"; o.style.display="flex"; setTimeout(()=>o.style.display="none",500); }
+        function closeSuccessModal() { document.getElementById('success-modal').classList.replace('flex-center', 'hidden'); switchPage('page-stages'); }
+        function confirmExit() { if(confirm(`${trainerName}，要離開目前的挑戰嗎？`)) switchPage('page-stages'); }
+
+        function showPokeDetail(id, shiny = false) {
+            const info = POKEDEX_DATA[id];
+            document.getElementById('dex-img').src = getImgSrc(id, shiny);
+            document.getElementById('dex-name').innerText = (shiny ? "✨ " : "") + info[0];
+            document.getElementById('dex-info').innerHTML = `<div class="mb-3 text-xs font-bold text-slate-400">NO.${id.toString().padStart(4, '0')}</div><p class="text-slate-600 text-sm italic">${info[2]}</p>`;
+            
+            const btnGoCatchAgain = document.getElementById('btn-go-catch-again');
+            btnGoCatchAgain.onclick = () => {
+                document.getElementById('dex-modal').classList.add('hidden');
+                pokedexNavigation(id);
+            };
+
+            document.getElementById('dex-modal').classList.replace('hidden', 'flex-center');
+        }
+
+        function enterPokedex() {
+            document.getElementById('list-title').innerText = isShinyMode ? `${trainerName} 的星空圖鑑` : `${trainerName} 的圖鑑`;
+            const container = document.getElementById('list-container'); container.innerHTML = "";
+            const allIds = Object.keys(POKEDEX_DATA).map(Number).sort((a,b)=>a-b);
+            
+            allIds.forEach(i => {
+                const caught = isShinyMode ? shinyCaughtIds.has(i) : caughtIds.has(i);
+                const btn = document.createElement('button'); 
+                btn.className = `p-2 rounded-2xl border-2 shadow flex flex-col items-center ${caught ? (isShinyMode ? 'bg-indigo-900 border-yellow-400' : 'bg-white border-blue-400') : (isShinyMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-200')}`;
+                btn.onclick = () => caught ? showPokeDetail(i, isShinyMode) : (isShinyMode ? alert("尚未遇見這隻異色寶可夢") : pokedexNavigation(i));
+                btn.innerHTML = `<img src="${getImgSrc(i, isShinyMode)}" class="w-12 h-12 ${caught ? '' : 'mon-silhouette'}">`;
+                container.appendChild(btn);
+            });
+            switchPage('page-list');
+        }
+
+        function pokedexNavigation(id) {
+            const chain = EVOLUTION_CHAINS.find(c => c.includes(id));
+            const baseId = chain ? chain[0] : id; 
+            
+            if (mythIds.includes(baseId)) {
+                if(caughtIds.has(150) && baseId === 151) {} 
+                else if(baseId > 144 && !caughtIds.has(baseId-1)) return alert("請依序在名人堂挑戰神獸！");
+            }
+            
+            let tA = 1; let locName = "";
+            if (baseId <= 35) { tA = 1; locName = "常青森林"; }
+            else if (baseId <= 70) { tA = 2; locName = "月見山"; }
+            else if (baseId <= 110) { tA = 3; locName = "華藍水域"; }
+            else if (baseId <= 151 && !mythIds.includes(baseId)) { tA = 4; locName = "無人發電廠"; }
+            else if (mythIds.includes(baseId)) { tA = 6; locName = "關東名人堂"; }
+            else {
+                parkMons.forEach((park, idx) => {
+                    if (park.includes(baseId)) { 
+                        tA = 7 + idx; 
+                        const parkNames = ["城都公園","豐緣公園","神奧公園","合眾公園","卡洛斯公園","阿羅拉公園","伽勒爾公園","帕底亞公園"];
+                        locName = parkNames[idx]; 
+                    }
+                });
+            }
+
+            if(tA >= 7 && !caughtIds.has(151)) return alert("請先完成關東圖鑑開啟回憶走廊！");
+
+            targetMonId = baseId; const isCaught = caughtIds.has(baseId);
+            document.getElementById('nav-mon-img').src = getImgSrc(baseId);
+            document.getElementById('nav-mon-img').className = isCaught ? "max-w-full max-h-full" : "max-w-full max-h-full mon-silhouette";
+            document.getElementById('nav-msg').innerHTML = `${trainerName}，發現蹤跡！地點：${locName}`;
+            document.getElementById('btn-go-nav').onclick = () => { document.getElementById('nav-modal').classList.add('hidden'); enterStage(tA); };
+            document.getElementById('nav-modal').classList.replace('hidden', 'flex-center');
+        }
+
+        function enterEvolveSelect() {
+            document.getElementById('list-title').innerText = `${trainerName} 的進化特訓`;
+            const container = document.getElementById('list-container'); container.innerHTML = "";
+            myPokes.forEach((p, index) => {
+                const btn = document.createElement('button'); btn.className = `p-2 rounded-2xl border-4 shadow flex-center active:scale-95 ${p.isShiny ? 'bg-indigo-900 border-yellow-400' : 'bg-white border-white'}`;
+                btn.onclick = () => { activeMyMon = { ...p, realIdx: index }; combo = 0; startEvolve(); };
+                btn.innerHTML = `<img src="${getImgSrc(p.id, p.isShiny)}" class="w-16">`;
+                container.appendChild(btn);
+            });
+            switchPage('page-list');
+        }
+
+        function startEvolve() {
+            const chain = EVOLUTION_CHAINS.find(c => c.includes(activeMyMon.id));
+            if(!chain || chain.indexOf(activeMyMon.id) === chain.length - 1) return alert("已達最終型態！");
+            currentMode = "evolve"; 
+            // 調整為：第一階進化答對2題，第二階進化答對3題
+            goal = (chain.indexOf(activeMyMon.id) === 0) ? 2 : 3; 
+            activeEnemy = { id: activeMyMon.id, name: POKEDEX_DATA[activeMyMon.id][0] }; 
+            
+            document.getElementById('progress-box').classList.remove('hidden'); 
+            document.getElementById('total-needed').innerText = goal;
+            document.getElementById('my-side').classList.remove('hidden'); 
+            document.getElementById('enemy-side').classList.add('hidden');
+            document.getElementById('my-mon-img').src = getImgSrc(activeMyMon.id, activeMyMon.isShiny);
+            
+            switchPage('page-game'); nextRound();
+        }
+
+        function enterMyCollection() {
+            document.getElementById('list-title').innerText = `${trainerName} 的背包`;
+            const container = document.getElementById('list-container'); container.innerHTML = "";
+            
+            const countsN = {}, countsS = {};
+            myPokes.filter(p=>!p.isShiny).forEach(p => countsN[p.id] = (countsN[p.id] || 0) + 1);
+            myPokes.filter(p=>p.isShiny).forEach(p => countsS[p.id] = (countsS[p.id] || 0) + 1);
+
+            // 顯示普通色
+            if (!isShinyMode) {
+                [...new Set(myPokes.filter(p=>!p.isShiny).map(p=>p.id))].forEach(id => {
+                    const btn = document.createElement('button'); btn.className = "bg-white p-2 rounded-2xl border-2 border-slate-300 shadow relative active:scale-95";
+                    btn.onclick = () => showPokeDetail(id, false);
+                    btn.innerHTML = `<img src="${getImgSrc(id, false)}" class="w-16">${countsN[id]>1 ? `<span class="count-badge">x${countsN[id]}</span>`:''}`;
+                    container.appendChild(btn);
+                });
+            } else {
+                // 顯示異色
+                [...new Set(myPokes.filter(p=>p.isShiny).map(p=>p.id))].forEach(id => {
+                    const btn = document.createElement('button'); btn.className = "bg-indigo-900 p-2 rounded-2xl border-4 border-yellow-400 shadow relative active:scale-95";
+                    btn.onclick = () => showPokeDetail(id, true);
+                    btn.innerHTML = `<img src="${getImgSrc(id, true)}" class="w-16">${countsS[id]>1 ? `<span class="count-badge bg-yellow-500">x${countsS[id]}</span>`:''}`;
+                    container.appendChild(btn);
+                });
+                if(Object.keys(countsS).length === 0) container.innerHTML = `<div class="col-span-3 text-yellow-300 font-bold mt-10">背包裡還沒有閃閃發光的寶可夢喔！</div>`;
+            }
+            switchPage('page-list');
+        }
+
+        function enterHallOfFame() {
+            currentMode = "hall"; combo = 0; currentArea = 6;
+            document.getElementById('progress-box').classList.remove('hidden'); 
+            document.getElementById('my-side').classList.add('hidden'); 
+            document.getElementById('enemy-side').classList.remove('hidden');
+            
+            generateWild(); // 改為統一由 generateWild 分配神獸
+            switchPage('page-game'); nextRound();
+        }
+    </script>
 </body>
 </html>

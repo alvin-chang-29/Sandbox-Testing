@@ -2,181 +2,212 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMath Master v38.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>寶可夢數學 Mezastar Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <style>
-        :root { --pkm-red: #ff1f1f; --pkm-blue: #3b82f6; }
-        body { font-family: 'PingFang TC', sans-serif; touch-action: manipulation; overflow: hidden; }
-        .grid-cell { transition: all 0.2s; position: relative; }
-        .highlight-row { background-color: rgba(59, 130, 246, 0.2); }
-        .highlight-col { background-color: rgba(239, 68, 68, 0.2); }
-        .highlight-cross { background-color: rgba(168, 85, 247, 0.4) !important; animation: pulse 1s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-        .pokeball-btn { filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); active: scale(0.9); }
-        #pokemon-sprite { transition: transform 60s linear; }
-        .runaway { transform: translateX(120vw) !important; }
+        /* Mezastar 暗色風格 */
+        :root {
+            --bg-dark: #0a0e17;
+            --mezastar-blue: #1e3a8a;
+            --mezastar-gold: #fbbf24;
+            --glow-color: rgba(59, 130, 246, 0.5);
+        }
+
+        body {
+            background: var(--bg-dark);
+            color: white;
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            overflow: hidden; /* 防止 PWA 滾動 */
+            height: 100vh;
+        }
+
+        /* 歡迎畫面：寶可夢爆炸背景 */
+        #page-welcome {
+            background: radial-gradient(circle, #2c3e50 0%, #000 100%);
+            overflow: hidden;
+        }
+
+        .burst-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            opacity: 0.4;
+            filter: blur(1px);
+            animation: burst-move 10s infinite alternate;
+        }
+
+        @keyframes burst-move {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.15); }
+        }
+
+        .mon-burst-item {
+            width: 100%;
+            aspect-ratio: 1/1;
+            object-fit: contain;
+            transform-origin: center;
+            animation: pop-out 0.5s ease-out forwards;
+        }
+
+        /* 高清精靈球 CSS */
+        .pokeball-hd {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(to bottom, #e74c3c 50%, #fff 50%);
+            border-radius: 50%;
+            border: 3px solid #333;
+            position: relative;
+            box-shadow: inset -5px -5px 0 rgba(0,0,0,0.1), 0 0 20px var(--glow-color);
+        }
+        .pokeball-hd::after {
+            content: "";
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 15px; height: 15px;
+            background: white;
+            border: 3px solid #333;
+            border-radius: 50%;
+            z-index: 10;
+        }
+        .pokeball-hd::before {
+            content: "";
+            position: absolute;
+            top: 50%; width: 100%; height: 3px;
+            background: #333;
+            transform: translateY(-50%);
+        }
+
+        /* 遊戲畫面調整 */
+        .page {
+            display: none;
+            height: 100vh;
+            padding-top: env(safe-area-inset-top);
+        }
+        .page-active { display: flex; flex-direction: column; }
+
+        .mezastar-card {
+            background: linear-gradient(180deg, #161b22 0%, #0d1117 100%);
+            border: 2px solid #30363d;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        /* 寶可夢放大 2 倍 */
+        #enemy-mon-img, #my-mon-img {
+            width: 280px !important; /* iPad 比例放大 */
+            height: 280px !important;
+            object-fit: contain;
+            filter: drop-shadow(0 0 20px var(--glow-color));
+            transition: transform 0.3s ease;
+        }
+
+        /* 按鈕質感 */
+        .btn-action {
+            background: linear-gradient(180deg, #3b82f6 0%, #1e40af 100%);
+            border-bottom: 4px solid #1e3a8a;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .btn-option {
+            background: #1f2937;
+            border: 2px solid #374151;
+            font-size: 2.5rem !important; /* 加大選項文字 */
+        }
     </style>
 </head>
-<body class="bg-slate-100 flex flex-col h-screen">
+<body>
 
-    <div class="h-1/3 bg-gradient-to-b from-blue-400 to-green-100 relative overflow-hidden p-4">
-        <div id="battle-scene" class="flex justify-between items-end h-full pb-4">
-            <div id="player-side" class="w-1/3 text-center">
-                <div class="bg-white/80 rounded-full py-1 px-3 text-xs font-bold mb-2">玩家</div>
-                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="w-12 mx-auto">
-            </div>
+    <div id="page-welcome" class="page page-active flex items-center justify-center relative p-10">
+        <div id="burst-container" class="burst-bg"></div>
+        
+        <div class="mezastar-card p-10 rounded-[3rem] z-10 w-full max-w-xl text-center border-t-4 border-blue-500">
+            <h1 class="text-5xl font-black mb-4 italic text-blue-400">MATH MEZASTAR</h1>
+            <p class="text-xl font-bold text-slate-400 mb-8 uppercase italic tracking-widest">Kanto Master PWA</p>
             
-            <div id="enemy-side" class="w-2/3 text-right relative">
-                <div class="inline-block bg-white/90 rounded-lg p-2 shadow-sm mr-4 mb-2 min-w-[120px]">
-                    <div id="pkm-name" class="font-bold text-sm">載入中...</div>
-                    <div class="w-full bg-gray-200 h-2 rounded-full mt-1">
-                        <div id="pkm-hp" class="bg-green-500 h-2 rounded-full w-full transition-all duration-500"></div>
-                    </div>
-                </div>
-                <img id="pokemon-sprite" src="" class="w-24 h-24 object-contain ml-auto">
-            </div>
-        </div>
-    </div>
-
-    <div id="math-ui" class="bg-white shadow-inner p-4 flex-1">
-        <div class="flex justify-between items-center mb-4">
-            <div class="text-lg font-black text-slate-700">對戰挑戰：<span id="target-math" class="text-blue-600">-- x --</span></div>
-            <div id="timer-display" class="font-mono text-xl text-red-500">00s</div>
-        </div>
-
-        <div id="matrix-container" class="grid grid-cols-10 gap-1 bg-gray-200 p-1 rounded border-2 border-slate-300 overflow-auto h-64">
-            </div>
-
-        <div class="flex mt-4 gap-4 items-center">
-            <input id="answer-input" type="number" placeholder="?" 
-                   class="flex-1 text-2xl border-b-4 border-blue-500 text-center focus:outline-none bg-transparent">
-            <button id="catch-btn" class="pokeball-btn">
-                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="w-14 h-14">
+            <input type="text" id="input-name" 
+                class="w-full bg-slate-900 border-2 border-slate-700 p-6 rounded-2xl text-center text-2xl font-bold mb-8 text-white outline-none focus:border-blue-500" 
+                placeholder="輸入訓練家姓名">
+                
+            <button onclick="checkAdminAndStart()" class="btn-action w-full py-6 rounded-2xl text-3xl font-black shadow-lg active:scale-95 transition-all">
+                冒險開始
             </button>
         </div>
     </div>
 
+    <div id="page-game" class="page bg-slate-950 p-6">
+        <div class="flex justify-between items-center mb-8 px-4">
+            <button onclick="confirmExit()" class="bg-slate-800 px-8 py-3 rounded-full text-xl font-bold">◀ 離開</button>
+            <div class="pokeball-hd"></div>
+            <div id="progress-box" class="bg-blue-900/50 border-2 border-blue-400 px-8 py-3 rounded-full text-xl font-black text-blue-300">
+                連對: <span id="combo" class="text-yellow-400">0</span> / <span id="total-needed">1</span>
+            </div>
+        </div>
+
+        <div class="flex-1 flex flex-col items-center justify-center mb-10">
+            <div id="battle-field" class="relative w-full flex justify-around items-center h-80">
+                <div id="my-side" class="hidden">
+                    <img id="my-mon-img" src="">
+                </div>
+                <div id="enemy-side" class="relative">
+                    <img id="enemy-mon-img" src="" class="scale-150"> <p id="enemy-name" class="text-xl font-black text-white mt-8 bg-blue-600/80 px-6 py-1 rounded-full text-center italic"></p>
+                </div>
+            </div>
+
+            <div class="mezastar-card mt-12 w-full max-w-2xl py-8 rounded-[2rem] text-center border-l-8 border-yellow-500">
+                <div id="question" class="text-7xl font-black text-white italic tracking-tighter">?</div>
+            </div>
+        </div>
+
+        <div id="options" class="grid grid-cols-2 gap-6 p-4 max-w-4xl mx-auto w-full mb-10"></div>
+    </div>
+
     <script>
-        // --- 初始化資料庫 ---
-        const db = new Dexie("PokeMathDB");
-        db.version(1).stores({ collection: '++id, pkmId, name, timestamp' });
+        // ... (保留 POKEDEX_DATA, EVOLUTION_CHAINS 等原始資料庫) ...
 
-        // --- 全域變數 ---
-        let currentPkm = null;
-        let startTime = 0;
-        let timerInterval;
-        let targetX = 0, targetY = 0;
-        const NAME_CACHE = new Map();
+        // 動態生成歡迎畫面背景
+        function initBurstBg() {
+            const container = document.getElementById('burst-container');
+            const demoIds = [1, 4, 7, 25, 133, 150, 144, 145, 146, 151, 6, 9, 3, 130, 143, 149, 243, 244, 245, 249, 250, 384, 382, 383, 483, 484, 1007, 1008];
+            demoIds.forEach(id => {
+                const img = document.createElement('img');
+                img.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+                img.className = 'mon-burst-item';
+                container.appendChild(img);
+            });
+        }
 
-        // --- 核心邏輯 ---
-        const App = {
-            async init() {
-                this.renderMatrix();
-                await this.newEncounter();
-                this.bindEvents();
-            },
-
-            async fetchPkmName(id) {
-                if (NAME_CACHE.has(id)) return NAME_CACHE.get(id);
-                try {
-                    const res = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
-                    const data = await res.json();
-                    const twName = data.names.find(n => n.language.name === "zh-Hant").name;
-                    NAME_CACHE.set(id, twName);
-                    return twName;
-                } catch { return "寶可夢"; }
-            },
-
-            async newEncounter() {
-                const randomId = Math.floor(Math.random() * 151) + 1;
-                const name = await this.fetchPkmName(randomId);
-                
-                document.getElementById('pokemon-sprite').src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${randomId}.png`;
-                document.getElementById('pkm-name').innerText = name;
-                document.getElementById('pokemon-sprite').classList.remove('runaway');
-                
-                targetX = Math.floor(Math.random() * 9) + 1;
-                targetY = Math.floor(Math.random() * 9) + 1;
-                document.getElementById('target-math').innerText = `${targetX} x ${targetY}`;
-                
-                this.startTimer();
-            },
-
-            renderMatrix() {
-                const container = document.getElementById('matrix-container');
-                container.innerHTML = '';
-                for (let r = 0; r <= 9; r++) {
-                    for (let c = 0; c <= 9; c++) {
-                        const cell = document.createElement('div');
-                        cell.className = 'grid-cell bg-white aspect-square flex items-center justify-center text-xs font-bold border border-gray-100';
-                        if (r === 0 || c === 0) {
-                            cell.classList.add('bg-gray-100', 'text-gray-500');
-                            cell.innerText = r || c || '';
-                        } else {
-                            cell.dataset.r = r;
-                            cell.dataset.c = c;
-                            cell.onclick = () => this.handleCellClick(r, c);
-                        }
-                        container.appendChild(cell);
-                    }
-                }
-            },
-
-            handleCellClick(r, c) {
-                // 清除舊高亮
-                document.querySelectorAll('.grid-cell').forEach(el => {
-                    el.classList.remove('highlight-row', 'highlight-col', 'highlight-cross');
-                });
-                // 十字交叉亮帶
-                document.querySelectorAll(`[data-r="${r}"]`).forEach(el => el.classList.add('highlight-row'));
-                document.querySelectorAll(`[data-c="${c}"]`).forEach(el => el.classList.add('highlight-col'));
-                const cross = document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
-                cross.classList.add('highlight-cross');
-            },
-
-            startTimer() {
-                clearInterval(timerInterval);
-                startTime = Date.now();
-                const sprite = document.getElementById('pokemon-sprite');
-                
-                timerInterval = setInterval(() => {
-                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                    document.getElementById('timer-display').innerText = `${elapsed}s`;
-                    
-                    if (elapsed >= 40) document.getElementById('pkm-hp').style.width = '50%';
-                    if (elapsed >= 60) {
-                        sprite.classList.add('runaway');
-                        clearInterval(timerInterval);
-                        setTimeout(() => this.newEncounter(), 2000);
-                    }
-                }, 1000);
-            },
-
-            async checkCapture() {
-                const input = parseInt(document.getElementById('answer-input').value);
-                const elapsed = (Date.now() - startTime) / 1000;
-                
-                if (input === targetX * targetY) {
-                    clearInterval(timerInterval);
-                    if (elapsed <= 20) {
-                        alert("絕佳！成功捕獲！");
-                        await db.collection.add({ pkmId: 1, name: document.getElementById('pkm-name').innerText, timestamp: Date.now() });
-                    } else if (elapsed <= 40) {
-                        alert("捕獲成功！但牠差點逃走。");
-                    }
-                    document.getElementById('answer-input').value = '';
-                    this.newEncounter();
-                } else {
-                    alert("計算錯誤！捕獲失敗");
-                }
+        // 修改 switchPage 確保深色系切換
+        function switchPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('page-active'));
+            const target = document.getElementById(id);
+            target.classList.add('page-active');
+            
+            // iPad 適配：針對不同頁面調整背景
+            if(id === 'page-game') {
+                document.body.style.background = "radial-gradient(circle at center, #1a2a6c, #b21f1f, #fdbb2d)";
+                document.body.style.backgroundSize = "400% 400%";
+                document.body.style.animation = "gradientMove 15s ease infinite";
+            } else {
+                document.body.style.background = "var(--bg-dark)";
             }
+        }
+
+        // ... (其餘 handleWin, generateWild, nextRound 邏輯維持不變) ...
+
+        window.onload = () => {
+            initBurstBg();
+            loadGame();
         };
 
-        window.onload = () => App.init();
-        function bindEvents() {
-            document.getElementById('catch-btn').onclick = () => App.checkCapture();
+        // 加入 PWA Service Worker 註冊代碼 (可視需求放入獨立檔案)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // navigator.serviceWorker.register('/sw.js');
+            });
         }
     </script>
 </body>

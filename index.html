@@ -2,156 +2,1603 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0"/>
-<title>寶可夢學習冒險 v7.2.1</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>寶可夢學習冒險</title>
 <style>
-/* 繼承 v38 渲染與 v1.1 結構 */
-:root { --primary-bg: #1a1a2e; --accent-red: #e63946; --accent-blue: #4cc9f0; --accent-gold: #ffd166; }
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-body { font-family: '微軟正黑體', sans-serif; background: var(--primary-bg); min-height: 100vh; color: #fff; overflow-x: hidden; }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'微軟正黑體',sans-serif;background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;color:#fff;}
+header{background:linear-gradient(90deg,#e63946,#f4a261);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;box-shadow:0 4px 15px rgba(0,0,0,.4);}
+header h1{font-size:1.2rem;text-shadow:2px 2px 4px rgba(0,0,0,.5);}
+.sb{display:flex;gap:8px;flex-wrap:wrap;}
+.si{background:rgba(255,255,255,.22);border-radius:20px;padding:4px 12px;font-size:.82rem;font-weight:bold;}
+.wrap{max-width:860px;margin:24px auto;padding:0 16px 110px;}
+.page{display:none;}.page.active{display:block;}
 
-/* v38.0 動態背景 */
-.bg-scene { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% 50%, #16213e 0%, #0f3460 100%); z-index: -1; }
-.particles { position: absolute; width: 100%; height: 100%; background-image: radial-gradient(#ffffff22 1px, transparent 1px); background-size: 30px 30px; animation: bgMove 20s linear infinite; }
-@keyframes bgMove { from { background-position: 0 0; } to { background-position: 100% 100%; } }
+/* 登入 */
+#pg-login{display:flex;align-items:center;justify-content:center;min-height:80vh;padding:20px;}
+#pg-login.page.active{display:flex;}
+.login-box{background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);border-radius:28px;padding:40px 36px;max-width:420px;width:100%;text-align:center;}
+.login-logo{font-size:4rem;margin-bottom:16px;animation:float 3s ease infinite alternate;}
+@keyframes float{from{transform:translateY(0);}to{transform:translateY(-10px);}}
+.login-box h2{font-size:1.8rem;color:#f4a261;margin-bottom:6px;}
+.login-box p{color:#adb5bd;font-size:.9rem;margin-bottom:28px;line-height:1.6;}
+.name-input{width:100%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.25);border-radius:14px;padding:14px 18px;font-size:1.1rem;color:#fff;outline:none;transition:.3s;text-align:center;}
+.name-input::placeholder{color:rgba(255,255,255,.4);}
+.name-input:focus{border-color:#4cc9f0;background:rgba(76,201,240,.1);}
+.login-btn{width:100%;margin-top:16px;background:linear-gradient(135deg,#f4a261,#e63946);border:none;border-radius:14px;padding:15px;font-size:1.1rem;font-weight:bold;color:#fff;cursor:pointer;transition:.3s;}
+.login-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(230,57,70,.4);}
+.login-err{color:#e63946;font-size:.85rem;margin-top:10px;min-height:20px;}
+.admin-hint{font-size:.72rem;color:rgba(255,255,255,.2);margin-top:14px;}
 
-/* 登入與基礎 UI 樣式 [cite: 1, 5] */
-header { background: rgba(230, 57, 70, 0.9); backdrop-filter: blur(10px); padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-header h1 { font-size: 1.1rem; }
-.sb { display: flex; gap: 8px; }
-.si { background: rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 12px; font-size: 0.8rem; }
+/* 主選單 */
+#pg-home{text-align:center;padding:30px 10px;}
+#pg-home h2{font-size:1.8rem;color:#f4a261;margin-bottom:6px;}
+.welcome{font-size:1rem;color:#4cc9f0;margin-bottom:6px;}
+#pg-home>p{color:#adb5bd;margin-bottom:28px;}
+.mode-grid{display:flex;gap:24px;justify-content:center;flex-wrap:wrap;}
+.mode-btn{background:linear-gradient(145deg,#1e3a5f,#16213e);border:3px solid transparent;border-radius:20px;padding:28px 24px;width:190px;cursor:pointer;text-align:center;transition:.3s;color:#fff;}
+.mode-btn:hover{transform:translateY(-6px);box-shadow:0 12px 28px rgba(0,0,0,.4);}
+.mode-btn.eng{border-color:#4cc9f0;}.mode-btn.eng:hover{background:linear-gradient(145deg,#023e7d,#1a1a2e);}
+.mode-btn.math{border-color:#f72585;}.mode-btn.math:hover{background:linear-gradient(145deg,#6a0572,#1a1a2e);}
+.mode-btn .ic{font-size:2.8rem;margin-bottom:10px;}
+.mode-btn h3{font-size:1.1rem;margin-bottom:5px;}
+.mode-btn small{font-size:.75rem;color:#adb5bd;display:block;}
+.gen-tag{margin-top:8px;display:inline-block;background:rgba(255,255,255,.12);border-radius:10px;padding:2px 10px;font-size:.72rem;}
 
-.wrap { max-width: 860px; margin: 24px auto; padding: 0 16px 110px; }
-.page { display: none; }
-.page.active { display: block; animation: fadeIn 0.4s ease; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+/* 難度 */
+#pg-level{text-align:center;padding:28px 10px;}
+#pg-level h2{font-size:1.6rem;color:#f4a261;margin-bottom:22px;}
+.lv-grid{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+.lv-btn{border:3px solid transparent;border-radius:18px;padding:22px 18px;width:170px;cursor:pointer;text-align:center;transition:.3s;color:#fff;position:relative;}
+.lv-btn:hover:not(.locked){transform:translateY(-5px);box-shadow:0 10px 22px rgba(0,0,0,.5);}
+.lv-btn.easy{background:linear-gradient(145deg,#064e3b,#065f46);border-color:#06d6a0;}
+.lv-btn.medium{background:linear-gradient(145deg,#7c2d12,#9a3412);border-color:#f4a261;}
+.lv-btn.hard{background:linear-gradient(145deg,#4a044e,#6b21a8);border-color:#f72585;}
+.lv-btn.adv{background:linear-gradient(145deg,#1e3a5f,#0f3460);border-color:#ffd166;}
+.lv-btn.locked{opacity:.4;pointer-events:none;}
+.lv-btn .lv-ic{font-size:2rem;margin-bottom:8px;}
+.lv-btn h3{font-size:1rem;margin-bottom:4px;}
+.lv-btn p{font-size:.72rem;color:rgba(255,255,255,.75);line-height:1.4;}
+.lv-btn .rng{margin-top:7px;display:inline-block;background:rgba(255,255,255,.13);border-radius:9px;padding:2px 9px;font-size:.68rem;}
+.lv-lock{position:absolute;top:7px;right:9px;font-size:.9rem;}
+.back-btn{margin-top:20px;background:transparent;border:2px solid #adb5bd;color:#adb5bd;padding:8px 22px;border-radius:24px;cursor:pointer;font-size:.88rem;transition:.3s;}
+.back-btn:hover{background:#adb5bd;color:#1a1a2e;}
 
-/* 登入頁面樣式 [cite: 1] */
-#pg-login { flex-direction: column; align-items: center; justify-content: center; min-height: 70vh; }
-#pg-login.active { display: flex; }
-.login-box { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border-radius: 30px; padding: 40px; width: 100%; max-width: 400px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-.login-logo { width: 100px; height: 100px; background: url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png') no-repeat center/contain; margin: 0 auto 20px; filter: drop-shadow(0 0 10px #e63946); animation: float 3s infinite; }
-@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-.name-input { width: 100%; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); border-radius: 15px; padding: 15px; color: #fff; font-size: 1.1rem; text-align: center; margin-bottom: 20px; outline: none; }
-.login-btn { width: 100%; background: linear-gradient(135deg, #f4a261, #e63946); border: none; padding: 15px; border-radius: 15px; color: #fff; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+/* ===== 困難模式：選擇進化寶可夢 ===== */
+#pg-pick{padding:20px 10px;}
+#pg-pick h2{font-size:1.5rem;color:#f4a261;text-align:center;margin-bottom:8px;}
+#pg-pick p{text-align:center;color:#adb5bd;font-size:.88rem;margin-bottom:20px;}
+.pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;margin-bottom:20px;}
+.pick-card{background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);border-radius:16px;padding:14px 10px;text-align:center;cursor:pointer;transition:.3s;position:relative;}
+.pick-card:hover{transform:translateY(-4px);box-shadow:0 8px 20px rgba(247,37,133,.3);border-color:#f72585;}
+.pick-card.selected{border-color:#ffd166;background:rgba(255,209,102,.12);box-shadow:0 0 0 3px rgba(255,209,102,.3);}
+.pick-card img{width:80px;height:80px;image-rendering:pixelated;display:block;margin:0 auto 8px;filter:drop-shadow(0 0 6px rgba(255,255,255,.3));}
+.pick-card .pk-name{font-size:.82rem;font-weight:bold;color:#fff;margin-bottom:3px;}
+.pick-card .pk-chain{font-size:.68rem;color:#4cc9f0;line-height:1.4;}
+.pick-card .pk-badge{position:absolute;top:6px;right:7px;font-size:.65rem;background:rgba(6,214,160,.25);border:1px solid #06d6a0;color:#06d6a0;border-radius:8px;padding:1px 6px;}
+.pick-confirm-btn{display:block;width:100%;max-width:300px;margin:0 auto;background:linear-gradient(135deg,#f72585,#7209b7);border:none;border-radius:14px;padding:14px;font-size:1rem;font-weight:bold;color:#fff;cursor:pointer;transition:.3s;opacity:.5;pointer-events:none;}
+.pick-confirm-btn.active{opacity:1;pointer-events:auto;}
+.pick-confirm-btn.active:hover{transform:scale(1.03);box-shadow:0 6px 18px rgba(247,37,133,.4);}
+.pick-empty{text-align:center;padding:40px 20px;color:#adb5bd;}
+.pick-empty .pe-ic{font-size:3rem;margin-bottom:12px;}
+.pick-empty p{font-size:.9rem;margin-bottom:16px;line-height:1.6;}
+.pick-go-easy{background:linear-gradient(135deg,#06d6a0,#4cc9f0);border:none;border-radius:12px;padding:10px 24px;font-size:.9rem;font-weight:bold;color:#fff;cursor:pointer;transition:.3s;}
+.pick-go-easy:hover{transform:scale(1.05);}
 
-/* 捕捉動畫 [cite: 3, 4] */
-.pb-img { width: 80px; height: 80px; }
-.pb-throw { animation: pbthrow 0.8s forwards; }
-@keyframes pbthrow { 0% { transform: translate(-100px, 100px) rotate(0); opacity: 0; } 100% { transform: translate(0,0) rotate(720deg); opacity: 1; } }
-.pb-shake { animation: pbshk 0.5s infinite; }
-@keyframes pbshk { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-15deg); } 75% { transform: rotate(15deg); } }
+/* 遭遇 */
+#pg-encounter{text-align:center;padding:20px 10px;}
+.enc-scene{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:32px 24px;margin-bottom:20px;position:relative;overflow:hidden;}
+.enc-scene::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(76,201,240,.08) 0%,transparent 70%);}
+.enc-label{font-size:.82rem;color:#4cc9f0;letter-spacing:3px;margin-bottom:10px;}
+.enc-title{font-size:1.5rem;font-weight:bold;color:#ffd166;margin-bottom:4px;}
+.enc-name{font-size:2.2rem;font-weight:bold;color:#fff;text-shadow:0 0 20px rgba(255,255,255,.5);margin-bottom:16px;}
+.enc-img{width:180px;height:180px;image-rendering:pixelated;filter:drop-shadow(0 0 20px rgba(255,255,255,.5));animation:enc-float 2s ease infinite alternate;}
+@keyframes enc-float{from{transform:translateY(0);}to{transform:translateY(-12px);}}
+.enc-img.ld{filter:brightness(0) invert(1) opacity(.2);animation:spina 1s linear infinite;}
+@keyframes spina{to{transform:rotate(360deg);}}
+.enc-type{display:inline-block;border-radius:16px;padding:3px 12px;font-size:.78rem;font-weight:bold;margin:0 3px 12px;}
+.enc-desc{font-size:.88rem;color:#adb5bd;line-height:1.6;margin-bottom:10px;}
+.enc-status{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;}
+.enc-badge{background:rgba(255,255,255,.1);border-radius:12px;padding:5px 14px;font-size:.8rem;}
+.enc-badge.new-b{background:rgba(247,37,133,.2);border:1px solid rgba(247,37,133,.4);color:#f72585;}
+.enc-badge.have-b{background:rgba(76,201,240,.2);border:1px solid rgba(76,201,240,.4);color:#4cc9f0;}
+.enc-hp-wrap{width:200px;margin:0 auto 12px;}
+.enc-hp-lbl{font-size:.75rem;color:#adb5bd;text-align:left;margin-bottom:4px;}
+.enc-hp-bar{height:8px;background:rgba(255,255,255,.15);border-radius:8px;overflow:hidden;}
+.enc-hp-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,#06d6a0,#4cc9f0);width:100%;transition:width 1s;}
+.enc-fight-btn{background:linear-gradient(135deg,#e63946,#f4a261);border:none;border-radius:50px;padding:14px 40px;font-size:1.1rem;font-weight:bold;color:#fff;cursor:pointer;transition:.3s;display:inline-flex;align-items:center;gap:8px;}
+.enc-fight-btn:hover{transform:scale(1.06);box-shadow:0 8px 22px rgba(230,57,70,.4);}
 
-/* 導覽列 [cite: 5, 18] */
-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15,20,40,0.96); display: flex; justify-content: center; gap: 10px; padding: 10px; z-index: 1000; border-top: 1px solid rgba(255,255,255,0.1); }
-.nb { background: rgba(255,255,255,0.07); border: none; padding: 10px 20px; border-radius: 10px; color: #adb5bd; font-weight: bold; cursor: pointer; }
-.nb.active { background: rgba(76,201,240,0.2); color: #fff; border: 1px solid var(--accent-blue); }
+/* 遊戲 */
+#pg-game{padding:0;}
+.gtop{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.tag{background:rgba(255,255,255,.1);border-radius:16px;padding:4px 13px;font-size:.82rem;}
+.pbw{height:9px;background:rgba(255,255,255,.12);border-radius:9px;margin-bottom:18px;overflow:hidden;}
+.pb{height:100%;background:linear-gradient(90deg,#4cc9f0,#f72585);border-radius:9px;transition:width .5s;width:0%;}
+.battle-pkm{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:12px 16px;margin-bottom:16px;}
+.battle-pkm img{width:70px;height:70px;image-rendering:pixelated;filter:drop-shadow(0 0 8px rgba(255,255,255,.4));}
+.bpi-name{font-size:1.05rem;font-weight:bold;color:#ffd166;}
+.bpi-type{font-size:.72rem;border-radius:10px;padding:2px 8px;font-weight:bold;display:inline-block;margin-top:3px;}
+.bpi-status{font-size:.75rem;color:#adb5bd;margin-top:3px;}
+.evo-wrap{background:rgba(255,255,255,.06);border-radius:16px;padding:14px 16px;margin-bottom:16px;}
+.evo-title{font-size:.8rem;color:#ffd166;text-align:center;margin-bottom:10px;}
+.evo-row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;}
+.evo-slot{text-align:center;}
+.evo-slot img{width:50px;height:50px;image-rendering:pixelated;display:block;margin:0 auto 3px;opacity:.35;transition:.4s;}
+.evo-slot img.ev-done{opacity:1;filter:drop-shadow(0 0 6px rgba(255,209,102,.7));}
+.evo-slot img.ev-cur{opacity:1;filter:drop-shadow(0 0 10px rgba(76,201,240,.9));animation:glw 1.2s ease infinite alternate;}
+@keyframes glw{from{filter:drop-shadow(0 0 5px rgba(76,201,240,.5));}to{filter:drop-shadow(0 0 14px rgba(76,201,240,1));}}
+.evo-slot span{font-size:.65rem;color:#adb5bd;}
+.evo-arr{font-size:1rem;color:#adb5bd;}
+.streak-row{display:flex;gap:6px;justify-content:center;margin-top:9px;}
+.sdot{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.18);transition:.3s;}
+.sdot.on{background:linear-gradient(135deg,#ffd166,#f4a261);box-shadow:0 0 7px rgba(255,209,102,.6);}
+.streak-info{font-size:.75rem;color:#adb5bd;text-align:center;margin-top:5px;}
+.qcard{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:26px 22px;text-align:center;margin-bottom:18px;}
+.qlabel{font-size:.78rem;color:#4cc9f0;letter-spacing:2px;margin-bottom:10px;}
+.qtext{font-size:1.85rem;font-weight:bold;margin-bottom:8px;}
+.qhint{font-size:.9rem;color:#adb5bd;}
+.spk-btn{background:linear-gradient(135deg,#4cc9f0,#3a86ff);border:none;border-radius:40px;padding:7px 18px;color:#fff;font-size:.85rem;font-weight:bold;cursor:pointer;margin-top:9px;display:inline-flex;align-items:center;gap:5px;transition:.3s;}
+.spk-btn:hover{transform:scale(1.07);}
+.spk-btn.spk-on{background:linear-gradient(135deg,#f72585,#7209b7);animation:spkp .6s ease infinite alternate;}
+@keyframes spkp{from{box-shadow:0 0 0 0 rgba(247,37,133,.5);}to{box-shadow:0 0 0 9px rgba(247,37,133,0);}}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:14px;}
+.opt{background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.18);border-radius:13px;padding:15px 10px;font-size:1rem;font-weight:bold;color:#fff;cursor:pointer;transition:.25s;}
+.opt:hover:not(:disabled){background:rgba(76,201,240,.2);border-color:#4cc9f0;transform:translateY(-2px);}
+.opt.ok{background:linear-gradient(135deg,#06d6a0,#118ab2)!important;border-color:#06d6a0!important;transform:scale(1.04);animation:bok .5s ease;}
+.opt.ng{background:linear-gradient(135deg,#e63946,#9d0208)!important;border-color:#e63946!important;animation:bng .4s ease;}
+@keyframes bok{0%{box-shadow:0 0 0 0 rgba(6,214,160,.6);}70%{box-shadow:0 0 0 14px rgba(6,214,160,0);}100%{box-shadow:0 0 0 0;}}
+@keyframes bng{0%,100%{transform:translateX(0);}25%{transform:translateX(-7px);}75%{transform:translateX(7px);}}
+.fb{text-align:center;font-size:1.05rem;font-weight:bold;min-height:26px;margin-bottom:6px;}
+.fb.ok{color:#06d6a0;}.fb.ng{color:#e63946;}
 
-/* 原本 v1.1 的各種樣式... [cite: 2, 5, 12, 14] */
-.mode-grid { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
-.mode-btn { background: rgba(255,255,255,0.05); border: 2px solid var(--accent-blue); border-radius: 20px; padding: 20px; width: 200px; color: #fff; cursor: pointer; }
-.enc-type { padding: 4px 12px; border-radius: 10px; font-size: 0.8rem; margin: 10px 0; display: inline-block; }
-.t-fire { background: #f08030; } .t-water { background: #6890f0; } .t-grass { background: #78c850; }
-/* ... (省略其他屬性顏色以免代碼太長) */
+/* 覆蓋層 */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:900;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;overflow-y:auto;}
+.overlay.show{display:flex;}
+.pb-throw{font-size:3.8rem;animation:pbthrow .8s ease forwards;}
+@keyframes pbthrow{0%{transform:translateX(-90px) rotate(0) scale(.5);opacity:0;}50%{transform:translateX(0) rotate(360deg) scale(1.3);opacity:1;}70%{transform:rotate(400deg) scale(1);}100%{transform:rotate(360deg) scale(1);}}
+.pb-shake{font-size:3.8rem;animation:pbshk .5s ease .9s 3 both;}
+@keyframes pbshk{0%,100%{transform:rotate(0);}25%{transform:rotate(-16deg);}75%{transform:rotate(16deg);}}
+.ct-title{font-size:1.6rem;font-weight:bold;color:#f4a261;margin:12px 0 3px;animation:fiu .5s ease 2.5s both;}
+.ct-sub{font-size:.88rem;color:#ffd166;margin-bottom:7px;animation:fiu .5s ease 2.7s both;}
+.ct-img{width:140px;height:140px;image-rendering:pixelated;filter:drop-shadow(0 0 16px rgba(255,255,255,.6));animation:bncin .8s ease 2.9s both;}
+.ct-img.ld{filter:brightness(0) invert(1) opacity(.3);animation:spina 1s linear infinite;}
+.ct-name{font-size:1.7rem;font-weight:bold;color:#ffd166;animation:fiu .5s ease 3.1s both;}
+.ct-type{display:inline-block;border-radius:16px;padding:3px 12px;font-size:.78rem;font-weight:bold;margin:5px 2px;animation:fiu .5s ease 3.1s both;}
+.ct-bonus{display:inline-block;background:linear-gradient(135deg,#ffd166,#f4a261);color:#1a1a2e;border-radius:16px;padding:5px 15px;font-size:.9rem;font-weight:bold;margin:6px 0;animation:fiu .5s ease 3.2s both;}
+.ct-desc{font-size:.87rem;color:#adb5bd;margin:5px 0 8px;max-width:300px;line-height:1.5;animation:fiu .5s ease 3.3s both;}
+.ct-next-wrap{animation:fiu .5s ease 3.4s both;margin-bottom:8px;}
+.ct-next-lbl{font-size:.75rem;color:#adb5bd;margin-bottom:6px;}
+.ct-next-pkm{display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:8px 16px;}
+.ct-next-pkm img{width:44px;height:44px;image-rendering:pixelated;}
+.ct-next-pkm span{font-size:.9rem;font-weight:bold;color:#fff;}
+.ct-close{background:linear-gradient(135deg,#f4a261,#e63946);border:none;border-radius:40px;padding:12px 34px;font-size:.98rem;font-weight:bold;color:#fff;cursor:pointer;animation:fiu .5s ease 3.6s both;transition:.3s;display:none;}
+.ct-close:hover{transform:scale(1.07);}
+@keyframes fiu{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);}}
+@keyframes bncin{0%{transform:scale(0) rotate(-10deg);opacity:0;}60%{transform:scale(1.18) rotate(5deg);opacity:1;}100%{transform:scale(1) rotate(0);}}
+.evo-bef{width:120px;height:120px;image-rendering:pixelated;animation:evbef 1.1s ease forwards;}
+@keyframes evbef{0%{filter:brightness(1);transform:scale(1);}60%{filter:brightness(8);transform:scale(1.1);}100%{filter:brightness(100);opacity:0;transform:scale(1.2);}}
+.evo-aft{width:150px;height:150px;image-rendering:pixelated;animation:evaft 1s ease 1.3s both;filter:drop-shadow(0 0 22px rgba(255,255,255,.8));}
+@keyframes evaft{0%{filter:brightness(100);transform:scale(.8);opacity:0;}50%{filter:brightness(3);transform:scale(1.12);}100%{filter:brightness(1);transform:scale(1);opacity:1;}}
+.evo-txt{font-size:1.7rem;font-weight:bold;color:#ffd166;animation:fiu .5s ease 2.3s both;margin-bottom:5px;}
+.evo-nm{font-size:2rem;font-weight:bold;color:#fff;animation:fiu .5s ease 2.5s both;}
+.evo-close{background:linear-gradient(135deg,#4cc9f0,#7209b7);border:none;border-radius:40px;padding:12px 32px;font-size:.98rem;font-weight:bold;color:#fff;cursor:pointer;animation:fiu .5s ease 2.9s both;transition:.3s;margin-top:14px;}
+.evo-close:hover{transform:scale(1.07);}
+.bc-fw{font-size:2.5rem;animation:bcfw 1s ease infinite alternate;margin-bottom:8px;}
+@keyframes bcfw{from{transform:scale(1);}to{transform:scale(1.14);filter:brightness(1.4);}}
+.bc-title{font-size:1.9rem;font-weight:bold;color:#ffd166;margin-bottom:6px;animation:fiu .6s ease .3s both;}
+.bc-sub{font-size:.95rem;color:#fff;margin-bottom:16px;animation:fiu .6s ease .5s both;}
+.bc-row{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;max-width:480px;margin-bottom:20px;animation:fiu .6s ease .9s both;}
+.bc-mini{width:50px;height:50px;image-rendering:pixelated;filter:drop-shadow(0 0 6px rgba(255,209,102,.6));}
+.bc-close{background:linear-gradient(135deg,#4cc9f0,#7209b7);border:none;border-radius:40px;padding:12px 34px;font-size:.98rem;font-weight:bold;color:#fff;cursor:pointer;transition:.3s;animation:fiu .6s ease 1.1s both;}
+.bc-close:hover{transform:scale(1.07);}
+.au-glow{font-size:3.5rem;animation:bcfw 1s ease infinite alternate;margin-bottom:10px;}
+.au-title{font-size:1.9rem;font-weight:bold;color:#ffd166;margin-bottom:7px;animation:fiu .6s ease .3s both;}
+.au-sub{font-size:.9rem;color:#adb5bd;max-width:320px;line-height:1.6;margin-bottom:18px;animation:fiu .6s ease .5s both;}
+.au-leg-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;animation:fiu .6s ease .7s both;}
+.au-leg{background:rgba(255,209,102,.1);border:2px solid rgba(255,209,102,.35);border-radius:14px;padding:10px 12px;text-align:center;width:80px;}
+.au-leg img{width:60px;height:60px;image-rendering:pixelated;display:block;margin:0 auto 4px;}
+.au-leg span{font-size:.7rem;color:#ffd166;}
+.au-close{background:linear-gradient(135deg,#ffd166,#f4a261);border:none;border-radius:40px;padding:12px 34px;font-size:.98rem;font-weight:bold;color:#1a1a2e;cursor:pointer;transition:.3s;animation:fiu .6s ease 1s both;}
+.au-close:hover{transform:scale(1.07);}
+
+/* 結果 */
+#pg-result{text-align:center;padding:34px 16px;}
+#pg-result h2{font-size:1.8rem;color:#ffd166;margin-bottom:12px;}
+.rst-stats{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin:18px 0;}
+.rst-s{background:rgba(255,255,255,.08);border-radius:13px;padding:16px 22px;font-size:.9rem;}
+.rst-s span{display:block;font-size:1.8rem;font-weight:bold;color:#4cc9f0;}
+.rst-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px;}
+.rst-btn{padding:12px 28px;border:none;border-radius:40px;font-size:.94rem;font-weight:bold;cursor:pointer;color:#fff;transition:.3s;}
+.rst-btn.rp{background:linear-gradient(135deg,#4cc9f0,#7209b7);}
+.rst-btn.mn{background:linear-gradient(135deg,#f4a261,#e63946);}
+.rst-btn:hover{transform:scale(1.05);}
+
+/* 圖鑑 */
+.dex-hd{text-align:center;margin-bottom:16px;}
+.dex-hd h2{font-size:1.6rem;color:#f4a261;margin-bottom:5px;}
+.dex-hd p{color:#adb5bd;font-size:.88rem;}
+.dex-tabs{display:flex;gap:9px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;}
+.dex-tab{padding:7px 18px;border-radius:18px;border:2px solid rgba(255,255,255,.18);background:transparent;color:#adb5bd;cursor:pointer;font-size:.83rem;font-weight:bold;transition:.3s;}
+.dex-tab.active{border-color:#4cc9f0;color:#fff;background:rgba(76,201,240,.14);}
+.dex-prog{max-width:480px;margin:0 auto 14px;}
+.dex-pr{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:.78rem;}
+.dex-prb{flex:1;height:7px;background:rgba(255,255,255,.11);border-radius:7px;overflow:hidden;}
+.dex-prbi{height:100%;border-radius:7px;transition:width .5s;}
+.pr-e{background:linear-gradient(90deg,#06d6a0,#4cc9f0);}
+.pr-m{background:linear-gradient(90deg,#f4a261,#e63946);}
+.pr-h{background:linear-gradient(90deg,#f72585,#7209b7);}
+.pr-l{background:linear-gradient(90deg,#ffd166,#f4a261);}
+.dex-filt{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;}
+.flt{padding:5px 13px;border-radius:15px;border:2px solid rgba(255,255,255,.18);background:transparent;color:#adb5bd;cursor:pointer;font-size:.78rem;transition:.3s;}
+.flt.active,.flt:hover{border-color:#4cc9f0;color:#fff;background:rgba(76,201,240,.13);}
+.dex-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:11px;margin-bottom:24px;}
+.dc{background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.09);border-radius:15px;padding:11px 7px;text-align:center;position:relative;transition:.3s;}
+.dc.gt{border-color:#ffd166;background:rgba(255,209,102,.1);cursor:pointer;}
+.dc.gt:hover{transform:translateY(-4px);box-shadow:0 9px 20px rgba(255,209,102,.22);}
+.dc.nc{filter:grayscale(1) brightness(.28);}
+.dc.nc-click{filter:grayscale(1) brightness(.4);cursor:pointer;border-color:rgba(255,255,255,.2);}
+.dc.nc-click:hover{filter:grayscale(.5) brightness(.6);transform:translateY(-3px);}
+.dc.ll{border-color:rgba(247,37,133,.3);background:rgba(247,37,133,.05);}
+.dc img{width:78px;height:78px;image-rendering:pixelated;display:block;margin:0 auto 5px;}
+.dc .ph{width:78px;height:78px;display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 5px;}
+.dc .dn{font-size:.77rem;font-weight:bold;margin-bottom:2px;}
+.dc .dnum{font-size:.68rem;color:#adb5bd;margin-bottom:3px;}
+.dc .dtyp{font-size:.64rem;border-radius:8px;padding:2px 6px;font-weight:bold;display:inline-block;}
+.dc .dstar{position:absolute;top:5px;right:6px;font-size:.72rem;color:#ffd166;}
+.dc .dlck{position:absolute;top:5px;right:6px;font-size:.8rem;}
+.dc .dhow{position:absolute;top:5px;left:6px;font-size:.6rem;color:#f72585;}
+.dc .guide-hint{font-size:.62rem;color:#4cc9f0;margin-top:3px;}
+
+/* 圖鑑指引 */
+#guide-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1000;align-items:center;justify-content:center;padding:20px;}
+#guide-modal.show{display:flex;}
+.gm-box{background:linear-gradient(145deg,#1e3a5f,#16213e);border:2px solid rgba(76,201,240,.4);border-radius:22px;padding:28px 24px;max-width:380px;width:100%;text-align:center;position:relative;max-height:90vh;overflow-y:auto;}
+.gm-x{position:absolute;top:10px;right:14px;background:none;border:none;color:#adb5bd;font-size:1.35rem;cursor:pointer;}
+.gm-icon{font-size:2.5rem;margin-bottom:10px;}
+.gm-title{font-size:1.4rem;font-weight:bold;color:#ffd166;margin-bottom:6px;}
+.gm-pkm-row{display:flex;align-items:center;justify-content:center;gap:12px;margin:14px 0;}
+.gm-pkm-card{text-align:center;}
+.gm-pkm-card img{width:80px;height:80px;image-rendering:pixelated;display:block;margin:0 auto 5px;filter:drop-shadow(0 0 8px rgba(255,255,255,.3));}
+.gm-pkm-card span{font-size:.8rem;color:#fff;}
+.gm-info{background:rgba(255,255,255,.06);border-radius:14px;padding:14px 16px;margin:12px 0;text-align:left;}
+.gm-info-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;font-size:.85rem;line-height:1.5;}
+.gm-info-row:last-child{margin-bottom:0;}
+.gm-info-row .gm-ic{font-size:1rem;flex-shrink:0;}
+.gm-info-row .gm-txt{color:#e0e0e0;}
+.gm-info-row .gm-txt strong{color:#4cc9f0;}
+.gm-evo-chain{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin:10px 0;}
+.gm-evo-step{text-align:center;font-size:.72rem;}
+.gm-evo-step img{width:50px;height:50px;image-rendering:pixelated;display:block;margin:0 auto 3px;}
+.gm-evo-step.target img{filter:drop-shadow(0 0 8px rgba(247,37,133,.8));}
+.gm-evo-arr{font-size:1rem;color:#adb5bd;}
+.gm-streak{display:flex;gap:5px;justify-content:center;margin:6px 0;}
+.gm-sdot{width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,#ffd166,#f4a261);box-shadow:0 0 6px rgba(255,209,102,.6);}
+.gm-go-btn{width:100%;margin-top:14px;border:none;border-radius:14px;padding:13px;font-size:1rem;font-weight:bold;color:#fff;cursor:pointer;transition:.3s;}
+.gm-go-btn.go-direct{background:linear-gradient(135deg,#06d6a0,#4cc9f0);}
+.gm-go-btn.go-hard{background:linear-gradient(135deg,#f72585,#7209b7);}
+.gm-go-btn.go-adv{background:linear-gradient(135deg,#ffd166,#f4a261);color:#1a1a2e;}
+.gm-go-btn:hover{transform:scale(1.03);}
+
+/* Modal */
+#modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.84);z-index:999;align-items:center;justify-content:center;}
+#modal.show{display:flex;}
+.mc{background:linear-gradient(145deg,#1e3a5f,#16213e);border:2px solid rgba(255,209,102,.38);border-radius:20px;padding:24px;max-width:330px;width:92%;text-align:center;position:relative;}
+.mc-x{position:absolute;top:9px;right:13px;background:none;border:none;color:#adb5bd;font-size:1.35rem;cursor:pointer;}
+.mc img{width:120px;height:120px;image-rendering:pixelated;filter:drop-shadow(0 0 12px rgba(255,255,255,.35));margin-bottom:7px;}
+.mc-name{font-size:1.55rem;font-weight:bold;color:#ffd166;margin-bottom:3px;}
+.mc-num{font-size:.82rem;color:#adb5bd;margin-bottom:9px;}
+.mc-desc{font-size:.83rem;color:#adb5bd;line-height:1.55;margin-bottom:12px;}
+.mc-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.mc-st{background:rgba(255,255,255,.06);border-radius:8px;padding:6px 9px;font-size:.78rem;text-align:left;}
+.mc-st span{display:block;font-size:.95rem;font-weight:bold;color:#4cc9f0;}
+
+nav{position:fixed;bottom:0;left:0;right:0;background:rgba(15,20,40,.96);backdrop-filter:blur(10px);display:flex;justify-content:center;gap:9px;padding:9px 16px;border-top:1px solid rgba(255,255,255,.09);z-index:100;}
+.nb{background:rgba(255,255,255,.07);border:2px solid transparent;border-radius:11px;padding:8px 17px;color:#adb5bd;cursor:pointer;font-size:.84rem;font-weight:bold;transition:.3s;display:flex;align-items:center;gap:4px;}
+.nb:hover,.nb.active{background:rgba(76,201,240,.18);border-color:#4cc9f0;color:#fff;}
+
+.t-grass{background:#78c850;color:#fff;}.t-fire{background:#f08030;color:#fff;}.t-water{background:#6890f0;color:#fff;}
+.t-electric{background:#f8d030;color:#000;}.t-normal{background:#a8a878;color:#fff;}.t-psychic{background:#f85888;color:#fff;}
+.t-ghost{background:#705898;color:#fff;}.t-dragon{background:#7038f8;color:#fff;}.t-rock{background:#b8a038;color:#fff;}
+.t-fighting{background:#c03028;color:#fff;}.t-bug{background:#a8b820;color:#fff;}.t-fairy{background:#ee99ac;color:#fff;}
+.t-flying{background:#a890f0;color:#fff;}.t-poison{background:#a040a0;color:#fff;}.t-ground{background:#e0c068;color:#000;}
+.t-steel{background:#b8b8d0;color:#000;}.t-ice{background:#98d8d8;color:#000;}.t-dark{background:#705848;color:#fff;}
+
+@media(max-width:480px){.qtext{font-size:1.4rem;}.opt{font-size:.88rem;padding:12px 7px;}header h1{font-size:1rem;}.lv-btn{width:150px;padding:18px 14px;}.pick-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));}}
 </style>
 </head>
 <body>
-
-<div class="bg-scene"><div class="particles"></div></div>
-
 <header>
   <h1>🎮 寶可夢學習冒險</h1>
   <div class="sb">
-    <div class="si">👤 <span id="hd-name">---</span></div>
-    <div class="si">⭐ <span id="hd-score">0</span></div>
+    <div class="si">👤<span id="hd-name">---</span></div>
+    <div class="si">⭐<span id="hd-score">0</span></div>
+    <div class="si">📖<span id="hd-g1">0</span>/151</div>
+    <div class="si">🔢<span id="hd-g2">0</span>/100</div>
   </div>
 </header>
-
 <div class="wrap">
+
+  <!-- 登入 -->
   <div id="pg-login" class="page active">
     <div class="login-box">
-      <div class="login-logo"></div>
-      <h2>冒險者登入</h2>
-      <p style="color:#adb5bd; margin-bottom:20px;">輸入名字以開始挑戰！</p>
-      <input class="name-input" id="name-input" type="text" placeholder="你的名字" maxlength="10">
-      <button class="login-btn" id="login-btn">開始冒險 🚀</button>
+      <div class="login-logo">🎮</div>
+      <h2>寶可夢學習冒險</h2>
+      <p>答對英文和數學題目<br/>就能捕捉寶可夢！快來挑戰吧！</p>
+      <input class="name-input" id="name-input" type="text" placeholder="請輸入你的名字" maxlength="12" autocomplete="off"/>
+      <button class="login-btn" id="login-btn">開始冒險！🚀</button>
+      <div class="login-err" id="login-err"></div>
+      <div class="admin-hint">提示：特殊帳號可解鎖全圖鑑</div>
     </div>
   </div>
 
+  <!-- 主選單 -->
   <div id="pg-home" class="page">
-    <h2 style="text-align:center">選擇學習主題</h2>
+    <h2>選擇學習主題</h2>
+    <div class="welcome" id="welcome-msg"></div>
+    <p>答對題目就能捕捉寶可夢！🔥</p>
     <div class="mode-grid">
-      <button class="mode-btn" id="btn-eng">📖 英文單字</button>
-      <button class="mode-btn" id="btn-math" style="border-color:var(--accent-red)">🔢 數學計算</button>
+      <button class="mode-btn eng" id="btn-eng">
+        <div class="ic">📖</div><h3>英文學習</h3>
+        <small>單字認識 + 🔊發音</small>
+        <span class="gen-tag">捕捉第一世代 No.1~151</span>
+      </button>
+      <button class="mode-btn math" id="btn-math">
+        <div class="ic">🔢</div><h3>數學計算</h3>
+        <small>加減法運算挑戰</small>
+        <span class="gen-tag">捕捉第二世代 No.152~251</span>
+      </button>
     </div>
   </div>
 
-  <div id="pg-dex" class="page">
-    <h2 style="text-align:center; margin-bottom:20px;">📕 我的寶可夢圖鑑</h2>
-    <div id="dex-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(100px, 1fr)); gap:10px;"></div>
-  </div>
-  
+  <!-- 難度 -->
+  <div id="pg-level" class="page">
+    <h2 id="lv-title">選擇難易度</h2>
+    <div class="lv-grid">
+      <button class="lv-btn easy" id="btn-easy">
+        <div class="lv-ic">🌟</div><h3>簡單</h3>
+        <p id="lv-desc-easy"></p><span class="rng" id="lv-rng-easy"></span>
+      </button>
+      <button class="lv-btn medium" id="btn-medium">
+        <div class="lv-ic">⚡</div><h3>普通</h3>
+        <p id="lv-desc-medium"></p><span class="rng" id="lv-rng-medium"></span>
+      </button>
+      <button class="lv-btn hard" id="btn-hard">
+        <div class="lv-ic">🔥</div><h3>困難</h3>
+        <p>選擇寶可夢進行進化！</p><span class="rng">連答進化挑戰</span>
+      </button>
+      <button class="lv-btn adv locked" id="btn-adv">
+        <span class="lv-lock" id="adv-lock">🔒</span>
+        <div class="lv-ic">👑</div><h3>進階</h3>
+        <p id="lv-desc-adv">完成前三關後解鎖</p><span class="rng">傳說神獸捕捉</span>
+      </button>
+    </div><br>
+    <button class="back-btn" id="btn-back-lv">← 返回</button>
   </div>
 
-<nav id="main-nav" style="display:none;">
+  <!-- 困難：選擇要進化的寶可夢 -->
+  <div id="pg-pick" class="page">
+    <h2>🔥 選擇要進化的寶可夢</h2>
+    <p>選擇一隻已捕捉的初階寶可夢，答對題目讓牠進化！</p>
+    <div class="pick-grid" id="pick-grid"></div>
+    <button class="pick-confirm-btn" id="pick-confirm-btn">確認選擇，開始挑戰！🔥</button>
+    <br><br>
+    <div style="text-align:center"><button class="back-btn" id="btn-back-pick">← 返回難度選擇</button></div>
+  </div>
+
+  <!-- 遭遇 -->
+  <div id="pg-encounter" class="page">
+    <div class="enc-scene">
+      <div class="enc-label">⚡ Wild Pokémon appeared!</div>
+      <div class="enc-title">野生的</div>
+      <div class="enc-name" id="enc-name">皮卡丘</div>
+      <img class="enc-img ld" id="enc-img" src="" alt=""/>
+      <div><span class="enc-type" id="enc-type"></span></div>
+      <div class="enc-hp-wrap">
+        <div class="enc-hp-lbl">HP</div>
+        <div class="enc-hp-bar"><div class="enc-hp-fill" id="enc-hp"></div></div>
+      </div>
+      <div class="enc-status" id="enc-status"></div>
+      <div class="enc-desc" id="enc-desc"></div>
+    </div>
+    <button class="enc-fight-btn" id="enc-fight-btn">⚔️ 開始答題捕捉！</button>
+  </div>
+
+  <!-- 遊戲 -->
+  <div id="pg-game" class="page">
+    <div class="gtop">
+      <span class="tag" id="g-mode-tag">📖 英文</span>
+      <span class="tag" id="g-lv-tag">🌟 簡單</span>
+      <span class="tag">題目 <span id="g-qn">1</span>/<span id="g-qt">10</span></span>
+    </div>
+    <div class="pbw"><div class="pb" id="g-pb"></div></div>
+    <div class="battle-pkm" id="battle-card">
+      <img id="battle-img" src="" alt=""/>
+      <div>
+        <div class="bpi-name" id="battle-name"></div>
+        <span class="bpi-type" id="battle-type"></span>
+        <div class="bpi-status" id="battle-status"></div>
+      </div>
+    </div>
+    <div class="evo-wrap" id="evo-wrap" style="display:none">
+      <div class="evo-title" id="evo-title">🎯 進化挑戰</div>
+      <div class="evo-row" id="evo-row"></div>
+      <div class="streak-row" id="streak-row"></div>
+      <div class="streak-info" id="streak-info"></div>
+    </div>
+    <div class="qcard">
+      <div class="qlabel" id="g-qlabel">英文題目</div>
+      <div class="qtext" id="g-qtext">Loading...</div>
+      <div class="qhint" id="g-qhint">請選出正確答案 👇</div>
+      <button class="spk-btn" id="spk-btn" style="display:none">🔊 聽發音</button>
+    </div>
+    <div class="opts" id="g-opts"></div>
+    <div class="fb" id="g-fb"></div>
+  </div>
+
+  <!-- 結果 -->
+  <div id="pg-result" class="page">
+    <h2>🎉 闖關完成！</h2>
+    <div class="rst-stats">
+      <div class="rst-s">答對<span id="r-ok">0</span>題</div>
+      <div class="rst-s">答錯<span id="r-ng">0</span>題</div>
+      <div class="rst-s">捕捉<span id="r-ct">0</span>隻</div>
+      <div class="rst-s">得分<span id="r-sc">0</span></div>
+    </div>
+    <div class="rst-btns">
+      <button class="rst-btn rp" id="btn-replay">🔄 再玩一次</button>
+      <button class="rst-btn mn" id="btn-menu">🏠 主選單</button>
+    </div>
+  </div>
+
+  <!-- 圖鑑 -->
+  <div id="pg-dex" class="page">
+    <div class="dex-hd">
+      <h2>📕 我的寶可夢圖鑑</h2>
+      <p>第一世代 <strong id="dex-g1" style="color:#4cc9f0">0</strong>/151 ／ 第二世代 <strong id="dex-g2" style="color:#f72585">0</strong>/100</p>
+    </div>
+    <div class="dex-tabs">
+      <button class="dex-tab active" id="dex-tab1">📖 第一世代</button>
+      <button class="dex-tab" id="dex-tab2">🔢 第二世代</button>
+    </div>
+    <div class="dex-prog" id="dex-prog"></div>
+    <div class="dex-filt">
+      <button class="flt active" data-f="all">全部</button>
+      <button class="flt" data-f="caught">已捕捉</button>
+      <button class="flt" data-f="uncaught">未捕捉</button>
+      <button class="flt" data-f="legendary">👑 神獸</button>
+    </div>
+    <div class="dex-grid" id="dex-grid"></div>
+    <div style="text-align:center"><button class="back-btn" id="btn-back-dex">← 返回主選單</button></div>
+  </div>
+
+</div>
+
+<!-- 捕捉覆蓋 -->
+<div class="overlay" id="ov-catch">
+  <div id="pb-el" class="pb-throw">⚪</div>
+  <div class="ct-title" id="ct-title">✨ 新寶可夢！</div>
+  <div class="ct-sub" id="ct-sub"></div>
+  <img class="ct-img ld" id="ct-img" src="" alt=""/>
+  <div class="ct-name" id="ct-name"></div>
+  <div><span class="ct-type" id="ct-type"></span></div>
+  <div class="ct-bonus" id="ct-bonus" style="display:none"></div>
+  <div class="ct-desc" id="ct-desc"></div>
+  <div class="ct-next-wrap" id="ct-next-wrap" style="display:none">
+    <div class="ct-next-lbl">⬇ 接下來遇到</div>
+    <div class="ct-next-pkm"><img id="ct-next-img" src="" alt=""/><span id="ct-next-name"></span></div>
+  </div>
+  <button class="ct-close" id="ct-close">繼續冒險 ➡</button>
+</div>
+
+<!-- 進化覆蓋 -->
+<div class="overlay" id="ov-evo">
+  <img class="evo-bef" id="evo-bef" src="" alt=""/>
+  <img class="evo-aft" id="evo-aft" src="" alt="" style="display:none"/>
+  <div class="evo-txt" id="evo-txt" style="display:none">🎊 進化成功！</div>
+  <div class="evo-nm" id="evo-nm" style="display:none"></div>
+  <button class="evo-close" id="evo-close" style="display:none">太好了！繼續 🚀</button>
+</div>
+
+<!-- 區塊完成 -->
+<div class="overlay" id="ov-bc">
+  <div class="bc-fw">🎆🎇✨🎆🎇</div>
+  <div class="bc-title" id="bc-title">🏆 完成！</div>
+  <div class="bc-sub" id="bc-sub"></div>
+  <div class="bc-row" id="bc-row"></div>
+  <button class="bc-close" id="bc-close">太棒了！繼續 🚀</button>
+</div>
+
+<!-- 進階解鎖 -->
+<div class="overlay" id="ov-adv">
+  <div class="au-glow">👑</div>
+  <div class="au-title">進階模式解鎖！</div>
+  <div class="au-sub" id="au-sub"></div>
+  <div class="au-leg-row" id="au-leg-row"></div>
+  <button class="au-close" id="au-close">去捕捉神獸！🎯</button>
+</div>
+
+<!-- 圖鑑指引 -->
+<div id="guide-modal">
+  <div class="gm-box">
+    <button class="gm-x" id="gm-x">✕</button>
+    <div class="gm-icon" id="gm-icon">📍</div>
+    <div class="gm-title" id="gm-title"></div>
+    <div id="gm-body"></div>
+    <button class="gm-go-btn" id="gm-go-btn"></button>
+  </div>
+</div>
+
+<!-- 已捕捉 Modal -->
+<div id="modal">
+  <div class="mc">
+    <button class="mc-x" id="modal-x">✕</button>
+    <img id="modal-img" src="" alt=""/>
+    <div class="mc-name" id="modal-name"></div>
+    <div class="mc-num" id="modal-num"></div>
+    <div id="modal-types"></div>
+    <div class="mc-desc" id="modal-desc"></div>
+    <div class="mc-stats" id="modal-stats"></div>
+  </div>
+</div>
+
+<nav>
   <button class="nb active" id="nav-home">🏠 首頁</button>
   <button class="nb" id="nav-dex">📕 圖鑑</button>
 </nav>
 
 <script>
-// --- 核心變數 [cite: 69] ---
-var $ = function(id){ return document.getElementById(id); };
-var G = {
-  playerName: '',
-  ts: 0,
-  cp: [], // 已捕捉 ID
-  cl: {},
-  mode: null,
-  questions: [],
-  qIdx: 0
+/* =====================================================
+   工具
+   ===================================================== */
+var $=function(id){return document.getElementById(id);};
+function shuffle(a){return a.slice().sort(function(){return Math.random()-.5;});}
+function rand(mn,mx){return Math.floor(Math.random()*(mx-mn+1))+mn;}
+function getArt(id){return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/'+id+'.png';}
+function getPx(id){return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/'+id+'.png';}
+function setImg(el,id){el.src='';el.onerror=function(){this.src=getPx(id);this.onerror=null;};el.src=getArt(id);}
+var TL={grass:'草',fire:'火',water:'水',electric:'電',normal:'一般',psychic:'超能',ghost:'幽靈',dragon:'龍',rock:'岩石',fighting:'格鬥',bug:'蟲',fairy:'妖精',flying:'飛行',poison:'毒',ground:'地面',steel:'鋼',ice:'冰',dark:'惡'};
+
+function isCatchable(p){
+  if(p.lg)return false;
+  if(!p.ec||p.ec.length<=1)return true;
+  return p.ec[0]===p.id;
+}
+
+/* =====================================================
+   完整第一世代資料 No.1~151
+   ===================================================== */
+var GEN1=[
+  {id:1,  name:'妙蛙種子',  en:'bulbasaur',  type:'grass',    desc:'在它出生後一段時間內，它會透過吸收背上種子堆積的養分來成長。',ec:[1,2,3]},
+  {id:2,  name:'妙蛙草',    en:'ivysaur',    type:'grass',    desc:'背上的花苞長大後，它似乎就無法再用後肢站立了。',ec:[1,2,3]},
+  {id:3,  name:'妙蛙花',    en:'venusaur',   type:'grass',    desc:'據說充足的養分與陽光會讓花朵的顏色變得鮮豔。花香能療癒人心。',ec:[1,2,3]},
+  {id:4,  name:'小火龍',    en:'charmander', type:'fire',     desc:'從出生時開始尾巴上就有火焰在燃燒。火焰熄滅時，它的生命也會結束。',ec:[4,5,6]},
+  {id:5,  name:'火恐龍',    en:'charmeleon', type:'fire',     desc:'揮舞燃燒著火焰的尾巴，用利爪將對手撕碎。個性非常粗暴。',ec:[4,5,6]},
+  {id:6,  name:'噴火龍',    en:'charizard',  type:'fire',     desc:'能噴出足以熔解岩石的熾熱火焰。有時會引發森林火災。',ec:[4,5,6]},
+  {id:7,  name:'傑尼龜',    en:'squirtle',   type:'water',    desc:'殼非常堅硬。出生後不久，背部就會膨脹並變硬，形成龜殼。',ec:[7,8,9]},
+  {id:8,  name:'卡咪龜',    en:'wartortle',  type:'water',    desc:'長滿長毛的尾巴是長壽的象徵，在老年人之間非常受歡迎。',ec:[7,8,9]},
+  {id:9,  name:'水箭龜',    en:'blastoise',  type:'water',    desc:'為了抵銷噴射水流時產生的後座力，它會增加身體的重量。',ec:[7,8,9]},
+  {id:10, name:'綠毛蟲',    en:'caterpie',   type:'bug',      desc:'腳上附有吸盤，所以無論是牆壁還是樹木，它都能輕鬆地爬上去。',ec:[10,11,12]},
+  {id:11, name:'鐵甲蛹',    en:'metapod',    type:'bug',      desc:'身體像鋼鐵一樣堅硬。雖然會一動不動，但殼裡正忙著準備進化。',ec:[10,11,12]},
+  {id:12, name:'巴大蝶',    en:'butterfree', type:'bug',      desc:'尋找花粉的能力非常優秀。即使是離巢穴１０公里遠的花朵，它也能察覺。',ec:[10,11,12]},
+  {id:13, name:'獨角蟲',    en:'weedle',     type:'bug',      desc:'頭上長著銳利的毒針。隱藏在茂密的草叢裡，靠吃樹葉度日。',ec:[13,14,15]},
+  {id:14, name:'鐵殼蛹',    en:'kakuna',     type:'bug',      desc:'雖然幾乎動彈不得，但在感到危險時，殼會變硬並豎起毒針。',ec:[13,14,15]},
+  {id:15, name:'大針蜂',    en:'beedrill',   type:'bug',      desc:'有時會成群出現。會用手腳上的三根毒針反覆刺擊對手。',ec:[13,14,15]},
+  {id:16, name:'波波',      en:'pidgey',     type:'normal',   desc:'生性溫和，會藉由拍動翅膀揚起沙塵來驅趕敵人，以此保護自己。',ec:[16,17,18]},
+  {id:17, name:'比比鳥',    en:'pidgeotto',  type:'normal',   desc:'有著寬廣的領地。會盤旋在高空，尋找像蛋蛋之類的獵物。',ec:[16,17,18]},
+  {id:18, name:'大比鳥',    en:'pidgeot',    type:'normal',   desc:'能以２馬赫的速度在空中飛行。發達的胸肌能拍出強力的陣風。',ec:[16,17,18]},
+  {id:19, name:'小拉達',    en:'rattata',    type:'normal',   desc:'生命力非常頑強。就算環境很惡劣，它也能在那裡定居並大量繁殖。',ec:[19,20]},
+  {id:20, name:'拉達',      en:'raticate',   type:'normal',   desc:'腳上長有小蹼，能游過河流。會為了尋找獵物而在廣闊的範圍內活動。',ec:[19,20]},
+  {id:21, name:'烈雀',      en:'spearow',    type:'normal',   desc:'會在草叢中翻找昆蟲等食物。為了保護領地，它會拍動翅膀在空中盤旋。',ec:[21,22]},
+  {id:22, name:'大嘴雀',    en:'fearow',     type:'normal',   desc:'細長的喙能幫它熟練地抓到躲在土裡或水中的獵物。',ec:[21,22]},
+  {id:23, name:'阿柏蛇',    en:'ekans',      type:'poison',   desc:'會悄無聲息地在地面滑行，趁對手不留神時從背後發動襲擊。',ec:[23,24]},
+  {id:24, name:'阿柏怪',    en:'arbok',      type:'poison',   desc:'如果被它粗壯的身軀纏住，就連結實的鐵桶也會被壓扁。',ec:[23,24]},
+  {id:25, name:'皮卡丘',    en:'pikachu',    type:'electric', desc:'越是能製造出強大電力，頰囊上的臉頰就越柔軟，也越有伸縮性。',ec:[172,25,26]},
+  {id:26, name:'雷丘',      en:'raichu',     type:'electric', desc:'如果電力在體內積累過多，性格就會變得具有攻擊性。有時會放電來平復心情。',ec:[172,25,26]},
+  {id:27, name:'穿山鼠',    en:'sandshrew',  type:'ground',   desc:'會縮成球狀來防護。在乾燥的沙地上生活，能靈活地挖掘洞穴。',ec:[27,28]},
+  {id:28, name:'穿山王',    en:'sandslash',  type:'ground',   desc:'背上的刺非常鋒利。在挖地洞時，如果刺斷了，馬上就會長出新的刺。',ec:[27,28]},
+  {id:29, name:'尼多蘭',    en:'nidoran-f',  type:'poison',   desc:'雖然個頭很小，但身上的毒針很危險。只有雌性才有微小的角。',ec:[29,30,31]},
+  {id:30, name:'尼多娜',    en:'nidorina',   type:'poison',   desc:'性格溫和。在把食物分給同伴時，為了不撞到對方，會把刺收起來。',ec:[29,30,31]},
+  {id:31, name:'尼多后',    en:'nidoqueen',  type:'poison',   desc:'全身包裹著堅硬的鱗片。為了保護幼崽，它會賭上性命去戰鬥。',ec:[29,30,31]},
+  {id:32, name:'尼多朗',    en:'nidoran-m',  type:'poison',   desc:'會轉動大大的耳朵來監測四周。一旦察覺危險，就會立刻發射毒針。',ec:[32,33,34]},
+  {id:33, name:'尼多力諾',  en:'nidorino',   type:'poison',   desc:'性格易怒。會四處揮舞發達的角，連岩石也能刺穿。',ec:[32,33,34]},
+  {id:34, name:'尼多王',    en:'nidoking',   type:'poison',   desc:'粗壯的尾巴有著掃斷電線桿的威力。會利用角發動猛烈的攻擊。',ec:[32,33,34]},
+  {id:35, name:'皮皮',      en:'clefairy',   type:'fairy',    desc:'據說在滿月之夜，它會為了玩耍而來到山中。受歡迎的程度正與日俱增。',ec:[173,35,36]},
+  {id:36, name:'皮可西',    en:'clefable',   type:'fairy',    desc:'聽覺非常敏銳。甚至能聽到１公里外掉落在地上的針的聲音。',ec:[173,35,36]},
+  {id:37, name:'六尾',      en:'vulpix',     type:'fire',     desc:'長大後，６條尾巴的尖端會捲曲。體內燃燒著火焰。',ec:[37,38]},
+  {id:38, name:'九尾',      en:'ninetales',  type:'fire',     desc:'據說它的９條尾巴裡蘊含著神通力，能讓它活上１０００年。',ec:[37,38]},
+  {id:39, name:'胖丁',      en:'jigglypuff', type:'fairy',    desc:'會轉動圓滾滾的大眼睛唱起悠揚的歌，讓聽者陷入沉睡。',ec:[174,39,40]},
+  {id:40, name:'胖可丁',    en:'wigglytuff', type:'fairy',    desc:'摸起來非常舒服。如果不小心被它吸入空氣，身體就會膨脹到極限。',ec:[174,39,40]},
+  {id:41, name:'超音蝠',    en:'zubat',      type:'poison',   desc:'雖然沒有眼睛，但能發出超音波，以此偵測四周的狀況。',ec:[41,42,169]},
+  {id:42, name:'大嘴蝠',    en:'golbat',     type:'poison',   desc:'無論是多麼堅硬的皮膚都能用細長的牙齒刺穿。會一次吸食大量的體液。',ec:[41,42,169]},
+  {id:43, name:'走路草',    en:'oddish',     type:'grass',    desc:'白天會把身體埋在土裡。據說在月光下活動時，會四處播灑種子。',ec:[43,44,45,182]},
+  {id:44, name:'臭臭花',    en:'gloom',      type:'grass',    desc:'從雌蕊流出的口水雖然臭得不得了，但據說也有人覺得那是香的。',ec:[43,44,45,182]},
+  {id:45, name:'霸王花',    en:'vileplume',  type:'grass',    desc:'花瓣越大，就能播灑越多的毒粉。由於頭太重，會顯得有些疲累。',ec:[43,44,45,182]},
+  {id:46, name:'派拉斯',    en:'paras',      type:'bug',      desc:'在名為冬蟲夏草的蘑菇控制下，會不斷吸取樹木根部的養分。',ec:[46,47]},
+  {id:47, name:'派拉斯特',  en:'parasect',   type:'bug',      desc:'蟲子的身體已經乾枯了。背上的蘑菇長大後，會播灑孢子。',ec:[46,47]},
+  {id:48, name:'毛球',      en:'venonat',    type:'bug',      desc:'大眼睛其實是無數小眼睛的集合體。到了晚上會受光線吸引而聚集起來。',ec:[48,49]},
+  {id:49, name:'摩魯蛾',    en:'venomoth',   type:'bug',      desc:'在夜晚拍動翅膀。會一邊飛一邊播灑有毒的鱗粉。',ec:[48,49]},
+  {id:50, name:'地鼠',      en:'diglett',    type:'ground',   desc:'在地下稍淺的地方生活。它爬過之後的地面會隆起，所以一眼就能認出來。',ec:[50,51]},
+  {id:51, name:'三地鼠',    en:'dugtrio',    type:'ground',   desc:'三個腦袋會輪流動，以此將地層挖掘到深處，讓對手無處可逃。',ec:[50,51]},
+  {id:52, name:'喵喵',      en:'meowth',     type:'normal',   desc:'喜歡閃閃發亮的東西。發現亮光閃閃的東西時，額頭的金幣也會跟著發光。',ec:[52,53]},
+  {id:53, name:'貓老大',    en:'persian',    type:'normal',   desc:'性格非常粗暴。只要一對上眼，就會毫不留情地向對方撲過去。',ec:[52,53]},
+  {id:54, name:'可達鴨',    en:'psyduck',    type:'water',    desc:'雖然一直受到頭痛的困擾，但如果頭痛劇烈到一定程度，就會開始使用不可思議的力量。',ec:[54,55]},
+  {id:55, name:'哥達鴨',    en:'golduck',    type:'water',    desc:'修長的四肢與發達的蹼讓它能在湖泊中優美地游泳。',ec:[54,55]},
+  {id:56, name:'猴怪',      en:'mankey',     type:'fighting', desc:'只要有一隻發火，周圍的所有猴怪也會跟著發火，所以在那之後會變得很麻煩。',ec:[56,57]},
+  {id:57, name:'火暴猴',    en:'primeape',   type:'fighting', desc:'不管是誰，只要和它對上眼，它就會怒不可遏，並一直追擊目標到天涯海角。',ec:[56,57]},
+  {id:58, name:'卡蒂狗',    en:'growlithe',  type:'fire',     desc:'性格誠實，與人親近。面對敵人時會狂吠並撕咬，以此趕走對手。',ec:[58,59]},
+  {id:59, name:'速龍',      en:'arcanine',   type:'fire',     desc:'威嚴的樣子令人著迷。奔跑起來的姿態宛如在地面飛翔一般。',ec:[58,59]},
+  {id:60, name:'蚊香蝌蚪',  en:'poliwag',    type:'water',    desc:'身體表面的皮膚雖然很薄且濕滑，但也很有彈性。連銳利的牙齒也會被它彈開。',ec:[60,61,62,186]},
+  {id:61, name:'蚊香君',    en:'poliwhirl',  type:'water',    desc:'雖然在陸地上也能生活，但在水中似乎更不容易被天敵發現，更為安全。',ec:[60,61,62,186]},
+  {id:62, name:'蚊香泳士',  en:'poliwrath',  type:'water',    desc:'全身上下都是結實的肌肉。擁有游完世界一圈的驚人體力。',ec:[60,61,62,186]},
+  {id:63, name:'凱西',      en:'abra',       type:'psychic',  desc:'每天要睡１８個小時。即使在睡夢中，察覺到氣息也會使用瞬間移動逃走。',ec:[63,64,65]},
+  {id:64, name:'勇基拉',    en:'kadabra',    type:'psychic',  desc:'會從身體裡發出特殊的阿爾法波，靠近它會讓機器發生故障。',ec:[63,64,65]},
+  {id:65, name:'胡地',      en:'alakazam',   type:'psychic',  desc:'大腦會不斷成長，所以頭會變得很重。會用超能力來支撐脖子。',ec:[63,64,65]},
+  {id:66, name:'腕力',      en:'machop',     type:'fighting', desc:'全身都是肌肉。雖然個頭很小，但力氣大到能投摔掉一群成年人。',ec:[66,67,68]},
+  {id:67, name:'豪力',      en:'machoke',    type:'fighting', desc:'擁有不管受到怎樣的攻擊都不為所動的強韌肉體。會去幫人類幹重體力活。',ec:[66,67,68]},
+  {id:68, name:'怪力',      en:'machamp',    type:'fighting', desc:'擁有４隻手，能在一瞬間發出無數次的攻擊。',ec:[66,67,68]},
+  {id:69, name:'喇叭芽',    en:'bellsprout', type:'grass',    desc:'無論是多麼強大的攻擊，它都能像柳樹一樣彎曲身體躲開。',ec:[69,70,71]},
+  {id:70, name:'口呆花',    en:'weepinbell', type:'grass',    desc:'在它肚子餓的時候，只要是有動靜的東西，它都會想也不想地吞下去。',ec:[69,70,71]},
+  {id:71, name:'大食花',    en:'victreebel', type:'grass',    desc:'會散發出香甜的氣味把獵物引誘進口中，只需１天就能連骨頭都化掉。',ec:[69,70,71]},
+  {id:72, name:'瑪瑙水母',  en:'tentacool',  type:'water',    desc:'身體大半部分由水組成。會從兩根長長的觸手裡射出毒液。',ec:[72,73]},
+  {id:73, name:'毒刺水母',  en:'tentacruel', type:'water',    desc:'８０根觸手能自由地伸縮。會用毒刺讓對手動彈不得。',ec:[72,73]},
+  {id:74, name:'小拳石',    en:'geodude',    type:'rock',     desc:'棲息在山道等地方。如果不小心踩到它，它就會生氣地揮動拳頭。',ec:[74,75,76]},
+  {id:75, name:'隆隆石',    en:'graveler',   type:'rock',     desc:'在山路上滾動著前進。不管是多大的岩石，它都能毫不在意地撞個粉碎。',ec:[74,75,76]},
+  {id:76, name:'隆隆岩',    en:'golem',      type:'rock',     desc:'身體像岩石一樣堅硬。能承受炸藥的爆炸，毫髮無傷。',ec:[74,75,76]},
+  {id:77, name:'小火馬',    en:'ponyta',     type:'fire',     desc:'剛出生時跑得很慢，但為了追趕父母，腿腳會漸漸變得強健。',ec:[77,78]},
+  {id:78, name:'烈焰馬',    en:'rapidash',   type:'fire',     desc:'最喜歡快跑。如果看到比自己快的東西，就會拼命地想超過對方。',ec:[77,78]},
+  {id:79, name:'呆呆獸',    en:'slowpoke',   type:'water',    desc:'反應非常遲鈍。就算尾巴被咬了，也要等過了一整天之後才會察覺。',ec:[79,80,199]},
+  {id:80, name:'呆殼獸',    en:'slowbro',    type:'water',    desc:'在大海中悠閒度日。尾巴被大舌貝咬住後，它似乎就再也不會痛了。',ec:[79,80,199]},
+  {id:81, name:'小磁怪',    en:'magnemite',  type:'electric', desc:'會從兩邊的磁鐵發出電磁波，以此懸浮在空中前進。',ec:[81,82]},
+  {id:82, name:'三合一磁怪',en:'magneton',   type:'electric', desc:'連結在一起後，電力會變強。如果大量出現，就會引發電磁風暴。',ec:[81,82]},
+  {id:83, name:'大蔥鴨',    en:'farfetchd',  type:'normal',   desc:'會用大蔥做各種各樣的事。據說也有人因為大蔥的用法而跟它吵架。',ec:[83]},
+  {id:84, name:'嘟嘟',      en:'doduo',      type:'normal',   desc:'在大草原上奔跑。兩個腦袋會輪流睡覺，保持警覺。',ec:[84,85]},
+  {id:85, name:'嘟嘟利',    en:'dodrio',     type:'normal',   desc:'擁有三個腦袋。即使是在睡覺時，其中一個也會醒著監視周圍。',ec:[84,85]},
+  {id:86, name:'小海獅',    en:'seel',       type:'water',    desc:'被厚實的脂肪包裹著，在冰冷的海洋中也能充滿活力地游泳。',ec:[86,87]},
+  {id:87, name:'白海獅',    en:'dewgong',    type:'water',    desc:'最喜歡在冰山上曬太陽。耐寒能力極強，水溫越低越有活力。',ec:[86,87]},
+  {id:88, name:'臭泥',      en:'grimer',     type:'poison',   desc:'是在工廠排出的廢液裡產生的。不管走到哪裡，都會散發出惡臭。',ec:[88,89]},
+  {id:89, name:'臭臭泥',    en:'muk',        type:'poison',   desc:'只要是它經過的地方，連草都不會再長。非常臭，而且帶有劇毒。',ec:[88,89]},
+  {id:90, name:'大舌貝',    en:'shellder',   type:'water',    desc:'雖然殼非常堅硬，但內部卻很柔軟。會吐出舌頭引誘敵人。',ec:[90,91]},
+  {id:91, name:'刺甲貝',    en:'cloyster',   type:'water',    desc:'雙殼連凝固的熔岩都能撞碎。殼裡的部分至今仍是個謎。',ec:[90,91]},
+  {id:92, name:'鬼斯',      en:'gastly',     type:'ghost',    desc:'身體大約有９５％是氣體。即使是體型龐大的寶可夢也能將其毒倒。',ec:[92,93,94]},
+  {id:93, name:'鬼斯通',    en:'haunter',    type:'ghost',    desc:'會躲在黑暗中伺機而動。如果有誰靠近它，它就會舔對方的臉。',ec:[92,93,94]},
+  {id:94, name:'耿鬼',      en:'gengar',     type:'ghost',    desc:'據說為了奪取人命，它會躲在黑暗中靜靜地等待機會。',ec:[92,93,94]},
+  {id:95, name:'大岩蛇',    en:'onix',       type:'rock',     desc:'會在地下挖掘隧道前進。巨大的身軀即使在地下也會引發震動。',ec:[95,208]},
+  {id:96, name:'素利普',    en:'drowzee',    type:'psychic',  desc:'如果睡覺時鼻子覺得癢，那多半是因為素利普正站在枕頭邊偷吃夢。',ec:[96,97]},
+  {id:97, name:'素利拍',    en:'hypno',      type:'psychic',  desc:'手裡拿著圓擺。如果跟它對上眼，就會在短短３秒內陷入沉睡。',ec:[96,97]},
+  {id:98, name:'大鉗蟹',    en:'krabby',     type:'water',    desc:'在沙灘上挖洞居住。如果感到危險，就會從嘴裡吐出泡沫隱藏身體。',ec:[98,99]},
+  {id:99, name:'巨鉗蟹',    en:'kingler',    type:'water',    desc:'巨大的鉗子雖然有著１萬馬力的威力，但因為太重，使用起來很困難。',ec:[98,99]},
+  {id:100,name:'雷電球',    en:'voltorb',    type:'electric', desc:'外型非常像精靈球。只要稍微受到一點衝擊，就會立刻自爆。',ec:[100,101]},
+  {id:101,name:'頑皮雷彈',  en:'electrode',  type:'electric', desc:'會對微小的刺激產生反應而爆炸。由於其危險性，它還有個「炸彈球」的綽號。',ec:[100,101]},
+  {id:102,name:'蛋蛋',      en:'exeggcute',  type:'grass',    desc:'６個腦袋會互相吸引。即使因意外而減少成５個，不久後也一定會回到６個。',ec:[102,103]},
+  {id:103,name:'椰蛋樹',    en:'exeggutor',  type:'grass',    desc:'每個頭都想著不同的事情。會大聲吵鬧，似乎是為了決定朝哪個方向前進。',ec:[102,103]},
+  {id:104,name:'卡拉卡拉',  en:'cubone',     type:'ground',   desc:'頭上戴著已經去世的母親的頭骨。寂寞的時候會大聲哭泣。',ec:[104,105]},
+  {id:105,name:'嘎啦嘎啦',  en:'marowak',    type:'ground',   desc:'性格變得很火爆。據說在世界的某個地方，存在著一個嘎啦嘎啦的墳場。',ec:[104,105]},
+  {id:106,name:'飛腿郎',    en:'hitmonlee',  type:'fighting', desc:'能隨心所欲地伸縮雙腳。即使與對手相距很遠，它也能踢飛對方。',ec:[236,106]},
+  {id:107,name:'快拳郎',    en:'hitmonchan', type:'fighting', desc:'連空氣都能擊穿。在扭動拳頭出拳時，甚至連最堅硬的鋼鐵都能擊碎。',ec:[236,107]},
+  {id:108,name:'大舌頭',    en:'lickitung',  type:'normal',   desc:'能將２公尺長的舌頭像手一樣靈活地運用。如果不小心被它舔到，會覺得麻麻的。',ec:[108]},
+  {id:109,name:'瓦斯彈',    en:'koffing',    type:'poison',   desc:'身體裡充滿了有毒瓦斯。到了炎熱的地方，體內的氣體就會膨脹而產生爆炸。',ec:[109,110]},
+  {id:110,name:'雙彈瓦斯',  en:'weezing',    type:'poison',   desc:'會藉由混合兩種毒瓦斯來提升其毒性。比起瓦斯彈，其爆炸次數也更多。',ec:[109,110]},
+  {id:111,name:'獨角犀牛',  en:'rhyhorn',    type:'ground',   desc:'雖然腦袋不太好使，但體力很充沛。即使一邊跑一邊撞毀大樓也不會覺得痛。',ec:[111,112]},
+  {id:112,name:'鑽角犀獸',  en:'rhydon',     type:'ground',   desc:'全身被堅硬的皮膚包裹著。即使是在熔岩中，它也能毫不在意地生活。',ec:[111,112]},
+  {id:113,name:'吉利蛋',    en:'chansey',    type:'normal',   desc:'會把富有營養的蛋分享給受傷的人或寶可夢。是個心地善良的寶可夢。',ec:[113,242]},
+  {id:114,name:'蔓藤怪',    en:'tangela',    type:'grass',    desc:'全身被藍色的藤蔓包裹著。據說這層藤蔓即使斷了也會立刻長出來。',ec:[114]},
+  {id:115,name:'袋獸',      en:'kangaskhan', type:'normal',   desc:'育兒袋裡裝著小袋獸。雖然生性溫和，但為了保護孩子會不顧性命地戰鬥。',ec:[115]},
+  {id:116,name:'墨海馬',    en:'horsea',     type:'water',    desc:'會在珊瑚的陰影下定居。如果察覺危險，就會從嘴裡吐出黑色的墨汁逃走。',ec:[116,117,230]},
+  {id:117,name:'海刺龍',    en:'seadra',     type:'water',    desc:'身體的刺裡帶有毒素。在它睡覺的時候，如果有人去碰它，就會被刺傷。',ec:[116,117,230]},
+  {id:118,name:'角金魚',    en:'goldeen',    type:'water',    desc:'背鰭和胸鰭像婚紗一樣美麗。因為在水中游動的姿態非常迷人，被譽為水中皇后。',ec:[118,119]},
+  {id:119,name:'金魚王',    en:'seaking',    type:'water',    desc:'到了秋天產卵期，會為了在岩石上築巢，而用尖銳的角將岩石鑽開。',ec:[118,119]},
+  {id:120,name:'海星星',    en:'staryu',     type:'water',    desc:'棲息在沙灘上。到了晚上，身體中央的紅色核心會發出閃爍的光。',ec:[120,121]},
+  {id:121,name:'寶石海星',  en:'starmie',    type:'water',    desc:'核心會發出七彩光芒。古時候的人們曾認為它的核心是落在地上的寶石。',ec:[120,121]},
+  {id:122,name:'魔牆人偶',  en:'mr-mime',    type:'psychic',  desc:'會透過指尖發出的震動使空氣變硬，以此製造出連肉眼都看不見的牆壁。',ec:[122]},
+  {id:123,name:'飛天螳螂',  en:'scyther',    type:'bug',      desc:'雙手銳利的鐮刀非常鋒利。即使是粗壯的樹幹，只需一揮就能砍斷。',ec:[123,212]},
+  {id:124,name:'迷唇姐',    en:'jynx',       type:'ice',      desc:'會一邊扭動腰部一邊走路。據說這有著特殊的節奏，會讓看到的人跟著扭動。',ec:[238,124]},
+  {id:125,name:'電擊獸',    en:'electabuzz', type:'electric', desc:'會受電力的吸引而聚集在變電所。性格十分好鬥且粗暴。',ec:[239,125]},
+  {id:126,name:'鴨嘴火獸',  en:'magmar',     type:'fire',     desc:'體內燃燒著熾熱的火焰。當它呼吸時，火焰也會從鼻子和嘴巴裡漏出來。',ec:[240,126]},
+  {id:127,name:'凱羅斯',    en:'pinsir',     type:'bug',      desc:'頭上的兩根角力量極大。如果被它夾住，連粗壯的圓木都會被切斷。',ec:[127]},
+  {id:128,name:'肯泰羅',    en:'tauros',     type:'normal',   desc:'精力充沛。一旦選定了攻擊目標，就會一邊用三根尾巴抽打身體一邊猛衝。',ec:[128]},
+  {id:129,name:'鯉魚王',    en:'magikarp',   type:'water',    desc:'雖然生命力很頑強，但卻是個既弱小又可憐的寶可夢。在遙遠的過去，它似乎更強一點。',ec:[129,130]},
+  {id:130,name:'暴鯉龍',    en:'gyarados',   type:'water',    desc:'生性兇殘。會噴出破壞光線，將周圍的一切燃燒殆盡，毀滅得乾乾淨淨。',ec:[129,130]},
+  {id:131,name:'拉普拉斯',  en:'lapras',     type:'water',    desc:'頭腦非常聰明。喜歡載著人類在海上航行，能與人類心意相通。',ec:[131]},
+  {id:132,name:'百變怪',    en:'ditto',      type:'normal',   desc:'能透過重組全身細胞，讓自己變得與看到的對手一模一樣。',ec:[132]},
+  {id:133,name:'伊布',      en:'eevee',      type:'normal',   desc:'擁有因應環境變化而改變身體結構的遺傳因子，潛藏著各種進化的可能性。',ec:[133,134,135,136,196,197]},
+  {id:134,name:'水伊布',    en:'vaporeon',   type:'water',    desc:'細胞結構與水分子相似。會像溶解在水裡一樣消失得無影無蹤。',ec:[133,134,135,136,196,197]},
+  {id:135,name:'雷伊布',    en:'jolteon',    type:'electric', desc:'能發出約１萬伏特的電力。全身的毛都會像針一樣豎起來。',ec:[133,134,135,136,196,197]},
+  {id:136,name:'火伊布',    en:'flareon',    type:'fire',     desc:'在吸入空氣後，會在體內深處的火囊裡將其加熱到約１７００度。',ec:[133,134,135,136,196,197]},
+  {id:137,name:'多邊獸',    en:'porygon',    type:'normal',   desc:'是人類透過科學技術開發出來的。據說它是世界上第一個具備人工呼吸能力的寶可夢。',ec:[137,233]},
+  {id:138,name:'菊石獸',    en:'omanyte',    type:'rock',     desc:'據說是從化石中復活的。在古代的海洋中，會噴水來調節深度。',ec:[138,139]},
+  {id:139,name:'多刺菊石獸',en:'omastar',    type:'rock',     desc:'巨大的殼是它滅絕的原因。因為殼太重了，導致其動作變得遲緩。',ec:[138,139]},
+  {id:140,name:'化石盔',    en:'kabuto',     type:'rock',     desc:'隱藏在堅硬的殼裡。雖然據說已經滅絕了，但偶爾也能在野外發現它。',ec:[140,141]},
+  {id:141,name:'鐮刀盔',    en:'kabutops',   type:'rock',     desc:'能熟練地運用鐮刀捕食對手。據說它是為了尋找獵物才來到陸地上的。',ec:[140,141]},
+  {id:142,name:'化石翼龍',  en:'aerodactyl', type:'rock',     desc:'從琥珀裡提取出的遺傳因子中復活。是古代天空中無可爭議的霸主。',ec:[142]},
+  {id:143,name:'卡比獸',    en:'snorlax',    type:'normal',   desc:'只要肚子不餓，它就一直都在睡覺。是個一天不吃 400 公斤就不安心的大家畜。',ec:[143]},
+  {id:144,name:'急凍鳥',    en:'articuno',   type:'ice',      desc:'傳說中的鳥寶可夢。拍動翅膀就能讓空氣受凍，以此降下大雪。',ec:[144],lg:true},
+  {id:145,name:'閃電鳥',    en:'zapdos',     type:'electric', desc:'傳說中的鳥寶可夢。拍動翅膀時產生的摩擦會導致雷鳴。',ec:[145],lg:true},
+  {id:146,name:'火焰鳥',    en:'moltres',    type:'fire',     desc:'傳說中的鳥寶可夢。據說每當它拍動翅膀，點點火星就會隨之飄落。',ec:[146],lg:true},
+  {id:147,name:'迷你龍',    en:'dratini',    type:'dragon',   desc:'隱藏在瀑布後面的水底生活。會透過不斷蛻皮來反覆成長。',ec:[147,148,149]},
+  {id:148,name:'哈克龍',    en:'dragonair',  type:'dragon',   desc:'會將巨大的能量儲存在全身。據說能隨意操縱天氣。',ec:[147,148,149]},
+  {id:149,name:'快龍',      en:'dragonite',  type:'dragon',   desc:'擁有寬廣的慈悲心。會救起在海裡溺水的人或寶可夢。',ec:[147,148,149]},
+  {id:150,name:'超夢',      en:'mewtwo',     type:'psychic',  desc:'藉由重組基因而誕生。雖然擁有最強的戰鬥能力，卻不具備慈悲的心。',ec:[150],lg:true},
+  {id:151,name:'夢幻',      en:'mew',        type:'psychic',  desc:'因為能學會所有的招式，所以有很多學者認為它是寶可夢的祖先。',ec:[151],lg:true}
+];
+
+/* =====================================================
+   完整第二世代資料 No.152~251
+   ===================================================== */
+var GEN2=[
+  {id:152,name:'菊草葉',    en:'chikorita',  type:'grass',    desc:'會用頭上的葉子偵測溫度和濕度。它很喜歡曬太陽。',ec:[152,153,154]},
+  {id:153,name:'月桂葉',    en:'bayleef',    type:'grass',    desc:'從脖子周圍的葉子發出的香氣，能讓聞到的人變得充滿活力。',ec:[152,153,154]},
+  {id:154,name:'大竺葵',    en:'meganium',   type:'grass',    desc:'它吐出的氣息具有讓枯萎的草木復甦的神奇力量。',ec:[152,153,154]},
+  {id:155,name:'火球鼠',    en:'cyndaquil',  type:'fire',     desc:'膽子非常小。受到驚嚇時，背上的火焰就會燃燒得更加猛烈。',ec:[155,156,157]},
+  {id:156,name:'火岩鼠',    en:'quilava',    type:'fire',     desc:'戰鬥前會背對對手，展示自己燃燒得極其猛烈的火焰。',ec:[155,156,157]},
+  {id:157,name:'火暴獸',    en:'typhlosion', type:'fire',     desc:'據說當它怒火中燒時，身體會發燙到甚至連碰觸到的東西都會燒焦。',ec:[155,156,157]},
+  {id:158,name:'小鋸鱷',    en:'totodile',   type:'water',    desc:'雖然個頭很小，但下顎的力量很強。本意只是想輕輕咬一下，卻會讓對方受重傷。',ec:[158,159,160]},
+  {id:159,name:'藍鱷',      en:'croconaw',   type:'water',    desc:'一旦咬住就不會鬆口，直到把對方咬碎。牙齒掉落後也能不斷長出。',ec:[158,159,160]},
+  {id:160,name:'大力鱷',    en:'feraligatr', type:'water',    desc:'會張開大嘴威嚇對手。也會用強韌的後肢踩踏地面向對手衝撞。',ec:[158,159,160]},
+  {id:161,name:'尾立',      en:'sentret',    type:'normal',   desc:'警戒心很強。偵測周圍狀況時，會用尾巴支撐身體站起來看。',ec:[161,162]},
+  {id:162,name:'大尾立',    en:'furret',     type:'normal',   desc:'會配合細長的體型，在地下挖掘細長的巢穴。體型越細長越讓它感到安心。',ec:[161,162]},
+  {id:163,name:'咕咕',      en:'hoothoot',   type:'normal',   desc:'體內有著能感知地球自轉的器官，所以無論何時都能準確地感知時間。',ec:[163,164]},
+  {id:164,name:'貓頭夜鷹',  en:'noctowl',    type:'normal',   desc:'雙眼擁有特殊的構造。只要有一丁點光亮，就能在黑暗中看清四周。',ec:[163,164]},
+  {id:165,name:'芭芭蝶',    en:'ledyba',     type:'bug',      desc:'性格膽小。為了不從同伴中掉隊，會從腿部發出含有氣味的液體來溝通。',ec:[165,166]},
+  {id:166,name:'安瓢蟲',    en:'ledian',     type:'bug',      desc:'背上的花紋會隨星空的大小而改變。據說星星閃耀時，它也會發光。',ec:[165,166]},
+  {id:167,name:'圓絲蛛',    en:'spinarak',   type:'bug',      desc:'會吐出具有黏性的絲來捕捉獵物。雖然絲很細，卻結實得足以拉住獵物。',ec:[167,168]},
+  {id:168,name:'阿利多斯',  en:'ariados',    type:'bug',      desc:'不僅能從屁股，甚至還能從嘴裡吐出絲來。會用絲把獵物緊緊纏住。',ec:[167,168]},
+  {id:169,name:'叉字蝠',    en:'crobat',     type:'poison',   desc:'即使是在狹窄的洞穴裡，也能熟練地拍動４隻翅膀，悄無聲息地飛行。',ec:[41,42,169]},
+  {id:170,name:'燈籠魚',    en:'chinchou',   type:'water',    desc:'兩根觸手裡充滿了正電和負電。會放出電力讓對手感到麻痺。',ec:[170,171]},
+  {id:171,name:'電燈怪',    en:'lanturn',    type:'water',    desc:'發出的光亮甚至能從水深５０００公尺處透到海面上。被稱為深海之星。',ec:[170,171]},
+  {id:172,name:'皮丘',      en:'pichu',      type:'electric', desc:'還不擅長儲存電力。如果不小心受到驚嚇，就會立刻把電放掉。',ec:[172,25,26]},
+  {id:173,name:'皮寶寶',    en:'cleffa',     type:'fairy',    desc:'據說在流星頻繁出現的夜晚，會有人看到它在跳舞。外型像星星一樣。',ec:[173,35,36]},
+  {id:174,name:'寶寶丁',    en:'igglybuff',  type:'fairy',    desc:'身體非常柔軟，富有彈性。一旦滾動起來，就會像皮球一樣彈跳不止。',ec:[174,39,40]},
+  {id:175,name:'波克比',    en:'togepi',     type:'fairy',    desc:'殼裡塞滿了幸福，據說如果能溫柔對待它，它就會把幸運分給別人。',ec:[175,176]},
+  {id:176,name:'波克基古',  en:'togetic',    type:'fairy',    desc:'據說為了尋找純潔的人，它會在世界各地飛行。如果不待在好人身邊，它就會變得很沒精神。',ec:[175,176]},
+  {id:177,name:'天然雀',    en:'natu',       type:'psychic',  desc:'會一直在樹上觀察著什麼。因為翅膀還沒長好，比起飛行更擅長跳躍。',ec:[177,178]},
+  {id:178,name:'天然鳥',    en:'xatu',       type:'psychic',  desc:'據說它能用右眼看見未來，左眼看見過去。會一動不動地觀察太陽的動向。',ec:[177,178]},
+  {id:179,name:'咩利羊',    en:'mareep',     type:'electric', desc:'皮膚上長著厚厚的毛，靜電會積聚在其中。到了夏天，毛會全部掉光。',ec:[179,180,181]},
+  {id:180,name:'茸茸羊',    en:'flaaffy',    type:'electric', desc:'為了讓積累的電力不漏出來，皮膚變得像橡膠一樣。',ec:[179,180,181]},
+  {id:181,name:'電龍',      en:'ampharos',   type:'electric', desc:'尾巴尖端發出的光亮能傳到很遠的地方，自古以來就被視為路標。',ec:[179,180,181]},
+  {id:182,name:'美麗花',    en:'bellossom',  type:'grass',    desc:'據說陽光越多，它花瓣的顏色就越鮮豔。在跳舞時，花瓣會互相摩擦發出好聽的聲音。',ec:[43,44,45,182]},
+  {id:183,name:'瑪力露',    en:'marill',     type:'water',    desc:'尾巴尖端充滿了比水還輕的油，所以即使是在湍急的河流中也不會溺水。',ec:[183,184]},
+  {id:184,name:'瑪力露麗',  en:'azumarill',  type:'water',    desc:'即使是在湍急的河流中，它發達的耳朵也能聽清獵物發出的聲音。',ec:[183,184]},
+  {id:185,name:'胡說樹',    en:'sudowoodo',  type:'rock',     desc:'為了不被敵人襲擊而模仿樹木。因為非常討厭水，所以下雨時會消失不見。',ec:[185]},
+  {id:186,name:'牛蛙君',    en:'politoed',   type:'water',    desc:'頭上的捲毛是身為王者的證明。據說捲毛越長、越捲，就越受同伴尊敬。',ec:[60,61,62,186]},
+  {id:187,name:'毽子草',    en:'hoppip',     type:'grass',    desc:'身體非常輕。為了不被風吹走而踩在地面上。最喜歡微風。',ec:[187,188,189]},
+  {id:188,name:'毽子花',    en:'skiploom',   type:'grass',    desc:'頭上的花朵會隨溫度的高低而開合。這也是測量氣溫的一種方式。',ec:[187,188,189]},
+  {id:189,name:'毽子棉',    en:'jumpluff',   type:'grass',    desc:'會乘著季節風在世界各地飄蕩，播灑孢子來增加同伴。',ec:[187,188,189]},
+  {id:190,name:'長尾怪手',  en:'aipom',      type:'normal',   desc:'會隨心所欲地操縱尾巴。因為尾巴太過靈活，手反而變得不怎麼好用了。',ec:[190]},
+  {id:191,name:'向日種子',  en:'sunkern',    type:'grass',    desc:'為了不被襲擊而拼命忍受飢餓。據說它只靠早晨晶瑩的露水就能活下去。',ec:[191,192]},
+  {id:192,name:'向日花怪',  en:'sunflora',   type:'grass',    desc:'會朝向太陽移動。陽光越充足，花瓣的顏色就越鮮艷。',ec:[191,192]},
+  {id:193,name:'蜻蜻蜓',    en:'yanma',      type:'bug',      desc:'能高速拍動翅膀在空中飛行。視力非常優秀，能看清全方位。',ec:[193]},
+  {id:194,name:'烏波',      en:'wooper',     type:'water',    desc:'在地面走路時，會用有毒的黏液包裹身體。在冰冷的水中生活。',ec:[194,195]},
+  {id:195,name:'沼王',      en:'quagsire',   type:'water',    desc:'性格悠閒。游動時，身體會撞上岩石或船底，但它毫不在意。',ec:[194,195]},
+  {id:196,name:'太陽伊布',  en:'espeon',     type:'psychic',  desc:'會透過全身纖細的毛來感知空氣的流動，以此預測對手的行動。',ec:[133,134,135,136,196,197]},
+  {id:197,name:'月亮伊布',  en:'umbreon',    type:'dark',     desc:'在滿月之夜或是激動的時候，身上的圈圈花紋就會發出金黃色的光。',ec:[133,134,135,136,196,197]},
+  {id:198,name:'黑暗鴉',    en:'murkrow',    type:'dark',     desc:'據說看到它的人就會發生不幸。對發光的小東西非常感興趣。',ec:[198]},
+  {id:199,name:'呆呆王',    en:'slowking',   type:'water',    desc:'被大舌貝咬住後，毒素流進大腦，讓它覺醒了驚人的聰明才智。',ec:[79,80,199]},
+  {id:200,name:'夢妖',      en:'misdreavus', type:'ghost',    desc:'最喜歡惡作劇。會發出尖叫聲或扯別人的頭髮，以此嚇唬對方。',ec:[200]},
+  {id:201,name:'未知圖騰',  en:'unown',      type:'psychic',  desc:'形狀像古代文字。雖然有很多種形狀，但據說它們原本是同一種生物。',ec:[201]},
+  {id:202,name:'果然翁',    en:'wobbuffet',  type:'psychic',  desc:'為了隱藏漆黑的尾巴而躲在陰暗處生活。自己絕對不會主動發起攻擊。',ec:[202]},
+  {id:203,name:'麒麟奇',    en:'girafarig',  type:'normal',   desc:'尾巴上也有一顆小腦袋。如果靠近它的話，尾巴上的腦袋就會咬過來。',ec:[203]},
+  {id:204,name:'榛果球',    en:'pineco',     type:'bug',      desc:'會把樹皮貼在身上，讓自己看起來更大。如果有人趁它吃東西時去碰它，它就會自爆。',ec:[204,205]},
+  {id:205,name:'佛烈托斯',  en:'forretress', type:'bug',      desc:'全身包裹著鋼鐵般堅硬的殼。殼裡的部分至今仍是個謎。',ec:[204,205]},
+  {id:206,name:'土龍弟弟',  en:'dunsparce',  type:'normal',   desc:'會用尾巴挖掘地洞，製造出複雜的迷宮。一旦被發現就會用小翅膀飛走。',ec:[206]},
+  {id:207,name:'天蠍',      en:'gligar',     type:'ground',   desc:'會貼在懸崖峭壁上生活。發現獵物後會張開翅膀滑翔，並用尾巴刺向對手。',ec:[207]},
+  {id:208,name:'大鋼蛇',    en:'steelix',    type:'steel',    desc:'據說在地下深處承受著巨大的壓力與熱度，使得身體變得比鑽石還硬。',ec:[95,208]},
+  {id:209,name:'布魯',      en:'snubbull',   type:'fairy',    desc:'雖然長相兇惡，但其實性格很膽小且溫柔。在女性之間非常受歡迎。',ec:[209,210]},
+  {id:210,name:'布魯皇',    en:'granbull',   type:'fairy',    desc:'發達的下顎非常重。雖然平時很溫和，但發怒時會揮舞尖牙。',ec:[209,210]},
+  {id:211,name:'千針魚',    en:'qwilfish',   type:'water',    desc:'會吸入大量的水讓身體膨脹。全身的針裡都帶有致命的毒素。',ec:[211]},
+  {id:212,name:'巨鉗螳螂',  en:'scizor',     type:'bug',      desc:'舉起帶有眼球花紋的鉗子就能威嚇對手。身體堅硬得如同鋼鐵。',ec:[123,212]},
+  {id:213,name:'壺壺',      en:'shuckle',    type:'bug',      desc:'會將樹果儲存在殼裡。據說儲存的樹果最後會變成濃稠的果汁。',ec:[213]},
+  {id:214,name:'赫拉克羅斯',en:'heracross',  type:'bug',      desc:'擁有驚人的怪力。會用銳利的爪子踩穩地面，並用引以為傲的角把對手甩飛。',ec:[214]},
+  {id:215,name:'狃拉',      en:'sneasel',    type:'dark',     desc:'性格狡猾且生性兇殘。會趁父母不在家時，把鳥寶可夢的蛋偷出來吃掉。',ec:[215]},
+  {id:216,name:'熊寶寶',    en:'teddiursa',  type:'normal',   desc:'如果找到了蜂蜜，新月型的圖案就會發光。總是舔著沾滿蜂蜜的手掌。',ec:[216,217]},
+  {id:217,name:'圈圈熊',    en:'ursaring',   type:'normal',   desc:'在棲息著圈圈熊的森林裡，到處都能看到它為了標示領地而留下的抓痕。',ec:[216,217]},
+  {id:218,name:'熔岩蟲',    en:'slugma',     type:'fire',     desc:'身體是由熔岩組成的。如果停止移動，身體就會變冷並凝固。',ec:[218,219]},
+  {id:219,name:'熔岩蝸牛',  en:'magcargo',   type:'fire',     desc:'體溫大約有１萬度。背上的殼其實是凝固了的熔岩，很容易碎。',ec:[218,219]},
+  {id:220,name:'小山豬',    en:'swinub',     type:'ice',      desc:'會用鼻尖摩擦地面來尋找食物。據說它偶爾會挖出冰封已久的美味。',ec:[220,221]},
+  {id:221,name:'長毛豬',    en:'piloswine',  type:'ice',      desc:'雖然眼睛被長長的毛擋住了，但靈敏的鼻子能準確地辨別四周的狀況。',ec:[220,221]},
+  {id:222,name:'太陽珊瑚',  en:'corsola',    type:'water',    desc:'頭上的角在掉落後會很快長出來。在乾淨的海域裡能看到成群的太陽珊瑚。',ec:[222]},
+  {id:223,name:'鐵炮魚',    en:'remoraid',   type:'water',    desc:'會噴出強力的水流捕捉空中的獵物。也會吸附在巨翅飛魚身上分食殘渣。',ec:[223,224]},
+  {id:224,name:'章魚桶',    en:'octillery',  type:'water',    desc:'會鑽進岩穴中睡覺。噴出的墨汁不僅能遮擋視線，還能讓對手的嗅覺失靈。',ec:[223,224]},
+  {id:225,name:'信使鳥',    en:'delibird',   type:'ice',      desc:'會把食物包在尾巴裡。據說在山上落難的人曾靠它分享的食物保住了性命。',ec:[225]},
+  {id:226,name:'巨翅飛魚',  en:'mantine',    type:'water',    desc:'在廣闊的海域中悠閒游泳。據說它能乘著浪頭跳出海面。',ec:[226]},
+  {id:227,name:'盔甲鳥',    en:'skarmory',   type:'steel',    desc:'身體雖然包裹著鋼鐵，但能以超過１００公里的時速在天空中飛行。',ec:[227]},
+  {id:228,name:'戴魯比',    en:'houndour',   type:'dark',     desc:'會用各種叫聲與同伴溝通，並集結成群，以團隊合作來捕捉獵物。',ec:[228,229]},
+  {id:229,name:'黑魯加',    en:'houndoom',   type:'dark',     desc:'據說從它嘴裡噴出的火焰帶有毒素。如果被燒傷，傷口會疼上一輩子。',ec:[228,229]},
+  {id:230,name:'刺龍王',    en:'kingdra',    type:'water',    desc:'平時隱藏在深海裡。據說它打噴嚏時產生的漩渦連船都能吞沒。',ec:[116,117,230]},
+  {id:231,name:'小小象',    en:'phanpy',     type:'ground',   desc:'長長的鼻子非常有勁。雖然是在向人撒嬌，但如果被它撞到可會受重傷。',ec:[231,232]},
+  {id:232,name:'頓甲',      en:'donphan',    type:'ground',   desc:'牙齒越長，其地位就越高。會把堅硬的身體捲成球狀，猛烈地衝向對手。',ec:[231,232]},
+  {id:233,name:'多邊獸Ⅱ',  en:'porygon2',   type:'normal',   desc:'為了研究行星開發而升級的軟體。然而它卻還無法在宇宙中飛行。',ec:[137,233]},
+  {id:234,name:'驚角鹿',    en:'stantler',   type:'normal',   desc:'角上的圓球能散發出奇妙的氣味。看到那對角的人，感知會變得很混亂。',ec:[234]},
+  {id:235,name:'圖圖犬',    en:'smeargle',   type:'normal',   desc:'會從尾巴尖端分泌出特殊的液體。會用液體在各處塗鴉來標示領地。',ec:[235]},
+  {id:236,name:'巴爾郎',    en:'tyrogue',    type:'fighting', desc:'精力充沛。為了變得更強，無論對手是誰，它都會毫不猶豫地發起挑戰。',ec:[236,106,107,237]},
+  {id:237,name:'戰舞郎',    en:'hitmontop',  type:'fighting', desc:'會一邊旋轉一邊使出踢擊。被旋轉時產生的離心力加持過的踢擊威力驚人。',ec:[236,106,107,237]},
+  {id:238,name:'迷唇娃',    en:'smoochum',   type:'ice',      desc:'雙唇最為敏感。無論看到什麼，它都會先用唇碰一碰來檢查。',ec:[238,124]},
+  {id:239,name:'電擊怪',    en:'elekid',     type:'electric', desc:'會旋轉手臂來產生電力。但因為無法儲存電力，馬上就會放光。',ec:[239,125]},
+  {id:240,name:'小鴨嘴龍',  en:'magby',      type:'fire',     desc:'血液像熔岩一樣熾熱。每當呼吸時，黃色的火焰就會從口鼻中漏出。',ec:[240,126]},
+  {id:241,name:'大奶罐',    en:'miltank',    type:'normal',   desc:'擠出來的奶營養滿分。無論是對大人還是小孩，都是最棒的飲品。',ec:[241]},
+  {id:242,name:'幸福蛋',    en:'blissey',    type:'normal',   desc:'據說只要吃上一口它那裝滿了幸福的蛋，無論是誰都能變得溫柔。',ec:[113,242]},
+  {id:243,name:'雷公',      en:'raikou',     type:'electric', desc:'背著雨雲的寶可夢。據說它能隨意發射閃電。',ec:[243],lg:true},
+  {id:244,name:'炎帝',      en:'entei',      type:'fire',     desc:'據說每當它咆哮時，世界某處的火山就會爆發。',ec:[244],lg:true},
+  {id:245,name:'水君',      en:'suicune',    type:'water',    desc:'據說是北風的化身。擁有能瞬間淨化污濁水源的力量。',ec:[245],lg:true},
+  {id:246,name:'幼基拉斯',  en:'larvitar',   type:'rock',     desc:'吃土成長。如果不吃掉一座山那麼多的土，就無法進化成蛹。',ec:[246,247,248]},
+  {id:247,name:'沙基拉斯',  en:'pupitar',    type:'rock',     desc:'外殼非常堅硬。會噴出壓縮氣體，像火箭一樣四處亂衝。',ec:[246,247,248]},
+  {id:248,name:'班基拉斯',  en:'tyranitar',  type:'rock',     desc:'擁有即便毀壞大山，改變地形也不為所動的性格。',ec:[246,247,248]},
+  {id:249,name:'洛奇亞',    en:'lugia',      type:'psychic',  desc:'據說它只要輕輕揮動翅膀，就能吹垮民房。因此它選擇在深海中靜靜生活。',ec:[249],lg:true},
+  {id:250,name:'鳳王',      en:'ho-oh',      type:'fire',     desc:'據說它會一邊閃耀著七彩光芒一邊在天空中飛行。見到它的人能獲得永遠的幸福。',ec:[250],lg:true},
+  {id:251,name:'時拉比',    en:'celebi',     type:'grass',    desc:'擁有穿越時空的能力。在和平的時代裡，據說它會現身在森林中。',ec:[251],lg:true}
+];
+
+var ALL=GEN1.concat(GEN2);
+var G1_LEG=[144,145,146,150,151];
+var G2_LEG=[243,244,245,249,250,251];
+
+/* =====================================================
+   英文題庫
+   ===================================================== */
+var WORD_DATA={
+  food:   ['apple','banana','cake','egg','fish','milk','rice','bread','water','juice'],
+  animal: ['dog','cat','pig','cow','duck','bird','rabbit','horse','tiger'],
+  school: ['book','pen','pencil','bag','desk','chair','eraser','ruler','paper','box'],
+  home:   ['bed','table','door','window','sofa','TV','lamp','clock','room'],
+  nature: ['sun','moon','star','sky','tree','flower','grass','river','rain','cloud'],
+  vehicle:['car','bus','bike','train','taxi','boat','plane','truck','ship','subway'],
+  toy:    ['ball','kite','doll','toy','game','robot','puzzle','drum','guitar','yo-yo'],
+  body:   ['boy','girl','teacher','friend','hand','foot','head','eye','ear','mouth'],
+  color:  ['blue','red','yellow','green','black','brown','white','purple']
+};
+var WORD_ZH={
+  apple:'蘋果',banana:'香蕉',cake:'蛋糕',egg:'雞蛋',fish:'魚',milk:'牛奶',
+  rice:'米飯',bread:'麵包',water:'水',juice:'果汁',
+  dog:'狗',cat:'貓',pig:'豬',cow:'牛',duck:'鴨子',bird:'鳥',
+  rabbit:'兔子',horse:'馬',tiger:'老虎',
+  book:'書本',pen:'原子筆',pencil:'鉛筆',bag:'書包',desk:'桌子',chair:'椅子',
+  eraser:'橡皮擦',ruler:'尺',paper:'紙',box:'盒子',
+  bed:'床',table:'桌子',door:'門',window:'窗戶',sofa:'沙發',
+  TV:'電視',lamp:'燈',clock:'時鐘',room:'房間',
+  sun:'太陽',moon:'月亮',star:'星星',sky:'天空',tree:'樹',flower:'花',
+  grass:'草',river:'河流',rain:'雨',cloud:'雲',
+  car:'汽車',bus:'公車',bike:'腳踏車',train:'火車',taxi:'計程車',
+  boat:'船',plane:'飛機',truck:'卡車',ship:'輪船',subway:'捷運',
+  ball:'球',kite:'風箏',doll:'娃娃',toy:'玩具',game:'遊戲',
+  robot:'機器人',puzzle:'拼圖',drum:'鼓',guitar:'吉他','yo-yo':'溜溜球',
+  boy:'男孩',girl:'女孩',teacher:'老師',friend:'朋友',
+  hand:'手',foot:'腳',head:'頭',eye:'眼睛',ear:'耳朵',mouth:'嘴巴',
+  blue:'藍色',red:'紅色',yellow:'黃色',green:'綠色',
+  black:'黑色',brown:'棕色',white:'白色',purple:'紫色'
 };
 
-// --- 初始化事件 [cite: 71, 72] ---
-function initEvents() {
-    $('login-btn').onclick = doLogin;
-    $('nav-home').onclick = function() { showPage('pg-home'); setNav(this); };
-    $('nav-dex').onclick = function() { showPage('pg-dex'); setNav(this); renderDex(); };
-    $('btn-eng').onclick = function() { alert('進入英文模式'); }; // 串接原本遊戲邏輯 [cite: 75]
-    $('btn-math').onclick = function() { alert('進入數學模式'); };
+function buildEngQ(pool,count){
+  var qs=[],used={},att=0;
+  var allKeys=Object.keys(WORD_ZH);
+  while(qs.length<count&&att<500){
+    att++;
+    var word=pool[rand(0,pool.length-1)];
+    if(used[word])continue;
+    used[word]=true;
+    var zh=WORD_ZH[word];if(!zh)continue;
+    var wrong=[];
+    var sh=shuffle(allKeys);
+    for(var i=0;i<sh.length&&wrong.length<3;i++){
+      if(sh[i]!==word&&WORD_ZH[sh[i]]!==zh)wrong.push(WORD_ZH[sh[i]]);
+    }
+    if(wrong.length<3)continue;
+    qs.push({q:word.toUpperCase()+' 的中文是？',sp:word,a:zh,o:shuffle([zh].concat(wrong))});
+  }
+  return qs;
+}
+function genEngQ(level){
+  var pool;
+  if(level==='easy')    pool=shuffle([].concat(WORD_DATA.food,WORD_DATA.animal,WORD_DATA.color));
+  else if(level==='medium') pool=shuffle([].concat(WORD_DATA.school,WORD_DATA.home,WORD_DATA.nature));
+  else if(level==='hard')   pool=shuffle([].concat(WORD_DATA.vehicle,WORD_DATA.toy,WORD_DATA.body));
+  else{ var all=[];Object.values(WORD_DATA).forEach(function(a){all=all.concat(a);});pool=shuffle(all);}
+  return buildEngQ(pool,10);
 }
 
-// --- 登入邏輯修復  ---
-function doLogin() {
-    var name = $('name-input').value.trim();
-    if (!name) { alert('請輸入訓練師名字！'); return; }
-    
-    G.playerName = name;
-    $('hd-name').textContent = name;
-    $('main-nav').style.display = 'flex'; // 登入後才顯示導航列
-    showPage('pg-home');
+/* =====================================================
+   數學題庫
+   ===================================================== */
+function makeOpts(c,mn,mx){
+  var s=[c],t=0;
+  while(s.length<4&&t<200){t++;var d=rand(1,4)*(Math.random()<.5?1:-1);var v=c+d;if(v>=mn&&v<=mx&&s.indexOf(v)===-1)s.push(v);}
+  while(s.length<4){var v2=rand(Math.max(mn,c-5),Math.min(mx,c+5));if(s.indexOf(v2)===-1)s.push(v2);}
+  return shuffle(s).slice(0,4).map(String);
+}
+function genMath(level,count){
+  var pool=[],used={},att=0;
+  while(pool.length<count&&att<3000){
+    att++;var q,a,key;
+    if(level==='easy'){
+      if(Math.random()<.5){var x=rand(1,18),y=rand(1,20-x);a=x+y;key='+'+x+'_'+y;q=x+' + '+y+' = ？';}
+      else{var x=rand(2,20),y=rand(1,x-1);a=x-y;key='-'+x+'_'+y;q=x+' - '+y+' = ？';}
+    }else if(level==='medium'){
+      var x=rand(1,15),y=rand(1,10),z=rand(1,10);var mid=x+y;if(mid>20)continue;
+      a=mid-z;if(a<0||a>20)continue;key='m'+x+'_'+y+'_'+z;q=x+' + '+y+' - '+z+' = ？';
+    }else if(level==='hard'){
+      var t2=rand(0,2);
+      if(t2===0){var x=rand(1,35),y=rand(1,50-x),z=rand(1,x+y);a=x+y-z;if(a<0||a>50)continue;key='h0'+x+'_'+y+'_'+z;q=x+' + '+y+' - '+z+' = ？';}
+      else if(t2===1){var x=rand(10,45),y=rand(1,x-1),z=rand(1,50-(x-y));if(x-y+z>50)continue;a=x-y+z;key='h1'+x+'_'+y+'_'+z;q=x+' - '+y+' + '+z+' = ？';}
+      else{var x=rand(5,25),y=rand(1,15),z=rand(1,15);if(x+y+z>50)continue;a=x+y+z;key='h2'+x+'_'+y+'_'+z;q=x+' + '+y+' + '+z+' = ？';}
+    }else{
+      var x=rand(10,35),y=rand(5,15),z=rand(5,15),w=rand(1,10);var r=x+y-z+w;if(r<0||r>50)continue;
+      a=r;key='adv'+x+'_'+y+'_'+z+'_'+w;q=x+' + '+y+' - '+z+' + '+w+' = ？';
+    }
+    if(used[key])continue;used[key]=true;
+    pool.push({q:q,a:String(a),o:makeOpts(a,0,level==='easy'?20:50),sp:null});
+  }
+  return pool;
 }
 
-// --- 頁面切換修復  ---
-function showPage(id) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    $(id).classList.add('active');
-}
-
-function setNav(el) {
-    document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
-}
-
-// --- 渲染圖鑑 [cite: 123, 127] ---
-function renderDex() {
-    var grid = $('dex-grid');
-    grid.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">目前圖鑑是空的，快去捕捉吧！</p>';
-    // 此處可串接原本的 ALL.forEach 渲染邏輯
-}
-
-window.onload = function() {
-    initEvents();
+/* =====================================================
+   狀態
+   ===================================================== */
+var ADMIN='admin';
+var G={
+  playerName:'',mode:null,level:null,
+  questions:[],qIdx:0,correct:0,wrong:0,score:0,caught:0,
+  answered:false,spkWord:null,
+  pendingPkm:null,nextPkm:null,
+  hm:{pokemon:null,evoIdx:0,streak:0,goal:2,frozen:false},
+  cp:JSON.parse(localStorage.getItem('pkm_cp')||'[]'),
+  ts:parseInt(localStorage.getItem('pkm_ts')||'0'),
+  cl:JSON.parse(localStorage.getItem('pkm_cl')||'{}'),
+  dexGen:1,dexFilter:'all',
+  pickedPkm:null  // 選擇進化頁面選中的寶可夢
 };
+function save(){localStorage.setItem('pkm_cp',JSON.stringify(G.cp));localStorage.setItem('pkm_ts',String(G.ts));localStorage.setItem('pkm_cl',JSON.stringify(G.cl));}
+function cntGen(gen){return G.cp.filter(function(id){return gen===1?id<=151:id>=152&&id<=251;}).length;}
+function updateHd(){$('hd-name').textContent=G.playerName||'---';$('hd-score').textContent=G.ts;$('hd-g1').textContent=cntGen(1);$('hd-g2').textContent=cntGen(2);}
+function goPage(id){document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});$(id).classList.add('active');}
+
+/* =====================================================
+   事件
+   ===================================================== */
+function initEvents(){
+  $('login-btn').onclick=doLogin;
+  $('name-input').onkeydown=function(e){if(e.key==='Enter')doLogin();};
+  $('btn-eng').onclick=function(){selectMode('english');};
+  $('btn-math').onclick=function(){selectMode('math');};
+  $('btn-easy').onclick=function(){selectLevel('easy');};
+  $('btn-medium').onclick=function(){selectLevel('medium');};
+  $('btn-hard').onclick=function(){showPickPage();};   // ★ 困難→先選寶可夢
+  $('btn-adv').onclick=function(){selectLevel('advanced');};
+  $('btn-back-lv').onclick=function(){goPage('pg-home');};
+  $('btn-back-pick').onclick=function(){goPage('pg-level');};
+  $('pick-confirm-btn').onclick=confirmPick;
+  $('enc-fight-btn').onclick=startAnswering;
+  $('spk-btn').onclick=speakWord;
+  $('ct-close').onclick=closeCatch;
+  $('evo-close').onclick=closeEvo;
+  $('bc-close').onclick=closeBC;
+  $('au-close').onclick=closeAdv;
+  $('btn-replay').onclick=function(){
+    if(G.level==='hard') showPickPage(); else startGame();
+  };
+  $('btn-menu').onclick=function(){goPage('pg-home');};
+  $('dex-tab1').onclick=function(){switchDexGen(1,this);};
+  $('dex-tab2').onclick=function(){switchDexGen(2,this);};
+  document.querySelectorAll('.flt').forEach(function(b){b.onclick=function(){filterDex(this.dataset.f,this);};});
+  $('btn-back-dex').onclick=function(){goPage('pg-home');};
+  $('nav-home').onclick=function(){setNavA(this);goPage('pg-home');};
+  $('nav-dex').onclick=function(){setNavA(this);renderDex();goPage('pg-dex');};
+  $('modal-x').onclick=closeModal;
+  $('modal').onclick=function(e){if(e.target===this)closeModal();};
+  $('gm-x').onclick=closeGuide;
+  $('guide-modal').onclick=function(e){if(e.target===this)closeGuide();};
+}
+function setNavA(el){document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('active');});el.classList.add('active');}
+
+/* =====================================================
+   登入
+   ===================================================== */
+function doLogin(){
+  var name=$('name-input').value.trim();
+  if(!name){$('login-err').textContent='請輸入名字！';return;}
+  G.playerName=name;$('login-err').textContent='';
+  if(name.toLowerCase()===ADMIN)unlockAllDex();
+  $('welcome-msg').textContent='歡迎回來，'+name+' 訓練師！👋';
+  updateHd();goPage('pg-home');
+}
+function unlockAllDex(){
+  ALL.forEach(function(p){if(G.cp.indexOf(p.id)===-1)G.cp.push(p.id);});
+  G.cl={english:{easy:true,medium:true,hard:true},math:{easy:true,medium:true,hard:true}};
+  G.ts=999999;save();updateHd();alert('🎉 管理員模式！所有圖鑑已解鎖！');
+}
+
+/* =====================================================
+   模式/難度
+   ===================================================== */
+function selectMode(mode){
+  G.mode=mode;
+  var isEng=mode==='english';
+  $('lv-title').textContent=isEng?'📖 英文 — 選擇難易度':'🔢 數學 — 選擇難易度';
+  $('lv-desc-easy').textContent  =isEng?'食物、動物、顏色單字':'加法或減法（答案≤20）';
+  $('lv-desc-medium').textContent=isEng?'學校用品、家、自然單字':'加減混合（答案≤20）';
+  $('lv-rng-easy').textContent   =isEng?'捕捉 No.1~75':'捕捉 No.152~201';
+  $('lv-rng-medium').textContent =isEng?'捕捉 No.76~151':'捕捉 No.202~251';
+  var cl=G.cl[mode]||{};
+  var adv=cl.easy&&cl.medium&&cl.hard;
+  var ab=$('btn-adv');
+  if(adv){ab.classList.remove('locked');$('adv-lock').textContent='👑';$('lv-desc-adv').textContent='捕捉傳說神獸！';}
+  else{ab.classList.add('locked');$('adv-lock').textContent='🔒';$('lv-desc-adv').textContent='完成前三關後解鎖';}
+  goPage('pg-level');
+}
+
+function selectLevel(level){
+  G.level=level;startGame();
+}
+
+/* =====================================================
+   ★ 困難模式：顯示選擇寶可夢頁面
+   ===================================================== */
+function showPickPage(){
+  G.level='hard';
+  var starters=getStarters();
+  var grid=$('pick-grid');
+  grid.innerHTML='';
+  G.pickedPkm=null;
+  var confirmBtn=$('pick-confirm-btn');
+  confirmBtn.classList.remove('active');
+
+  if(starters.length===0){
+    grid.innerHTML='<div class="pick-empty" style="grid-column:1/-1">'
+      +'<div class="pe-ic">😢</div>'
+      +'<p>還沒有可以進化的寶可夢！<br/>請先在「簡單」或「普通」模式<br/>捕捉進化鏈起點的寶可夢！</p>'
+      +'<button class="pick-go-easy" id="pick-go-easy-btn">去簡單模式捕捉！🌟</button>'
+      +'</div>';
+    // 延遲綁定，因為innerHTML剛設定
+    setTimeout(function(){
+      var btn=$('pick-go-easy-btn');
+      if(btn)btn.onclick=function(){selectLevel('easy');};
+    },0);
+    goPage('pg-pick');
+    return;
+  }
+
+  starters.forEach(function(p){
+    var chain=p.ec.map(function(id){return ALL.find(function(x){return x.id===id;});}).filter(Boolean);
+    // 只取進化鏈中從起點開始、屬於簡單/普通範圍的部分
+    var chainNames=chain.map(function(c){return c.name;}).join(' → ');
+    var card=document.createElement('div');
+    card.className='pick-card';
+    var alreadyEvolved=G.cp.indexOf(p.id)!==-1;
+    card.innerHTML='<img src="'+getArt(p.id)+'" onerror="this.src=\''+getPx(p.id)+'\'" alt="'+p.name+'"/>'
+      +'<div class="pk-name">'+p.name+'</div>'
+      +'<div class="pk-chain">'+chainNames+'</div>'
+      +(alreadyEvolved?'<span class="pk-badge">已捕捉</span>':'');
+    card.onclick=function(){
+      document.querySelectorAll('.pick-card').forEach(function(c){c.classList.remove('selected');});
+      card.classList.add('selected');
+      G.pickedPkm=p;
+      confirmBtn.classList.add('active');
+    };
+    grid.appendChild(card);
+  });
+  goPage('pg-pick');
+}
+
+function confirmPick(){
+  if(!G.pickedPkm)return;
+  G.hm.pokemon=G.pickedPkm;
+  G.hm.evoIdx=0;G.hm.streak=0;G.hm.goal=2;G.hm.frozen=false;
+  startGame();
+}
+
+function getStarters(){
+  var isEng=G.mode==='english';
+  var mn=isEng?1:152,mx=isEng?75:201;
+  var result=[];
+  ALL.forEach(function(p){
+    if(p.id<mn||p.id>mx||p.lg)return;
+    if(G.cp.indexOf(p.id)===-1)return;
+    if(p.ec&&p.ec[0]===p.id&&p.ec.length>1)result.push(p);
+  });
+  return result;
+}
+function isAdvUnlocked(mode){var cl=G.cl[mode]||{};return !!(cl.easy&&cl.medium&&cl.hard);}
+
+/* =====================================================
+   選取寶可夢（簡單/普通/進階）
+   ===================================================== */
+function pickPokemon(){
+  var mode=G.mode,level=G.level;
+  if(level==='advanced'){
+    var legIds=mode==='english'?G1_LEG:G2_LEG;
+    var pool=legIds.map(function(id){return ALL.find(function(p){return p.id===id;});}).filter(Boolean);
+    var unc=pool.filter(function(p){return G.cp.indexOf(p.id)===-1;});
+    return unc.length>0?unc[rand(0,unc.length-1)]:pool[rand(0,pool.length-1)];
+  }
+  if(level==='hard')return G.hm.pokemon;
+  var mn,mx;
+  if(level==='easy'){mn=mode==='english'?1:152;mx=mode==='english'?75:201;}
+  else              {mn=mode==='english'?76:202;mx=mode==='english'?151:251;}
+  var pool=ALL.filter(function(p){return p.id>=mn&&p.id<=mx&&isCatchable(p);});
+  if(!pool.length)pool=ALL.filter(function(p){return p.id>=mn&&p.id<=mx&&!p.lg;});
+  var unc=pool.filter(function(p){return G.cp.indexOf(p.id)===-1;});
+  return unc.length>0?unc[rand(0,unc.length-1)]:pool[rand(0,pool.length-1)];
+}
+
+/* =====================================================
+   開始遊戲
+   ===================================================== */
+function startGame(){
+  var pool=G.mode==='english'?genEngQ(G.level):genMath(G.level,10);
+  G.questions=pool;G.qIdx=0;G.correct=0;G.wrong=0;G.score=0;G.caught=0;G.answered=false;
+  G.pendingPkm=pickPokemon();
+  G.nextPkm=null;
+  showEncounter(G.pendingPkm);
+}
+
+/* =====================================================
+   遭遇畫面
+   ===================================================== */
+function showEncounter(p){
+  var isNew=G.cp.indexOf(p.id)===-1;
+  $('enc-name').textContent=p.name;
+  $('enc-desc').textContent=p.desc;
+  var te=$('enc-type');te.textContent=(TL[p.type]||p.type)+'屬性';te.className='enc-type t-'+p.type;
+  var hp=$('enc-hp');hp.style.width='100%';
+  if(!isNew)setTimeout(function(){hp.style.width=rand(30,70)+'%';},300);
+  var st=$('enc-status');st.innerHTML='';
+  var nb=document.createElement('span');
+  nb.className='enc-badge '+(isNew?'new-b':'have-b');
+  nb.textContent=isNew?'★ 未捕捉':'✓ 已有這隻';
+  st.appendChild(nb);
+  if(p.lg){var lb=document.createElement('span');lb.className='enc-badge';lb.style.cssText='background:rgba(255,209,102,.2);border:1px solid rgba(255,209,102,.4);color:#ffd166;';lb.textContent='👑 傳說神獸';st.appendChild(lb);}
+  // 困難模式特別標示
+  if(G.level==='hard'){var eb=document.createElement('span');eb.className='enc-badge';eb.style.cssText='background:rgba(247,37,133,.2);border:1px solid rgba(247,37,133,.4);color:#f72585;';eb.textContent='🔥 進化挑戰';st.appendChild(eb);}
+  var img=$('enc-img');
+  img.className='enc-img ld';img.src='';img.alt=p.name;
+  img.onload=function(){img.classList.remove('ld');};
+  img.onerror=function(){img.src=getPx(p.id);img.classList.remove('ld');img.onerror=null;};
+  img.src=getArt(p.id);
+  goPage('pg-encounter');
+}
+
+/* =====================================================
+   開始答題
+   ===================================================== */
+function startAnswering(){
+  var mL={english:'📖 英文',math:'🔢 數學'};
+  var lL={easy:'🌟 簡單',medium:'⚡ 普通',hard:'🔥 困難',advanced:'👑 進階'};
+  $('g-mode-tag').textContent=mL[G.mode];
+  $('g-lv-tag').textContent=lL[G.level];
+  $('g-qt').textContent=G.questions.length;
+  updateBattleCard(G.pendingPkm);
+  if(G.level==='hard'){$('evo-wrap').style.display='block';renderEvoBar();}
+  else{$('evo-wrap').style.display='none';}
+  goPage('pg-game');renderQ();
+}
+
+function updateBattleCard(p){
+  var img=$('battle-img');
+  img.src='';img.alt=p.name;
+  img.onerror=function(){this.src=getPx(p.id);this.onerror=null;};
+  img.src=getArt(p.id);
+  $('battle-name').textContent=p.name;
+  var t=$('battle-type');t.textContent=(TL[p.type]||p.type)+'屬性';t.className='bpi-type t-'+p.type;
+  $('battle-status').textContent=G.cp.indexOf(p.id)===-1?'★ 尚未捕捉':'✓ 已有這隻';
+}
+
+/* =====================================================
+   進化條
+   ===================================================== */
+function renderEvoBar(){
+  var hm=G.hm;
+  // 取進化鏈（只取遊戲中實際範圍的部分）
+  var isEng=G.mode==='english';
+  var mn=isEng?1:152,mx=isEng?75:201;
+  var fullChain=hm.pokemon.ec.map(function(id){return ALL.find(function(p){return p.id===id;});}).filter(Boolean);
+  // 找起點的index，從起點開始顯示
+  var startIdx=0;
+  for(var i=0;i<fullChain.length;i++){if(fullChain[i].id===hm.pokemon.id){startIdx=i;break;}}
+  var chain=fullChain.slice(startIdx);
+
+  var row=$('evo-row');row.innerHTML='';
+  chain.forEach(function(p,i){
+    if(i>0){var a=document.createElement('span');a.className='evo-arr';a.textContent='➡';row.appendChild(a);}
+    var slot=document.createElement('div');slot.className='evo-slot';
+    var img=document.createElement('img');
+    img.src='';img.onerror=function(){this.src=getPx(p.id);};img.src=getArt(p.id);
+    img.className=i<hm.evoIdx?'ev-done':(i===hm.evoIdx?'ev-cur':'');
+    var lbl=document.createElement('span');lbl.textContent=p.name;
+    slot.appendChild(img);slot.appendChild(lbl);row.appendChild(slot);
+  });
+  var sr=$('streak-row');sr.innerHTML='';
+  for(var i=0;i<hm.goal;i++){var d=document.createElement('div');d.className='sdot'+(i<hm.streak&&!hm.frozen?' on':'');sr.appendChild(d);}
+  var nextP=chain[hm.evoIdx+1];
+  $('streak-info').textContent=
+    hm.evoIdx>=chain.length-1?'🏆 已進化到最終型態！':
+    hm.frozen?'⚠️ 答錯，進度保留（'+hm.streak+'/'+hm.goal+'）':
+    '再連答對 '+(hm.goal-hm.streak)+' 題，'+(nextP?nextP.name:'下一型態')+' 就會進化！';
+  $('evo-title').textContent='🎯 進化挑戰：'+hm.pokemon.name;
+}
+
+/* =====================================================
+   渲染題目
+   ===================================================== */
+function renderQ(){
+  var q=G.questions[G.qIdx];G.answered=false;stopSpeak();
+  $('g-qn').textContent=G.qIdx+1;
+  $('g-pb').style.width=(G.qIdx/G.questions.length*100)+'%';
+  $('g-qlabel').textContent=G.mode==='english'?'📖 英文單字':'🔢 數學題目';
+  $('g-qtext').textContent=q.q;$('g-qhint').textContent='請選出正確答案 👇';
+  $('g-fb').textContent='';$('g-fb').className='fb';
+  var sb=$('spk-btn');
+  if(G.mode==='english'&&q.sp){sb.style.display='inline-flex';sb.className='spk-btn';G.spkWord=q.sp;}
+  else{sb.style.display='none';G.spkWord=null;}
+  var grid=$('g-opts');grid.innerHTML='';
+  shuffle(q.o).forEach(function(opt){
+    var btn=document.createElement('button');btn.className='opt';btn.textContent=opt;
+    btn.onclick=function(){handleAns(this,opt,q.a);};grid.appendChild(btn);
+  });
+}
+
+/* =====================================================
+   發音
+   ===================================================== */
+function speakWord(){
+  if(!G.spkWord)return;
+  if(!window.speechSynthesis){alert('請使用Chrome瀏覽器！');return;}
+  window.speechSynthesis.cancel();
+  var u=new SpeechSynthesisUtterance(G.spkWord);u.lang='en-US';u.rate=0.85;u.pitch=1.1;
+  var btn=$('spk-btn');btn.classList.add('spk-on');btn.textContent='🔊 播放中...';
+  u.onend=function(){btn.classList.remove('spk-on');btn.textContent='🔊 聽發音';};
+  window.speechSynthesis.speak(u);
+}
+function stopSpeak(){
+  if(window.speechSynthesis)window.speechSynthesis.cancel();
+  var b=$('spk-btn');if(b){b.classList.remove('spk-on');b.textContent='🔊 聽發音';}
+}
+
+/* =====================================================
+   答題
+   ===================================================== */
+function handleAns(btn,chosen,correct){
+  if(G.answered)return;G.answered=true;stopSpeak();
+  document.querySelectorAll('.opt').forEach(function(b){b.disabled=true;});
+  var fb=$('g-fb');
+  if(chosen===correct){
+    btn.classList.add('ok');fb.textContent='🎉 答對了！太棒了！';fb.className='fb ok';
+    G.correct++;
+    var pts=G.level==='easy'?10:G.level==='medium'?20:G.level==='hard'?30:50;
+    G.score+=pts;G.ts+=pts;
+    if(G.level==='hard'){handleHardOk();}
+    else{
+      G.nextPkm=(G.qIdx+1<G.questions.length)?pickPokemon():null;
+      showCatch();
+    }
+  }else{
+    btn.classList.add('ng');
+    document.querySelectorAll('.opt').forEach(function(b){if(b.textContent===correct)b.classList.add('ok');});
+    fb.textContent='❌ 答錯了！正確答案是：'+correct;fb.className='fb ng';
+    G.wrong++;
+    if(G.level==='hard'){G.hm.frozen=true;renderEvoBar();}
+    // ★ 答錯保留原本寶可夢，直接下一題
+    setTimeout(nextQ,1800);
+  }
+}
+
+/* =====================================================
+   困難答對：進化
+   ===================================================== */
+function handleHardOk(){
+  var hm=G.hm;hm.frozen=false;hm.streak++;
+  // 取起點開始的進化鏈
+  var isEng=G.mode==='english';
+  var fullChain=hm.pokemon.ec.map(function(id){return ALL.find(function(p){return p.id===id;});}).filter(Boolean);
+  var startIdx=0;
+  for(var i=0;i<fullChain.length;i++){if(fullChain[i].id===hm.pokemon.id){startIdx=i;break;}}
+  var chain=fullChain.slice(startIdx);
+
+  if(hm.streak>=hm.goal&&hm.evoIdx<chain.length-1){
+    var bef=chain[hm.evoIdx];hm.evoIdx++;hm.streak=0;hm.goal=3;
+    var aft=chain[hm.evoIdx];renderEvoBar();updateBattleCard(aft);
+    setTimeout(function(){triggerEvo(bef,aft);},900);
+  }else{renderEvoBar();setTimeout(nextQ,1200);}
+}
+
+/* =====================================================
+   進化動畫
+   ===================================================== */
+function triggerEvo(bef,aft){
+  var ov=$('ov-evo'),bi=$('evo-bef'),ai=$('evo-aft'),et=$('evo-txt'),en=$('evo-nm'),ec=$('evo-close');
+  bi.src='';ai.src='';bi.style.display='block';ai.style.display='none';
+  et.style.display='none';en.style.display='none';ec.style.display='none';
+  bi.className='';void bi.offsetWidth;bi.className='evo-bef';
+  ai.className='';void ai.offsetWidth;ai.className='evo-aft';
+  setImg(bi,bef.id);setImg(ai,aft.id);
+  if(G.cp.indexOf(aft.id)===-1){G.cp.push(aft.id);G.caught++;}
+  save();updateHd();ov.classList.add('show');
+  setTimeout(function(){ai.style.display='block';},1400);
+  setTimeout(function(){et.style.display='block';en.style.display='block';en.textContent='🎊 '+aft.name+' 進化成功！';},2300);
+  setTimeout(function(){ec.style.display='inline-block';},2900);
+}
+function closeEvo(){$('ov-evo').classList.remove('show');nextQ();}
+
+/* =====================================================
+   捕捉動畫（★ 確保與 pendingPkm 同一隻）
+   ===================================================== */
+function showCatch(){
+  var p=G.pendingPkm;
+  var isNew=G.cp.indexOf(p.id)===-1;
+  var ov=$('ov-catch');ov.classList.add('show');
+  $('ct-close').style.display='none';$('ct-bonus').style.display='none';$('ct-next-wrap').style.display='none';
+  var pb=$('pb-el');pb.textContent='⚪';pb.className='pb-throw';
+  var img=$('ct-img');img.className='ct-img ld';img.src='';img.alt=p.name;
+  img.onload=function(){img.classList.remove('ld');};
+  img.onerror=function(){img.src=getPx(p.id);img.classList.remove('ld');img.onerror=null;};
+  img.src=getArt(p.id);
+  $('ct-title').textContent=p.lg?'👑 傳說神獸！':isNew?'✨ 新寶可夢！':'🔄 又遇見牠了！';
+  $('ct-sub').textContent=isNew?'成功捕捉！加入圖鑑！':'已經有這隻了！';
+  $('ct-name').textContent=p.name;$('ct-desc').textContent=p.desc;
+  var tb=$('ct-type');tb.textContent=(TL[p.type]||p.type)+'屬性';tb.className='ct-type t-'+p.type;
+  if(!isNew){
+    var bonus=G.level==='easy'?5:G.level==='medium'?10:G.level==='advanced'?30:15;
+    G.score+=bonus;G.ts+=bonus;
+    $('ct-bonus').textContent='⭐ Bonus +'+bonus+'分！已集齊這隻！';$('ct-bonus').style.display='inline-block';
+  }
+  setTimeout(function(){pb.className='pb-shake';pb.textContent='🔴';},900);
+  if(isNew){G.cp.push(p.id);G.caught++;}
+  save();updateHd();
+  setTimeout(function(){
+    if(G.nextPkm){
+      var ni=$('ct-next-img'),nn=$('ct-next-name');
+      ni.src='';ni.onerror=function(){this.src=getPx(G.nextPkm.id);this.onerror=null;};ni.src=getArt(G.nextPkm.id);
+      nn.textContent=G.nextPkm.name+(G.cp.indexOf(G.nextPkm.id)===-1?' ★新':'');
+      $('ct-next-wrap').style.display='block';
+    }
+    $('ct-close').style.display='inline-block';
+  },3600);
+}
+
+function closeCatch(){
+  $('ov-catch').classList.remove('show');
+  if(G.nextPkm){G.pendingPkm=G.nextPkm;G.nextPkm=null;updateBattleCard(G.pendingPkm);}
+  checkBlockDone();
+}
+
+/* =====================================================
+   區塊完成
+   ===================================================== */
+function checkBlockDone(){
+  var mode=G.mode,level=G.level;
+  if(level==='hard'||level==='advanced'){nextQ();return;}
+  var mn,mx;
+  if(level==='easy'){mn=mode==='english'?1:152;mx=mode==='english'?75:201;}
+  else              {mn=mode==='english'?76:202;mx=mode==='english'?151:251;}
+  var pool=ALL.filter(function(p){return p.id>=mn&&p.id<=mx&&isCatchable(p);});
+  var done=pool.every(function(p){return G.cp.indexOf(p.id)!==-1;});
+  var key='bc_'+mode+'_'+level;
+  if(done&&!localStorage.getItem(key)){
+    localStorage.setItem(key,'1');
+    if(!G.cl[mode])G.cl[mode]={};G.cl[mode][level]=true;save();
+    showBC(mode,level,mn,mx);
+  }else{nextQ();}
+}
+function showBC(mode,level,mn,mx){
+  var lL={easy:'🌟 簡單',medium:'⚡ 普通'};
+  $('bc-title').textContent='🏆 '+lL[level]+' 區塊完成！';
+  $('bc-sub').textContent='你已收集這個區塊所有可捕捉的寶可夢！';
+  var row=$('bc-row');row.innerHTML='';
+  ALL.filter(function(p){return p.id>=mn&&p.id<=mx&&isCatchable(p);}).forEach(function(p){
+    var img=document.createElement('img');img.className='bc-mini';
+    img.src=getArt(p.id);img.onerror=function(){this.src=getPx(p.id);};row.appendChild(img);
+  });
+  $('ov-bc').classList.add('show');
+}
+function closeBC(){
+  $('ov-bc').classList.remove('show');
+  var mode=G.mode,cl=G.cl[mode]||{};
+  if(cl.easy&&cl.medium&&cl.hard&&!localStorage.getItem('adv_shown_'+mode)){
+    localStorage.setItem('adv_shown_'+mode,'1');showAdvUnlock();
+  }else{nextQ();}
+}
+function showAdvUnlock(){
+  var mode=G.mode,legIds=mode==='english'?G1_LEG:G2_LEG;
+  $('au-sub').textContent='所有一般寶可夢已捕捉！進階模式開放，前往捕捉傳說神獸！';
+  var row=$('au-leg-row');row.innerHTML='';
+  legIds.forEach(function(id){
+    var p=ALL.find(function(x){return x.id===id;});if(!p)return;
+    var c=document.createElement('div');c.className='au-leg';
+    var img=document.createElement('img');img.src=getArt(id);img.onerror=function(){this.src=getPx(id);};
+    var lbl=document.createElement('span');lbl.textContent=p.name;
+    c.appendChild(img);c.appendChild(lbl);row.appendChild(c);
+  });
+  $('ov-adv').classList.add('show');
+}
+function closeAdv(){$('ov-adv').classList.remove('show');nextQ();}
+
+/* =====================================================
+   下一題
+   ===================================================== */
+function nextQ(){
+  if(G.level==='hard'){
+    var hm=G.hm;
+    var fullChain=hm.pokemon.ec.map(function(id){return ALL.find(function(p){return p.id===id;});}).filter(Boolean);
+    var startIdx=0;
+    for(var i=0;i<fullChain.length;i++){if(fullChain[i].id===hm.pokemon.id){startIdx=i;break;}}
+    var chain=fullChain.slice(startIdx);
+    for(var i=0;i<=hm.evoIdx;i++){if(G.cp.indexOf(chain[i].id)===-1)G.cp.push(chain[i].id);}
+    if(hm.evoIdx>=chain.length-1){if(!G.cl[G.mode])G.cl[G.mode]={};G.cl[G.mode].hard=true;}
+    save();updateHd();
+  }
+  G.qIdx++;
+  if(G.qIdx>=G.questions.length){showResult();return;}
+  renderQ();
+}
+function showResult(){
+  $('g-pb').style.width='100%';
+  $('r-ok').textContent=G.correct;$('r-ng').textContent=G.wrong;
+  $('r-ct').textContent=G.caught;$('r-sc').textContent=G.score;
+  goPage('pg-result');
+}
+
+/* =====================================================
+   圖鑑
+   ===================================================== */
+function switchDexGen(gen,btn){
+  G.dexGen=gen;document.querySelectorAll('.dex-tab').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');renderDex();
+}
+function filterDex(type,btn){
+  G.dexFilter=type;document.querySelectorAll('.flt').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');renderDex();
+}
+function renderDex(){
+  $('dex-g1').textContent=cntGen(1);$('dex-g2').textContent=cntGen(2);
+  var gen=G.dexGen===1?GEN1:GEN2;
+  var mode=G.dexGen===1?'english':'math';
+  var legIds=G.dexGen===1?G1_LEG:G2_LEG;
+  var ranges=G.dexGen===1?[[1,75,'easy'],[76,151,'medium']]:[[152,201,'easy'],[202,251,'medium']];
+  var prog=$('dex-prog');prog.innerHTML='';
+  ranges.forEach(function(r){
+    var mn=r[0],mx=r[1],lv=r[2];
+    var pool=gen.filter(function(p){return p.id>=mn&&p.id<=mx&&isCatchable(p);});
+    var c=pool.filter(function(p){return G.cp.indexOf(p.id)!==-1;}).length;
+    var lL={easy:'🌟 簡單',medium:'⚡ 普通'};
+    prog.innerHTML+='<div class="dex-pr"><span style="width:100px;font-size:.76rem">'+lL[lv]+'</span><div class="dex-prb"><div class="dex-prbi pr-'+lv+'" style="width:'+Math.round(c/Math.max(1,pool.length)*100)+'%"></div></div><span style="width:50px;text-align:right;font-size:.76rem">'+c+'/'+pool.length+'</span></div>';
+  });
+  var hardPool=gen.filter(function(p){return !p.lg&&p.ec&&p.ec.length>1&&p.ec[0]!==p.id;});
+  var hardC=hardPool.filter(function(p){return G.cp.indexOf(p.id)!==-1;}).length;
+  prog.innerHTML+='<div class="dex-pr"><span style="width:100px;font-size:.76rem">🔥 困難進化</span><div class="dex-prb"><div class="dex-prbi pr-h" style="width:'+Math.round(hardC/Math.max(1,hardPool.length)*100)+'%"></div></div><span style="width:50px;text-align:right;font-size:.76rem">'+hardC+'/'+hardPool.length+'</span></div>';
+  var lc=legIds.filter(function(id){return G.cp.indexOf(id)!==-1;}).length;
+  prog.innerHTML+='<div class="dex-pr"><span style="width:100px;font-size:.76rem">👑 傳說</span><div class="dex-prb"><div class="dex-prbi pr-l" style="width:'+Math.round(lc/legIds.length*100)+'%"></div></div><span style="width:50px;text-align:right;font-size:.76rem">'+lc+'/'+legIds.length+'</span></div>';
+
+  var list=gen;
+  if(G.dexFilter==='caught')   list=gen.filter(function(p){return G.cp.indexOf(p.id)!==-1;});
+  if(G.dexFilter==='uncaught') list=gen.filter(function(p){return G.cp.indexOf(p.id)===-1;});
+  if(G.dexFilter==='legendary')list=gen.filter(function(p){return p.lg;});
+
+  var grid=$('dex-grid');grid.innerHTML='';
+  list.forEach(function(p){
+    var caught=G.cp.indexOf(p.id)!==-1;
+    var legLocked=p.lg&&!isAdvUnlocked(mode)&&!caught;
+    var card=document.createElement('div');
+    if(caught){
+      card.className='dc gt';
+      var how=p.lg?'👑進階':isCatchable(p)?'🌟直接':'🔥進化';
+      card.innerHTML='<span class="dstar">★</span><span class="dhow">'+how+'</span><img src="'+getArt(p.id)+'" onerror="this.src=\''+getPx(p.id)+'\'"/><div class="dn">'+p.name+'</div><div class="dnum">No.'+String(p.id).padStart(3,'0')+'</div><span class="dtyp t-'+p.type+'">'+(TL[p.type]||p.type)+'</span>'+(p.lg?'<span class="dlck">👑</span>':'');
+      card.onclick=function(){openModal(p);};
+    }else if(legLocked){
+      card.className='dc ll nc-click';
+      card.innerHTML='<div class="ph">🔒</div><div class="dn">???</div><div class="dnum">No.'+String(p.id).padStart(3,'0')+'</div><span class="dtyp" style="background:rgba(247,37,133,.3);color:#fff">傳說</span><div class="guide-hint">點擊查看如何解鎖</div>';
+      card.onclick=function(){openGuide(p,mode);};
+    }else{
+      card.className='dc nc-click';
+      var hint=isCatchable(p)?'點擊查看如何捕捉':'點擊查看如何進化';
+      card.innerHTML='<div class="ph">❓</div><div class="dn">???</div><div class="dnum">No.'+String(p.id).padStart(3,'0')+'</div><div class="guide-hint">'+hint+'</div>';
+      card.onclick=function(){openGuide(p,mode);};
+    }
+    grid.appendChild(card);
+  });
+}
+
+/* =====================================================
+   圖鑑指引
+   ===================================================== */
+function openGuide(p,mode){
+  var body=$('gm-body');body.innerHTML='';
+  var goBtn=$('gm-go-btn');goBtn.onclick=null;
+
+  if(p.lg){
+    $('gm-icon').textContent='👑';$('gm-title').textContent=p.name+' — 傳說神獸';
+    var legUnlocked=isAdvUnlocked(mode);
+    body.innerHTML='<div class="gm-pkm-row"><div class="gm-pkm-card"><img src="'+getArt(p.id)+'" onerror="this.src=\''+getPx(p.id)+'\'"/><span>'+p.name+'</span></div></div>';
+    var info='<div class="gm-info">';
+    if(!legUnlocked){
+      info+='<div class="gm-info-row"><span class="gm-ic">🔒</span><span class="gm-txt">需完成 <strong>'+(mode==='english'?'📖 英文':'🔢 數學')+'</strong> 的<strong>簡單 + 普通 + 困難</strong>後，才能解鎖進階模式！</span></div>';
+      goBtn.textContent='去努力解鎖！💪';goBtn.className='gm-go-btn go-direct';
+      goBtn.onclick=function(){closeGuide();goPage('pg-home');};
+    }else{
+      info+='<div class="gm-info-row"><span class="gm-ic">✅</span><span class="gm-txt">進階模式已解鎖！前往<strong>進階模式</strong>答題就能捕捉牠！</span></div>';
+      goBtn.textContent='前往進階模式 👑';goBtn.className='gm-go-btn go-adv';
+      goBtn.onclick=function(){closeGuide();selectMode(mode);};
+    }
+    info+='</div>';body.innerHTML+=info;
+
+  }else if(isCatchable(p)){
+    $('gm-icon').textContent='📍';$('gm-title').textContent=p.name+' — 捕捉指引';
+    var isEng=mode==='english';
+    var mn,mx,lvName,lvKey;
+    if(p.id>=(isEng?1:152)&&p.id<=(isEng?75:201)){mn=isEng?1:152;mx=isEng?75:201;lvName='🌟 簡單';lvKey='easy';}
+    else{mn=isEng?76:202;mx=isEng?151:251;lvName='⚡ 普通';lvKey='medium';}
+    body.innerHTML='<div class="gm-pkm-row"><div class="gm-pkm-card"><img src="'+getArt(p.id)+'" onerror="this.src=\''+getPx(p.id)+'\'"/><span>'+p.name+'</span></div></div>';
+    var info='<div class="gm-info">';
+    info+='<div class="gm-info-row"><span class="gm-ic">'+(isEng?'📖':'🔢')+'</span><span class="gm-txt">在 <strong>'+(isEng?'英文':'數學')+'</strong> 模式的 <strong>'+lvName+'</strong> 中可以遇到！</span></div>';
+    info+='<div class="gm-info-row"><span class="gm-ic">🎯</span><span class="gm-txt">範圍：<strong>No.'+mn+'~'+mx+'</strong></span></div>';
+    info+='<div class="gm-info-row"><span class="gm-ic">💡</span><span class="gm-txt">答對題目即可捕捉！</span></div>';
+    info+='</div>';body.innerHTML+=info;
+    goBtn.textContent='前往捕捉！🎯';goBtn.className='gm-go-btn go-direct';
+    goBtn.onclick=function(){closeGuide();G.mode=mode;selectLevel(lvKey);};
+
+  }else{
+    $('gm-icon').textContent='🔥';$('gm-title').textContent=p.name+' — 進化指引';
+    var isEng=mode==='english';
+    var fullChain=p.ec.map(function(id){return ALL.find(function(x){return x.id===id;});}).filter(Boolean);
+    // 找起點（isCatchable的那個）
+    var starter=fullChain.find(function(x){return isCatchable(x)&&!x.lg;})||fullChain[0];
+    var targetIdx=fullChain.indexOf(fullChain.find(function(x){return x.id===p.id;}));
+    var starterIdx=fullChain.indexOf(starter);
+
+    var chainHtml='<div class="gm-evo-chain">';
+    fullChain.forEach(function(cp,i){
+      if(i>0)chainHtml+='<span class="gm-evo-arr">➡</span>';
+      var cls='gm-evo-step'+(cp.id===p.id?' target':(cp.id===starter.id?' need':''));
+      chainHtml+='<div class="'+cls+'"><img src="'+getArt(cp.id)+'" onerror="this.src=\''+getPx(cp.id)+'\'"/><div>'+cp.name+'</div></div>';
+    });
+    chainHtml+='</div>';body.innerHTML=chainHtml;
+
+    var hasStarter=G.cp.indexOf(starter.id)!==-1;
+    var info='<div class="gm-info">';
+    if(!hasStarter){
+      info+='<div class="gm-info-row"><span class="gm-ic">1️⃣</span><span class="gm-txt">先在 <strong>'+(isEng?'英文':'數學')+' 簡單</strong>模式捕捉：<strong>'+starter.name+'</strong></span></div>';
+    }else{
+      info+='<div class="gm-info-row"><span class="gm-ic">✅</span><span class="gm-txt">已捕捉起點 <strong>'+starter.name+'</strong>！</span></div>';
+    }
+    info+='<div class="gm-info-row"><span class="gm-ic">2️⃣</span><span class="gm-txt">進入 <strong>🔥 困難模式</strong>，選擇 <strong>'+starter.name+'</strong></span></div>';
+    var stepsFromStarter=targetIdx-starterIdx;
+    if(stepsFromStarter===1){
+      info+='<div class="gm-info-row"><span class="gm-ic">⚡</span><span class="gm-txt">連續答對 <strong>2 題</strong> → 進化成 <strong>'+p.name+'</strong>！</span></div>';
+      info+='<div class="gm-streak"><div class="gm-sdot"></div><div class="gm-sdot"></div></div>';
+    }else if(stepsFromStarter>=2){
+      info+='<div class="gm-info-row"><span class="gm-ic">⚡</span><span class="gm-txt">連續答對 <strong>2 題</strong> → 進化成 '+fullChain[starterIdx+1].name+'</span></div>';
+      info+='<div class="gm-streak"><div class="gm-sdot"></div><div class="gm-sdot"></div></div>';
+      info+='<div class="gm-info-row"><span class="gm-ic">🔥</span><span class="gm-txt">再連續答對 <strong>3 題</strong> → 進化成 <strong>'+p.name+'</strong>！</span></div>';
+      info+='<div class="gm-streak"><div class="gm-sdot"></div><div class="gm-sdot"></div><div class="gm-sdot"></div></div>';
+    }
+    info+='</div>';body.innerHTML+=info;
+    if(!hasStarter){
+      goBtn.textContent='先去捕捉 '+starter.name+'！🌟';goBtn.className='gm-go-btn go-direct';
+      goBtn.onclick=function(){closeGuide();G.mode=mode;selectLevel('easy');};
+    }else{
+      goBtn.textContent='前往困難模式進化！🔥';goBtn.className='gm-go-btn go-hard';
+      goBtn.onclick=function(){closeGuide();G.mode=mode;showPickPage();};
+    }
+  }
+  $('guide-modal').classList.add('show');
+}
+function closeGuide(){$('guide-modal').classList.remove('show');}
+
+/* =====================================================
+   Modal
+   ===================================================== */
+function openModal(p){
+  $('modal-img').src='';$('modal-img').onerror=function(){this.src=getPx(p.id);this.onerror=null;};$('modal-img').src=getArt(p.id);
+  $('modal-name').textContent=p.name;
+  $('modal-num').textContent='No.'+String(p.id).padStart(3,'0')+' ／ '+p.en.charAt(0).toUpperCase()+p.en.slice(1);
+  $('modal-types').innerHTML='<span class="ct-type t-'+p.type+'">'+(TL[p.type]||p.type)+'屬性</span>'+(p.lg?'<span class="ct-type" style="background:linear-gradient(135deg,#ffd166,#f4a261);color:#1a1a2e">👑 傳說</span>':'');
+  $('modal-desc').textContent=p.desc;
+  var how=p.lg?'進階模式':isCatchable(p)?'簡單/普通直接捕捉':'困難模式進化';
+  $('modal-stats').innerHTML='<div class="mc-st">編號<span>#'+String(p.id).padStart(3,'0')+'</span></div><div class="mc-st">屬性<span>'+(TL[p.type]||p.type)+'</span></div><div class="mc-st">獲得方式<span style="font-size:.78rem">'+how+'</span></div><div class="mc-st">狀態<span style="color:#06d6a0">已捕捉 ✓</span></div>';
+  $('modal').classList.add('show');
+}
+function closeModal(){$('modal').classList.remove('show');}
+
+/* =====================================================
+   啟動
+   ===================================================== */
+window.onload=function(){initEvents();updateHd();};
 </script>
 </body>
 </html>

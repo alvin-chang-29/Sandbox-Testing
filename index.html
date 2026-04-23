@@ -8,117 +8,110 @@
     <title>寶可夢數學 Mezastar Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { --bg-dark: #0a0e17; --glow: rgba(59, 130, 246, 0.6); }
-        body { background: var(--bg-dark); color: white; font-family: 'PingFang TC', sans-serif; overflow: hidden; height: 100vh; user-select: none; touch-action: manipulation; }
-        .page { display: none; height: 100vh; flex-direction: column; }
+        :root { --bg-dark: #070b13; --glow: rgba(59, 130, 246, 0.5); }
+        body { background: var(--bg-dark); color: white; font-family: 'PingFang TC', sans-serif; height: 100vh; margin: 0; overflow: hidden; user-select: none; }
+        
+        .page { display: none; height: 100vh; width: 100vw; flex-direction: column; overflow: hidden; }
         .page-active { display: flex; }
-        .mezastar-card { background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); border: 2px solid #334155; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
-        .btn-action { background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%); border-bottom: 5px solid #1e3a8a; }
-        .btn-option { background: #1e293b; border: 3px solid #334155; transition: transform 0.1s; }
-        .btn-option:active { transform: translateY(4px); }
-        #enemy-mon-img { width: 300px !important; height: 300px !important; object-fit: contain; filter: drop-shadow(0 0 25px var(--glow)); }
-        .burst-bg { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(5, 1fr); opacity: 0.3; filter: blur(1px); animation: pulse 8s infinite alternate; }
-        @keyframes pulse { 0% { transform: scale(1); } 100% { transform: scale(1.1); } }
+        
+        /* 修復排版干涉：動態分配高度 */
+        .battle-top { flex: 0 0 auto; padding: 20px; }
+        .battle-mon-area { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; }
+        .battle-quiz-area { flex: 0 0 auto; padding: 20px; }
+        .battle-options-area { flex: 0 0 auto; padding: 10px 20px 40px; }
+
+        .mezastar-card { background: linear-gradient(180deg, #161d2b 0%, #0a0e17 100%); border: 2px solid #2d3748; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+        .btn-option { background: #1a2333; border: 3px solid #2d3748; color: #fff; font-size: 2.5rem; font-weight: 900; border-radius: 1.5rem; transition: all 0.1s; }
+        .btn-option:active { transform: scale(0.95); background: #2d3748; }
+        
+        #enemy-mon-img { max-height: 40vh; max-width: 80%; object-fit: contain; filter: drop-shadow(0 0 20px var(--glow)); }
+        
         #ox-overlay { pointer-events: none; z-index: 9999; display: none; position: fixed; inset: 0; align-items: center; justify-content: center; font-size: 15rem; font-weight: 900; }
-        .list-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; padding: 20px; overflow-y: auto; }
+        .burst-bg { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(5, 1fr); opacity: 0.25; filter: blur(1px); pointer-events: none; }
     </style>
 </head>
 <body>
 
     <div id="ox-overlay"></div>
 
-    <div id="page-welcome" class="page page-active items-center justify-center relative p-10">
+    <div id="page-welcome" class="page page-active items-center justify-center relative">
         <div id="burst-container" class="burst-bg"></div>
-        <div class="mezastar-card p-12 rounded-[3rem] z-10 w-full max-w-xl text-center">
-            <h1 class="text-5xl font-black mb-2 italic text-blue-400">MATH MEZASTAR</h1>
-            <p class="text-xs font-bold text-slate-500 mb-8 tracking-[0.3em] uppercase">Advanced PWA Training System</p>
-            <input type="text" id="input-name" class="w-full bg-slate-900 border-2 border-slate-700 p-6 rounded-2xl text-center text-2xl font-bold mb-8 text-white" placeholder="輸入訓練家名字">
-            <button onclick="checkAdminAndStart()" class="btn-action w-full py-6 rounded-2xl text-3xl font-black shadow-lg">冒險開始</button>
+        <div class="mezastar-card p-12 rounded-[3rem] z-10 w-full max-w-xl text-center border-t-4 border-blue-500">
+            <h1 class="text-5xl font-black mb-2 italic text-blue-400 italic">MATH MEZASTAR</h1>
+            <p class="text-sm font-bold text-slate-500 mb-8 tracking-[0.3em] uppercase">Kanto Master Training</p>
+            <input type="text" id="input-name" class="w-full bg-slate-900 border-2 border-slate-700 p-6 rounded-2xl text-center text-2xl font-bold mb-8 text-white" placeholder="請輸入訓練家姓名">
+            <button onclick="checkAdminAndStart()" class="bg-blue-600 w-full py-6 rounded-2xl text-3xl font-black shadow-lg active:scale-95 transition-all">冒險開始</button>
         </div>
     </div>
 
-    <div id="page-starter" class="page items-center justify-center bg-slate-950 p-10">
-        <h2 class="text-3xl font-black mb-10 italic text-yellow-400 underline decoration-blue-500">選擇首位夥伴</h2>
-        <div id="starter-list" class="grid grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-4xl"></div>
+    <div id="page-starter" class="page items-center justify-center bg-slate-950 p-6">
+        <h2 class="text-3xl font-black mb-10 italic text-yellow-400">選擇首發夥伴</h2>
+        <div id="starter-list" class="grid grid-cols-2 md:grid-cols-5 gap-6 w-full max-w-6xl"></div>
     </div>
 
-    <div id="page-stages" class="page bg-slate-950 p-6 overflow-hidden">
-        <div class="max-w-2xl mx-auto w-full pt-10 flex-1 overflow-y-auto">
-            <div class="flex items-center justify-between mb-8 px-2">
-                <h2 class="text-2xl font-black italic">訓練家: <span id="display-name" class="text-blue-400"></span></h2>
-                <div class="bg-blue-600 px-4 py-1 rounded-full text-xs font-bold">LV.1 MASTER</div>
-            </div>
-            <div class="grid gap-4" id="stage-menu"></div>
+    <div id="page-stages" class="page bg-slate-950">
+        <div class="battle-top flex justify-between items-center border-b border-slate-800">
+            <h2 class="text-2xl font-black italic text-blue-400">訓練家: <span id="display-name"></span></h2>
+            <div class="text-xs bg-blue-900 px-4 py-1 rounded-full border border-blue-500">PWA MASTER EDITION</div>
         </div>
-        <div class="grid grid-cols-2 gap-4 p-4 bg-slate-900/50 rounded-t-3xl mt-4">
-            <button onclick="enterMyCollection()" class="bg-slate-800 p-6 rounded-2xl font-black text-xl italic border-b-4 border-blue-500">🎒 我的背包</button>
-            <button onclick="enterPokedex()" class="bg-slate-800 p-6 rounded-2xl font-black text-xl italic border-b-4 border-red-500">📕 寶可夢圖鑑</button>
+        <div class="flex-1 overflow-y-auto p-6" id="stage-menu"></div>
+        <div class="grid grid-cols-2 gap-4 p-6 bg-slate-900">
+            <button onclick="enterMyCollection()" class="bg-slate-800 py-6 rounded-2xl font-black text-xl italic border-b-4 border-pink-500">🎒 我的背包</button>
+            <button onclick="enterPokedex()" class="bg-slate-800 py-6 rounded-2xl font-black text-xl italic border-b-4 border-red-500">📕 寶可夢圖鑑</button>
         </div>
     </div>
 
-    <div id="page-game" class="page bg-slate-950 p-4">
-        <div class="flex justify-between items-center p-4">
+    <div id="page-game" class="page bg-slate-950">
+        <div class="battle-top flex justify-between items-center">
             <button onclick="confirmExit()" class="bg-slate-800 px-6 py-2 rounded-full font-bold">◀ 離開</button>
             <div id="progress-box" class="bg-blue-900/50 border-2 border-blue-400 px-6 py-2 rounded-full font-black text-blue-300">
                 連對: <span id="combo" class="text-yellow-400">0</span> / <span id="total-needed">1</span>
             </div>
         </div>
-        <div class="flex-1 flex flex-col items-center justify-center">
-            <img id="enemy-mon-img" src="" class="mb-4">
-            <p id="enemy-name" class="bg-blue-600 px-8 py-1 rounded-full text-xl font-black italic mb-10"></p>
-            <div class="mezastar-card w-full max-w-2xl py-12 rounded-[2.5rem] text-center border-l-8 border-yellow-500">
-                <div id="question" class="text-7xl font-black italic text-white">?</div>
+
+        <div class="battle-mon-area">
+            <img id="enemy-mon-img" src="">
+            <div class="text-center mt-4">
+                <span id="enemy-id" class="text-xs font-bold text-slate-500 block mb-1"></span>
+                <span id="enemy-name" class="bg-blue-600 px-8 py-1 rounded-full text-xl font-black italic"></span>
+                <p id="enemy-desc" class="text-slate-400 text-sm mt-3 px-10 max-w-xl italic"></p>
             </div>
         </div>
-        <div id="options" class="grid grid-cols-2 gap-6 p-6 max-w-4xl mx-auto w-full mb-10"></div>
+
+        <div class="battle-quiz-area">
+            <div class="mezastar-card w-full max-w-2xl mx-auto py-8 rounded-[2.5rem] text-center border-l-8 border-yellow-500">
+                <div id="question" class="text-6xl font-black italic text-white tracking-tighter">?</div>
+            </div>
+        </div>
+
+        <div class="battle-options-area">
+            <div id="options" class="grid grid-cols-2 gap-6 max-w-4xl mx-auto w-full"></div>
+        </div>
     </div>
 
     <div id="page-list" class="page bg-slate-950">
-        <div class="p-8 flex justify-between items-center border-b border-slate-800">
+        <div class="battle-top flex justify-between items-center border-b border-slate-800">
             <h2 id="list-title" class="text-3xl font-black italic text-blue-400"></h2>
-            <button onclick="switchPage('page-stages')" class="bg-slate-800 px-6 py-2 rounded-xl">返回</button>
+            <button onclick="switchPage('page-stages')" class="bg-slate-800 px-6 py-2 rounded-xl">返回地圖</button>
         </div>
-        <div id="list-container" class="list-grid flex-1"></div>
-    </div>
-
-    <div id="success-modal" class="fixed inset-0 bg-black/95 hidden items-center justify-center z-[9999] p-6 backdrop-blur-md">
-        <div class="mezastar-card p-10 rounded-[3rem] text-center max-w-md w-full border-t-8 border-yellow-400">
-            <div class="text-4xl font-black mb-2 text-blue-400 italic">收服成功！</div>
-            <p id="success-msg" class="text-slate-400 font-bold mb-4"></p>
-            <img id="success-mon-img" src="" class="w-64 h-64 mx-auto object-contain mb-6 drop-shadow-2xl">
-            <button onclick="closeSuccessModal()" class="btn-action w-full py-5 rounded-2xl text-2xl font-black">繼續冒險</button>
-        </div>
+        <div id="list-container" class="flex-1 overflow-y-auto p-6 grid grid-cols-3 md:grid-cols-6 lg:grid-cols-8 gap-4"></div>
     </div>
 
     <script>
-        // 1. 完整的 POKEDEX_DATA (補回所有名稱與敘述)
+        // 1. 完整的 POKEDEX 資料庫 (包含名稱與敘述)
         const POKEDEX_DATA = {
-            1: ["妙蛙種子", "種子寶可夢", "背上的種子裡儲存了充足的營養。"], 2: ["妙蛙草", "種子寶可夢", "背上的花苞長大後，會發出甜美的香氣。"], 3: ["妙蛙花", "種子寶可夢", "雨後香氣會更濃郁，吸引許多寶可夢。"],
-            4: ["小火龍", "蜥蜴寶可夢", "尾巴上的火焰代表生命力。"], 5: ["火恐龍", "火焰寶可夢", "戰鬥時會噴出猛烈的火焰，燒盡一切。"], 6: ["噴火龍", "火焰寶可夢", "能飛到1400公尺高，噴出高溫火焰。"],
-            7: ["傑尼龜", "小龜寶可夢", "殼的圓潤形狀能減少水的阻力。"], 8: ["卡咪龜", "龜寶可夢", "長滿毛的尾巴是長壽的象徵。"], 9: ["水箭龜", "甲殼寶可夢", "甲殼上的噴射口能噴出貫穿厚重鋼板的水流。"],
-            25: ["皮卡丘", "鼠寶可夢", "兩頰有電囊，感覺危險會放電。"], 26: ["雷丘", "鼠寶可夢", "長長的尾巴能將電力排入地底。"],
-            133: ["伊布", "進化寶可夢", "基因極不穩定，有多種進化的可能。"], 143: ["卡比獸", "睡覺寶可夢", "每天要吃下400公斤食物。"],
-            149: ["快龍", "龍寶可夢", "智商與人類相當，會救助溺水的人。"], 150: ["超夢", "基因寶可夢", "人造寶可夢，戰鬥能力提升到了極限。"], 151: ["夢幻", "新種寶可夢", "據說擁有所有寶可夢的基因。"]
+            1:["妙蛙種子","種子寶可夢","在出生後的一段時間內，它會吸收背上種子裡儲存的營養來成長。"],2:["妙蛙草","種子寶可夢","背上的花苞長大後，它似乎就無法再用兩條後腿站立了。"],3:["妙蛙花","種子寶可夢","據說充足的營養與陽光會讓花的顏色變得更加鮮豔，其花香能安撫人心。"],
+            4:["小火龍","蜥蜴寶可夢","尾巴上的火焰代表它的生命力。如果身體強健，火焰就會燒得十分猛烈。"],5:["火恐龍","火焰寶可夢","會用鋒利的爪子無情地打倒對手。如果遇到強敵，它就會噴出青白色的火焰。"],6:["噴火龍","火焰寶可夢","據說在經歷過艱苦的戰鬥後，它的火焰溫度會升高。能飛到1400公尺高。"],
+            7:["傑尼龜","小龜寶可夢","殼的作用不僅是用來保護身體，圓潤的形狀能減少水的阻力，讓它游得飛快。"],8:["卡咪龜","龜寶可夢","據說它長滿毛的尾巴是長壽的象徵，在老人家中非常受歡迎。"],9:["水箭龜","甲殼寶可夢","背上的甲殼上長著兩座水砲。噴射出的水流威力巨大，能輕易貫通厚重的鐵板。"],
+            25:["皮卡丘","鼠寶可夢","兩頰有電囊。如果感覺到危險，就會從那裡放出強大的電力。"],26:["雷丘","鼠寶可夢","如果電囊裡儲存了過多電力，它會把尾巴插在地面上放電。這會讓它變得神清氣爽。"],
+            102:["蛋蛋","蛋寶可夢","六個看起來像蛋的東西靠心靈感應連結。如果少了一個，它們就會變得很不安。"],
+            133:["伊布","進化寶可夢","由於基因極不穩定，因此潛藏著各種進化的可能，是適應環境的專家。"],143:["卡比獸","睡覺寶可夢","除了吃就是睡。每天要吃下400公斤食物，胃液強大到能消化任何腐爛的東西。"],
+            150:["超夢","基因寶可夢","利用夢幻的基因經過多年的人工改造而成。戰鬥能力被提升到了極限，性格冷酷。"],151:["夢幻","新種寶可夢","據說擁有所有寶可夢的基因。因為能隨心所欲地隱身，所以很少有人見過它。"]
         };
-        // 自動補全 151 隻其餘資料 (確保地圖運作)
-        for(let i=1; i<=151; i++) { if(!POKEDEX_DATA[i]) POKEDEX_DATA[i] = [`寶可夢${i}`, "探索中", "目前還沒有這隻寶可夢的詳細資料。"]; }
+        // 補齊其餘 151 隻
+        for(let i=1; i<=151; i++) { if(!POKEDEX_DATA[i]) POKEDEX_DATA[i] = [`寶可夢${i}`, "探索中", "目前還沒有這隻寶可夢的詳細發現紀錄。"]; }
 
         let trainerName = "", myPokes = [], caughtIds = new Set(), combo = 0, currentAns = 0, activeEnemy = null;
-
-        function saveGame() { localStorage.setItem('poke_mezastar_save', JSON.stringify({ trainerName, myPokes, caughtIds: Array.from(caughtIds) })); }
-        function loadGame() {
-            const saved = localStorage.getItem('poke_mezastar_save');
-            if (saved) {
-                const data = JSON.parse(saved);
-                trainerName = data.trainerName;
-                myPokes = data.myPokes || [];
-                caughtIds = new Set(data.caughtIds || []);
-                document.getElementById('display-name').innerText = trainerName;
-                switchPage('page-stages');
-                return true;
-            }
-            return false;
-        }
 
         function checkAdminAndStart() {
             const name = document.getElementById('input-name').value.trim();
@@ -128,28 +121,33 @@
             
             const starters = [1, 4, 7, 25, 133];
             const list = document.getElementById('starter-list');
-            list.innerHTML = "";
-            starters.forEach(id => {
-                const btn = document.createElement('button');
-                btn.className = "mezastar-card p-6 rounded-3xl flex flex-col items-center active:scale-95";
-                btn.innerHTML = `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png" class="w-32 h-32"><span class="mt-4 font-bold">${POKEDEX_DATA[id][0]}</span>`;
-                btn.onclick = () => { myPokes.push({id, isShiny:false}); caughtIds.add(id); saveGame(); switchPage('page-stages'); };
-                list.appendChild(btn);
-            });
+            list.innerHTML = starters.map(id => `
+                <button onclick="pickStarter(${id})" class="mezastar-card p-6 rounded-3xl flex flex-col items-center active:scale-95">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png" class="w-full">
+                    <span class="mt-4 font-bold text-blue-400">${POKEDEX_DATA[id][0]}</span>
+                </button>
+            `).join("");
             switchPage('page-starter');
+        }
+
+        function pickStarter(id) {
+            myPokes.push({id, isShiny:false});
+            caughtIds.add(id);
+            saveGame();
+            switchPage('page-stages');
         }
 
         function updateStageMenu() {
             const stages = [
-                {id:1, name:"常青森林", sub:"加減運算 LV.1", color:"bg-emerald-700", range:[1,30]},
-                {id:2, name:"月見山", sub:"加減運算 LV.2", color:"bg-slate-700", range:[31,70]},
-                {id:3, name:"華藍水域", sub:"混合運算 LV.1", color:"bg-cyan-700", range:[71,110]},
-                {id:4, name:"冠軍之路", sub:"傳說對戰", color:"bg-indigo-800", range:[111,151]}
+                {id:1, name:"常青森林", sub:"個位數加減", color:"bg-emerald-800"},
+                {id:2, name:"月見山", sub:"三位數加減", color:"bg-slate-700"},
+                {id:3, name:"華藍水域", sub:"加法交換率", color:"bg-blue-800"},
+                {id:4, name:"無人發電廠", sub:"減法邏輯", color:"bg-amber-800"}
             ];
             document.getElementById('stage-menu').innerHTML = stages.map(s => `
-                <button onclick="enterStage(${s.id})" class="${s.color} p-6 rounded-2xl flex items-center gap-6 shadow-xl mb-2">
-                    <div class="bg-white/20 p-3 rounded-xl text-3xl">⚔️</div>
-                    <div class="text-left"><div class="text-xl font-black italic">${s.name}</div><div class="text-xs opacity-70">${s.sub}</div></div>
+                <button onclick="enterStage(${s.id})" class="${s.color} w-full p-8 rounded-3xl flex items-center gap-6 shadow-xl mb-4 border-l-8 border-white/30">
+                    <div class="text-4xl">⚔️</div>
+                    <div class="text-left"><div class="text-2xl font-black italic">${s.name}</div><div class="text-sm opacity-70">${s.sub}</div></div>
                 </button>
             `).join("");
         }
@@ -162,38 +160,42 @@
         }
 
         function generateWild(stageId) {
-            const ranges = { 1:[1,30], 2:[31,70], 3:[71,110], 4:[111,151] };
+            const ranges = { 1:[1,35], 2:[36,70], 3:[71,110], 4:[111,151] };
             const [min, max] = ranges[stageId];
             const wid = Math.floor(Math.random() * (max - min + 1)) + min;
-            activeEnemy = { id: wid, name: POKEDEX_DATA[wid][0] };
+            activeEnemy = { id: wid, name: POKEDEX_DATA[wid][0], type: POKEDEX_DATA[wid][1], desc: POKEDEX_DATA[wid][2] };
+            
+            document.getElementById('enemy-id').innerText = `NO.${wid.toString().padStart(3,'0')} | ${activeEnemy.type}`;
             document.getElementById('enemy-mon-img').src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${wid}.png`;
             document.getElementById('enemy-name').innerText = activeEnemy.name;
+            document.getElementById('enemy-desc').innerText = activeEnemy.desc;
         }
 
         function nextRound() {
             document.getElementById('combo').innerText = combo;
             const a = Math.floor(Math.random() * 10) + 1;
             const b = Math.floor(Math.random() * 10) + 1;
-            currentAns = a + b;
-            document.getElementById('question').innerText = `${a} + ${b} = ?`;
+            const c = Math.floor(Math.random() * 10) + 1;
             
-            // 修正選項生成邏輯
+            // 依照不同區域出題
+            if(activeEnemy.id <= 35) {
+                currentAns = a + b;
+                document.getElementById('question').innerText = `${a} + ${b} = ?`;
+            } else {
+                currentAns = a + b + c;
+                document.getElementById('question').innerText = `${a} + ${b} + ? = ${currentAns + a}`;
+                currentAns = currentAns - b; // 簡單邏輯變化
+            }
+            
             let opts = [currentAns];
             while(opts.length < 4) {
                 let wrong = currentAns + (Math.floor(Math.random() * 5) + 1) * (Math.random() > 0.5 ? 1 : -1);
-                if(wrong > 0 && !opts.includes(wrong)) opts.push(wrong);
+                if(wrong >= 0 && !opts.includes(wrong)) opts.push(wrong);
             }
             opts.sort(() => Math.random() - 0.5);
             
             const grid = document.getElementById('options');
-            grid.innerHTML = "";
-            opts.forEach(n => {
-                const btn = document.createElement('button');
-                btn.className = "btn-option py-8 rounded-3xl text-4xl font-black";
-                btn.innerText = n;
-                btn.onclick = () => checkAnswer(n);
-                grid.appendChild(btn);
-            });
+            grid.innerHTML = opts.map(n => `<button onclick="checkAnswer(${n})" class="btn-option py-6">${n}</button>`).join("");
         }
 
         function checkAnswer(n) {
@@ -202,7 +204,10 @@
                 overlay.innerText = "O"; overlay.style.color = "#22c55e";
                 overlay.style.display = "flex";
                 combo++;
-                setTimeout(() => { overlay.style.display = "none"; if(combo >= 1) handleCatch(); else nextRound(); }, 600);
+                setTimeout(() => { 
+                    overlay.style.display = "none"; 
+                    if(combo >= 1) handleCatch(); else nextRound(); 
+                }, 600);
             } else {
                 overlay.innerText = "X"; overlay.style.color = "#ef4444";
                 overlay.style.display = "flex";
@@ -215,41 +220,32 @@
             myPokes.push({id: activeEnemy.id, isShiny: false});
             caughtIds.add(activeEnemy.id);
             saveGame();
-            document.getElementById('success-mon-img').src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${activeEnemy.id}.png`;
-            document.getElementById('success-msg').innerText = `${trainerName}，收服了 ${activeEnemy.name}！`;
-            document.getElementById('success-modal').classList.replace('hidden', 'flex');
-        }
-
-        function closeSuccessModal() {
-            document.getElementById('success-modal').classList.replace('flex', 'hidden');
+            alert(`成功收服 ${activeEnemy.name}！`);
             switchPage('page-stages');
         }
 
-        // 背包功能
         function enterMyCollection() {
             document.getElementById('list-title').innerText = "我的背包";
             const container = document.getElementById('list-container');
             container.innerHTML = myPokes.map(p => `
                 <div class="mezastar-card p-4 rounded-2xl flex flex-col items-center">
-                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${p.id}.png" class="w-20 h-20">
-                    <div class="text-sm font-bold mt-2">${POKEDEX_DATA[p.id][0]}</div>
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${p.id}.png" class="w-full">
+                    <div class="text-xs font-bold mt-2 text-blue-400">${POKEDEX_DATA[p.id][0]}</div>
                 </div>
             `).join("");
             switchPage('page-list');
         }
 
-        // 圖鑑功能
         function enterPokedex() {
             document.getElementById('list-title').innerText = "寶可夢圖鑑";
             const container = document.getElementById('list-container');
             let html = "";
             for(let i=1; i<=151; i++) {
-                const isCaught = caughtIds.has(i);
+                const caught = caughtIds.has(i);
                 html += `
-                    <div class="mezastar-card p-4 rounded-2xl flex flex-col items-center ${isCaught ? 'opacity-100' : 'opacity-30'}">
-                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${i}.png" class="w-20 h-20 ${isCaught ? '' : 'brightness-0'}">
-                        <div class="text-xs font-bold mt-2">${isCaught ? POKEDEX_DATA[i][0] : '???'}</div>
-                        <div class="text-[10px] text-slate-500">${isCaught ? POKEDEX_DATA[i][1] : ''}</div>
+                    <div class="mezastar-card p-2 rounded-2xl flex flex-col items-center ${caught ? '' : 'opacity-30'}">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${i}.png" class="w-full ${caught ? '' : 'brightness-0'}">
+                        <div class="text-[10px] font-bold mt-1">${caught ? POKEDEX_DATA[i][0] : '???'}</div>
                     </div>
                 `;
             }
@@ -263,15 +259,26 @@
             document.getElementById(id).classList.add('page-active');
         }
 
-        function confirmExit() { if(confirm("要離開目前的挑戰嗎？")) switchPage('page-stages'); }
+        function saveGame() { localStorage.setItem('poke_mezastar_v2', JSON.stringify({ trainerName, myPokes, caughtIds: Array.from(caughtIds) })); }
+        function loadGame() {
+            const saved = localStorage.getItem('poke_mezastar_v2');
+            if(saved) {
+                const data = JSON.parse(saved);
+                trainerName = data.trainerName;
+                myPokes = data.myPokes;
+                caughtIds = new Set(data.caughtIds);
+                document.getElementById('display-name').innerText = trainerName;
+                switchPage('page-stages');
+            }
+        }
+        function confirmExit() { if(confirm("確定離開？")) switchPage('page-stages'); }
 
         window.onload = () => {
             const burst = document.getElementById('burst-container');
-            const ids = [1,4,7,25,133,150,149,6,9,3,130,143,151,144,145,146,59,26,18,38,65,94,103,112,123,125,126,131,142,39];
-            ids.forEach(id => {
+            [1,4,7,25,133,150,149,6,9,3,130,143,151,144,145,146,59,26,18,38,65,94,103,112,123,125,126,131,142,39].forEach(id => {
                 const img = document.createElement('img');
                 img.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
-                img.className = "w-full aspect-square object-contain p-2";
+                img.className = "w-full opacity-60";
                 burst.appendChild(img);
             });
             loadGame();
